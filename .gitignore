@@ -1,0 +1,10 @@
+.vscode
+.env
+.DS_Store
+
+npm-debug.log
+
+/config/secret.js
+/config/*.key
+/config/*.key.pub
+/node_modules
