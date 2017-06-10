@@ -4,6 +4,7 @@
 
 npm-debug.log
 
+/uploads
 /config/secret.js
 /config/*.key
 /config/*.key.pub

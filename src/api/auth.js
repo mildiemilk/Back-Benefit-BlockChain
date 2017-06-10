@@ -5,7 +5,7 @@ import { User } from '../models';
 const passwordPattern = /^(?=.*\d)(?=.*[A-Z]).{8,20}/;
 
 const login = {
-  tags: ['api'],
+  tags: ['auth', 'api'],
   validate: {
     payload: {
       email: Joi.string().required().email(),
@@ -14,7 +14,7 @@ const login = {
   },
   handler: (request, reply) => {
     const { email, password } = request.payload;
-  
+
     User.findOne({ email })
       .then((user) => {
         if (!user) {
@@ -25,7 +25,7 @@ const login = {
           } else {
             const { authService } = request.server.app;
             const token = authService.createAuthToken(user);
-  
+
             reply({ token });
           }
         }
@@ -34,6 +34,7 @@ const login = {
 };
 
 const logout = {
+  tags: ['auth', 'api'],
   auth: 'jwt',
   handler: (request, reply) => {
     reply("OK");

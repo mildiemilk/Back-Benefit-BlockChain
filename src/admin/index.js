@@ -22,4 +22,4 @@ export const register = (server, options, next) => {
 
 register.attributes = {
   name: 'admin',
-}
+};

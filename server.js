@@ -32,6 +32,7 @@ Glue.compose(manifest, { relativeTo: __dirname }, (err, server) => {
       'title': 'Benefitable API Documentation',
       'version': '0.0.1',
     },
+    grouping: 'tags',
     payloadType: 'form',
   };
 
