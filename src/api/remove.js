@@ -14,7 +14,7 @@ const Remove = {
   handler: (request, reply) => {
 
     const { email, password } = request.payload;
-    Contact.findOne({ 'email': email, isRemoved: true }, function(err, contact) {
+    User.findOne({ 'email': email, isRemoved: true }, function(err, contact) {
         //   isRemoved: true,
         //   removedAt: Mon Jan 04 2016 16:39:23 GMT-0800 (PST)
     });
