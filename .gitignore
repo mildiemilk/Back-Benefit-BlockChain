@@ -9,3 +9,6 @@ npm-debug.log
 /config/*.key
 /config/*.key.pub
 /node_modules
+/src/api/config
+/src/Verify
+/src/remove
