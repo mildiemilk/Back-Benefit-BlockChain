@@ -14,7 +14,7 @@ export const register = (plugin, options, next) => {
   plugin.app.services = services;
 
   next();
-}
+};
 
 register.attributes = {
   name: 'services',
