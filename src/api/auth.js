@@ -23,8 +23,8 @@ const login = {
           if (!user.comparePassword(password)) {
             reply(Boom.unauthorized('Invalid email or password'));
           } else {
-            const { authService } = request.server.app;
-            const token = authService.createAuthToken(user);
+            const { auth } = request.server.app.services;
+            const token = auth.createAuthToken(user);
 
             reply({ token });
           }
