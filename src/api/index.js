@@ -2,7 +2,6 @@ import Register from './register';
 import Auth from './auth';
 import FileHandler from './file';
 import Remove from './remove';
-import Changepassword from './changepassword';
 import Testrole from './testrole';
 
 export const register = (server, options, next) => {
@@ -10,7 +9,6 @@ export const register = (server, options, next) => {
   Auth(server);
   FileHandler(server);
   Remove(server);
-  Changepassword(server, options, next);
   Testrole(server);
   next();
 };
