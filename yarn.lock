@@ -171,7 +171,7 @@ asynckit@^0.4.0:
   version "0.4.0"
   resolved "https://registry.yarnpkg.com/asynckit/-/asynckit-0.4.0.tgz#c79ed97f7f34cb8f2ba1bc9790bcc366474b4b79"
 
-aws-sdk@^2.2.36, aws-sdk@^2.67.0:
+aws-sdk@2.x.x, aws-sdk@^2.2.36, aws-sdk@^2.67.0:
   version "2.67.0"
   resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.67.0.tgz#c0fc3a4343cfc631265d9dd6bc50ba709401f857"
   dependencies:
@@ -1748,6 +1748,14 @@ hapi-capitalize-modules@1.x.x:
 hapi-for-you@1.x.x:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/hapi-for-you/-/hapi-for-you-1.0.0.tgz#d362fbee8d7bda9c2c7801e207e5a5cd1a0b6a7b"
+
+hapi-mail@^15.0.0:
+  version "15.0.0"
+  resolved "https://registry.yarnpkg.com/hapi-mail/-/hapi-mail-15.0.0.tgz#fb76cdbb2081950cbb9a602c3abf08b17a81b95d"
+  dependencies:
+    aws-sdk "2.x.x"
+    handlebars "4.x.x"
+    hoek "4.x.x"
 
 hapi-scope-start@2.x.x:
   version "2.1.1"

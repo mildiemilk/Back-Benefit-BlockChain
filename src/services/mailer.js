@@ -24,8 +24,22 @@ class MailerService {
     }
   }
 
-  sendMail(to) {
-
+  sendMail(to,subject,mailbody) {
+    let mailOption = {
+      from: this.mailer.user,
+      to: to,
+      subject: subject,
+      text: mailbody,
+    };
+    
+    this.mailer.sendMail(mailOption,(error,info) => {
+      if(error){
+        console.log(error);
+      }
+      console.log("the message was sent");
+      console.log(info);
+      this.mailer.close(); // shut down the connection pool, no more messages
+    });
   }
 }
 

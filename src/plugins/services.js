@@ -1,5 +1,7 @@
 import secret from '../../config/secret';
 import AuthService from '../services/auth';
+import MailerService from '../services/mailer'
+import Config from '../api/Config';
 
 export const register = (plugin, options, next) => {
   const services = {};
@@ -9,6 +11,18 @@ export const register = (plugin, options, next) => {
     redis: redis,
     authPub: secret.jwtPub,
     authKey: secret.jwtKey,
+  });
+
+  services.mailer = new MailerService({
+    service:'gmail',
+    port:25,
+    auth: {
+      user: Config.email.username,
+      pass: Config.email.password,
+    },
+    tlsL:{
+      rejectUnauthorized: false
+    }
   });
 
   plugin.app.services = services;
