@@ -10,7 +10,7 @@ export const register = (server, options, next) => {
   Auth(server);
   FileHandler(server);
   Remove(server);
-  Changepassword(server);
+  Changepassword(server, options, next);
   Testrole(server);
   next();
 };

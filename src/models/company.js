@@ -5,8 +5,8 @@ import autoIncrement from 'mongoose-auto-increment';
 const CompanySchema = new mongoose.Schema ({
   id:{type: Number, default: 0, unique: true},
   Company_name:{ type: String, required: true},
-  location:{ type: String, required: true},
-  Company_NO:{ type: String},
+  location:{ type: String},
+  Company_Num:{ type: String},
   Company_legal_structure:{ type: String},
   Empolyee_number:{ type: Number},
   Company_Broker:{type: String},
