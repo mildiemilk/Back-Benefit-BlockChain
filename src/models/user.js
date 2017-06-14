@@ -1,13 +1,18 @@
 import bcrypt from 'bcrypt';
 import mongoose from 'mongoose';
 import timestamps from 'mongoose-timestamp';
+import autoIncrement from 'mongoose-auto-increment';
 
 const UserSchema = new mongoose.Schema ({
+  id:{type: Number, default: 0, unique: true},
   email: { type: String, required: true, index: { unique: true } },
   password: { type: String, required: true  },
   isSuperAdmin: { type: Boolean, default: false },
+  role:{ type: String, required: true},
   emailConfirmedAt: Date,
+  Company_id: { type: String},
   resetPasswordToken: String,
+  removedAt: { type: Date, default: null },
   resetPasswordExpires: Date,
 });
 
@@ -41,5 +46,11 @@ UserSchema.methods.getScopes = () => {
 };
 
 UserSchema.plugin(timestamps);
-
+autoIncrement.initialize(mongoose.connection);
+UserSchema.plugin(autoIncrement.plugin,{
+  model: 'UserSchema',
+  field: 'id',
+  startAt: 1,
+  incrementBy: 1
+});
 export default mongoose.model('User', UserSchema);

@@ -16,11 +16,19 @@ const login = {
   },
   handler: (request, reply) => {
     const { email, password } = request.payload;
+<<<<<<< HEAD
     console.log('test1');
 
     User.findOne({ email })
       .then((user) => {
         email_user = email;
+=======
+    User.findOne({ email })
+      .then((user) => {
+        if(user.removedAt != null){
+          console.log("This user is removed");
+        }
+>>>>>>> 8912bc44ca96de601924d751ea4dbd331d6bb5d4
         if (!user) {
           reply(Boom.unauthorized('Invalid email or password'));
         } else {

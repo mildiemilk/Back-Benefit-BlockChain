@@ -3,8 +3,8 @@ import Boom from 'boom';
 import { User } from '../models';
 import timestamps from 'mongoose-timestamp';
 
-const Remove = {
-  tags: ['api','remove'],
+const Testrole = {
+  tags: ['api'],
 
   validate: {
     payload: {
@@ -15,17 +15,13 @@ const Remove = {
 
     const { email } = request.payload;
     User.findOne({ 'email': email}, function(err,user) {
-      user.removedAt = Date.now();
-      user.save(function(err){
-        if (err) throw err;
-      });
-      reply(Boom.unauthorized('already remove'));
+      reply({ role : user.role});
     });
   },
 };
 
 export default function(app) {
   app.route([
-    { method: 'POST', path: '/Remove', config: Remove },
+    { method: 'POST', path: '/Testrole', config: Testrole },
   ]);
 }
