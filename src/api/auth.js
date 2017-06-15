@@ -3,8 +3,6 @@ import Boom from 'boom';
 import { User } from '../models';
 
 const passwordPattern = /^(?=.*\d)(?=.*[A-Z]).{8,20}/;
-let email_user;
-let userID;
 
 const login = {
   tags: ['auth', 'api'],
@@ -23,6 +21,10 @@ const login = {
         if(user.removedAt != null){
           console.log("This user is removed");
         }
+
+    User.findOne({ email })
+      .then((user) => {
+        email_user = email;
         if (!user) {
           reply(Boom.unauthorized('Invalid email or password'));
         } else {
@@ -81,10 +83,37 @@ const changepassword = {
   },
 };
 
-export default function Auth(server) {
+
+const ForgotPassword = {
+  tags: ['api'],
+  validate: {
+    payload: {
+      email: Joi.string().required().email(),
+    },
+  },
+  handler: (request, reply) => {
+    const { email} = request.payload;
+
+    User.findOne({ email })
+      .then((user) => {
+
+        if (user) {
+          user.save().then(() => {
+            const { mailer } = request.server.app.services;
+            mailer.sentMailForgotPasswordLink(email);
+            reply({ message:'please check your email'});
+          });
+        }
+      });
+   
+  }
+}  
+
+export default function(server) {
   server.route([
     { method: 'POST', path: '/login', config: login },
-    { method: 'GET', path: '/logout', config: logout }, 
+    { method: 'GET', path: '/logout', config: logout },
+    { method: 'POST', path: '/ForgotPassword', config: ForgotPassword },
     { method: 'POST', path: '/user/changepassword', config: changepassword },
-  ]);
+    ]);
 }

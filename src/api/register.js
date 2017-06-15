@@ -2,6 +2,8 @@ import Joi from 'joi';
 import Boom from 'boom';
 import { User } from '../models';
 import Config from './Config';
+import timestamps from 'mongoose-timestamp';
+import moment from 'moment';
 
 const passwordPattern = /^(?=.*\d)(?=.*[A-Z]).{8,20}/;
 
@@ -15,22 +17,18 @@ const register = {
     },
   },
   handler: (request, reply) => {
-    const { email, password,role } = request.payload;
+    const { email, password, role } = request.payload;
 
     User.findOne({ email })
       .then((user) => {
 
         if (user) {
           reply(Boom.badData('Email \'${email}\' existed', { email }));
-          User.findOneAndRemove({email}, function (err) {
-            if (err) throw err;
-            console.log('remove complete!');
-          });
-        
         } else {
-          user = new User({ email, password ,role });
+          user = new User({ email, password, role });
           user.save().then(() => {
             const { mailer } = request.server.app.services;
+<<<<<<< HEAD
             let to = email;
             let subject = 'verify your email';
             let mailbody = 'click link to verify your account!';
@@ -73,18 +71,49 @@ const register = {
               // };
             // }
             reply("Please confirm your email id by clicking on link in email")
+=======
+            mailer.sentMailVerificationLink(Date.now(),email);
+            reply({ message:'Register complete! plaese click confirm link in your email'});
+>>>>>>> cb280e8e4948f7754e6e72087ea6bbc32f4c3bb4
           });
         }
 
       });
-
+   
   },
 };
 
+const verify = {
+  tags: ['api'],
+  validate: {
+    params: {
+      email: Joi.string().required().email(),
+      token: Joi.string().required(),
+      ts: Joi.string().required(),
+      nounce: Joi.string().required()
+    },
+  },
+  handler: (request, reply) => {
+    const { email, token, ts, nounce} = request.params;
+    const { mailer } = request.server.app.services;
+    let base = email + ts + nounce;
+    let DateNow = moment(Date.now());
+    let Dateconfirm = ts;
+    if((DateNow-Dateconfirm)<5*60000){
+      if (token === mailer.genToken(base)) {
+        User.findOneAndUpdate({ email: email }, { $set: { emailConfirmedAt: Date.now() }},() => {
+          reply('You account is verified');
+        });
+      } else reply('invalid');
+    } else reply('Link expired DN ='+DateNow+' DV='+Dateconfirm);
+    
+  },
+};
 
 
 export default function(app) {
   app.route([
     { method: 'POST', path: '/register', config: register },
+    { method: 'GET', path: '/register-confirmation/{email}&{token}&{ts}&{nounce}', config: verify },
   ]);
 }

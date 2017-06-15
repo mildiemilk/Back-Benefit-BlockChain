@@ -15,8 +15,7 @@ const Remove = {
 
     const { email } = request.payload;
     User.findOne({ 'email': email}, function(err,user) {
-      user.removedAt = Date.now();
-      user.save(function(err){
+      user.delete(function(err){
         if (err) throw err;
       });
       reply(Boom.unauthorized('already remove'));
