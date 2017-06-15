@@ -30,7 +30,6 @@
     "joi": "^10.5.2",
     "jsonwebtoken": "^7.4.1",
     "mongoose": "^4.10.5",
-    "mongoose-delete": "^0.3.4",
     "mongoose-timestamp": "^0.6.0",
     "nodemailer": "^4.0.1",
     "nodemailer-ses-transport": "^1.5.1",
