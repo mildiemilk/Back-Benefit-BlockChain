@@ -1,5 +1,7 @@
 import aws from 'aws-sdk';
 import nodemailer from 'nodemailer';
+import config from '../api/Config';
+import bcrypt from 'bcrypt';
 
 class MailerService {
   constructor(options) {
@@ -29,7 +31,7 @@ class MailerService {
       from: this.mailer.user,
       to: to,
       subject: subject,
-      text: mailbody,
+      html: mailbody,
     };
     
     this.mailer.sendMail(mailOption,(error,info) => {
@@ -40,6 +42,30 @@ class MailerService {
       console.log(info);
       this.mailer.close(); // shut down the connection pool, no more messages
     });
+  }
+
+  genNounce(){
+    let nounce = bcrypt.genSaltSync(10);
+    return nounce;
+  }
+
+  genToken(base){
+    let token = bcrypt.hashSync(base, config.key.privateKey, function(err, hash) {
+      if (err) return err;
+      return hash;
+    });
+    return token;
+  }
+
+  sentMailVerificationLink(ts,email){
+    const nounce = this.genNounce();
+    let base = email + ts + nounce;
+    const token = this.genToken(base);
+    let subject = 'Verify Your Account';
+    let mailbody = '<p>Thanks for Registering on Benefitable</p><p>Please verify your email by clicking on the verification link below.<br/><a href="http://'
+                    + config.server.host + ':' + config.server.port + '/' + config.email.verifyEmailUrl + '/'
+                    + encodeURIComponent(email) + '&' + encodeURIComponent(token) + '&' + ts + '&' + encodeURIComponent(nounce) + '">Verification Link</a></p>';
+    this.sendMail(email,subject,mailbody);
   }
 }
 
