@@ -12,6 +12,10 @@ export const register = (server, options, next) => {
   Testrole(server);
   next();
 };
+export const test = (server, options, next) => {
+  Auth(server);
+  next();
+};
 
 register.attributes = {
   name: 'api',

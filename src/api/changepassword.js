@@ -15,7 +15,7 @@ const changepassword = {
     },
   },
   handler: (request, reply) => {
-    const { email, password,newpassword,repassword } = request.payload;
+    const { email, password, newpassword, repassword } = request.payload;
 
     User.findOne({ email })
       .then((user) => {
@@ -26,16 +26,16 @@ const changepassword = {
               user.password = newpassword;
               user.save(function(err){
                 if (err) throw err;
-                reply(`Password has changed.`);
+                reply('Password has changed.');
               });
             }else{
-              reply(Boom.badData(`Please fill new password again!`));
+              reply(Boom.badData('Please fill new password again!'));
             }
           }else{
-            reply(Boom.badData(`Password is not correct!`));
+            reply(Boom.badData('Password is not correct!'));
           }
         }else{
-          reply(Boom.badData(`Your e-mail is not correct!`));
+          reply(Boom.badData('Your e-mail is not correct!'));
         }
       });
   },

@@ -30,14 +30,12 @@ const register = {
         } else {
           user = new User({ email, password ,role });
           user.save().then(() => {
-<<<<<<< Updated upstream
             const { mailer } = request.server.app.services;
             let to = email;
             let subject = 'verify your email';
             let mailbody = 'click link to verify your account!';
             mailer.sendMail(to,subject,mailbody);
             reply('Register complete! plaese click confirm link in your email');
-=======
             // reply({ id: user.id });
             // const transporter = nodemailer.createTransport({
             //   service:'gmail',
@@ -75,7 +73,6 @@ const register = {
               // };
             // }
             reply("Please confirm your email id by clicking on link in email")
->>>>>>> Stashed changes
           });
         }
 
