@@ -3,6 +3,7 @@ import Boom from 'boom';
 import { User } from '../models';
 import Config from './Config';
 import timestamps from 'mongoose-timestamp';
+import moment from 'moment';
 
 const passwordPattern = /^(?=.*\d)(?=.*[A-Z]).{8,20}/;
 
@@ -51,12 +52,16 @@ const verify = {
     const { email, token, ts, nounce} = request.params;
     const { mailer } = request.server.app.services;
     let base = email + ts + nounce;
-    if (token === mailer.genToken(base)) {
-      User.findOneAndUpdate({ email: email }, { $set: { emailConfirmedAt: Date.now() }},() => {
-        reply('You account is verified');
-      });
-    } else reply('invalid');
-   
+    let DateNow = moment(Date.now());
+    let Dateconfirm = ts;
+    if((DateNow-Dateconfirm)<5*60000){
+      if (token === mailer.genToken(base)) {
+        User.findOneAndUpdate({ email: email }, { $set: { emailConfirmedAt: Date.now() }},() => {
+          reply('You account is verified');
+        });
+      } else reply('invalid');
+    } else reply('Link expired DN ='+DateNow+' DV='+Dateconfirm);
+    
   },
 };
 
