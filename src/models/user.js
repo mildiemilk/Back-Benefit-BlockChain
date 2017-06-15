@@ -11,7 +11,7 @@ const UserSchema = new mongoose.Schema ({
   isSuperAdmin: { type: Boolean, default: false },
   role:{ type: String, required: true},
   emailConfirmedAt: Date,
-  Company_id: { type: String},
+  company: { type: String, required: true},
   resetPasswordToken: String,
   removedAt: { type: Date, default: null },
   resetPasswordExpires: Date,

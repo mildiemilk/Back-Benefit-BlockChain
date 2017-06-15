@@ -17,14 +17,6 @@ const login = {
 
     User.findOne({ email })
       .then((user) => {
-        
-        if(user.removedAt != null){
-          console.log("This user is removed");
-        }
-
-    User.findOne({ email })
-      .then((user) => {
-        email_user = email;
         if (!user) {
           reply(Boom.unauthorized('Invalid email or password'));
         } else {
@@ -42,7 +34,7 @@ const login = {
 
 const logout = {
   tags: ['auth', 'api'],
-  auth: 'jwt', 
+  auth: 'jwt',
   handler: (request, reply) => {
     reply("OK");
   },
@@ -105,9 +97,9 @@ const ForgotPassword = {
           });
         }
       });
-   
+
   }
-}  
+}
 
 export default function(server) {
   server.route([
@@ -115,5 +107,5 @@ export default function(server) {
     { method: 'GET', path: '/logout', config: logout },
     { method: 'POST', path: '/ForgotPassword', config: ForgotPassword },
     { method: 'POST', path: '/user/changepassword', config: changepassword },
-    ]);
+  ]);
 }

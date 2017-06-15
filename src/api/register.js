@@ -14,10 +14,11 @@ const register = {
       email: Joi.string().required().email(),
       password: Joi.string().required().trim().regex(passwordPattern),
       role: Joi.string().required(),
+      company: Joi.string().required(),
     },
   },
   handler: (request, reply) => {
-    const { email, password, role } = request.payload;
+    const { email, password, role, company } = request.payload;
 
     User.findOne({ email })
       .then((user) => {
@@ -25,61 +26,16 @@ const register = {
         if (user) {
           reply(Boom.badData('Email \'${email}\' existed', { email }));
         } else {
-          user = new User({ email, password, role });
+          user = new User({ email, password, role, company });
           user.save().then(() => {
             const { mailer } = request.server.app.services;
-<<<<<<< HEAD
-            let to = email;
-            let subject = 'verify your email';
-            let mailbody = 'click link to verify your account!';
-            mailer.sendMail(to,subject,mailbody);
-            reply('Register complete! plaese click confirm link in your email');
-            // reply({ id: user.id });
-            // const transporter = nodemailer.createTransport({
-            //   service:'gmail',
-            //   secure:false,
-            //   port:25,
-            //   auth: {
-            //     user: 'punthitra.dits@gmail.com',
-            //     pass: '',
-            //   },
-            //   tlsL:{
-            //     rejectUnauthorized: false
-            //   }
-            // });
-
-            // function mail(from, email, subject, mailbody){
-            //   let HelperOption = {
-            //     from: from,
-            //     to: [email],
-            //     subject: 'EmailVerify',
-            //     text: 'Hello',
-            //   }
-
-              // transporter.sendMail(HelperOption,(error,info) => {
-              //   if(error){
-              //     console.log(error);
-              //   }
-              //   console.log("the message was sent");
-              //   console.log(info);
-              //   transporter.close(); // shut down the connection pool, no more messages
-              // });
-              // exports.sentMailVerificationLink = function(user,token) {
-              //   var from = Config.email.accountName+" Team<" + Config.email.username + ">";
-              //   var mailbody = "<p>Thanks for Registering on "+Config.email.accountName+" </p><p>Please verify your email by clicking on the verification link below.<br/><a href='http://"+Config.server.host+":"+ Config.server.port+"/"+Config.email.verifyEmailUrl+"/"+token+"'>Verification Link</a></p>"
-              //   HelperOption(from, user.userName , "Account Verification", mailbody);
-              // };
-            // }
-            reply("Please confirm your email id by clicking on link in email")
-=======
             mailer.sentMailVerificationLink(Date.now(),email);
             reply({ message:'Register complete! plaese click confirm link in your email'});
->>>>>>> cb280e8e4948f7754e6e72087ea6bbc32f4c3bb4
           });
         }
 
       });
-   
+
   },
 };
 
@@ -106,7 +62,7 @@ const verify = {
         });
       } else reply('invalid');
     } else reply('Link expired DN ='+DateNow+' DV='+Dateconfirm);
-    
+
   },
 };
 

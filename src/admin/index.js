@@ -1,7 +1,11 @@
-export const register = (server, options, next) => {
+import RegisterCompany from './registerCompany';
+import EditCompany from './editCompany';
 
+export const register = (server, options, next) => {
+  RegisterCompany(server);
+  EditCompany(server);
   server.route([
-    { 
+    {
       method: 'GET',
       path: '/',
       config: {

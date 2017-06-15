@@ -4,14 +4,13 @@ import autoIncrement from 'mongoose-auto-increment';
 
 const CompanySchema = new mongoose.Schema ({
   refId:{type: Number, default: 0, unique: true},
-  Company_name:{ type: String, required: true},
-  location:{ type: String},
-  CompanyNum:{ type: String},
-  CompanyLegalStructure:{ type: String},
-  EmpolyeeNumber:{ type: Number},
-  CompanyBroker:{type: String},
-  CompanyInsurer:{type: String},
-  removedAt: { type: Date, default: null },
+  CompanyName:{ type: String, required: true},
+  location:{ type: String, required: true},
+  CompanyNum:{ type: Number, required: true},
+  CompanyLegalStructure:{ type: String, required: true},
+  EmpolyeeNumber:{ type: Number, required: true},
+  CompanyBroker:{type: String, required: true},
+  CompanyInsurer:{type: String, required: true},
 });
 
 
