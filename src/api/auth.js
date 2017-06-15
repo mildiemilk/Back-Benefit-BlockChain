@@ -21,10 +21,6 @@ const login = {
     User.findOne({ email })
       .then((user) => {
         email_user = email;
-          if(user.removedAt != null){
-          console.log("This user is removed");
-        }
-
         if (!user) {
           reply(Boom.unauthorized('Invalid email or password'));
         } else {
@@ -51,6 +47,7 @@ const logout = {
 
 const changepassword = {
   tags: ['api'],
+  auth: 'jwt',
   validate: {
     payload: {
       email: Joi.string().required().email(),

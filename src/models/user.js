@@ -2,9 +2,10 @@ import bcrypt from 'bcrypt';
 import mongoose from 'mongoose';
 import timestamps from 'mongoose-timestamp';
 import autoIncrement from 'mongoose-auto-increment';
+import mongoose_delete from 'mongoose-delete';
 
 const UserSchema = new mongoose.Schema ({
-  id:{type: Number, default: 0, unique: true},
+  refId: { type: Number, default: 0, unique: true },
   email: { type: String, required: true, index: { unique: true } },
   password: { type: String, required: true  },
   isSuperAdmin: { type: Boolean, default: false },
@@ -47,9 +48,10 @@ UserSchema.methods.getScopes = () => {
 
 UserSchema.plugin(timestamps);
 autoIncrement.initialize(mongoose.connection);
+UserSchema.plugin(mongoose_delete, { deletedAt : true });
 UserSchema.plugin(autoIncrement.plugin,{
   model: 'UserSchema',
-  field: 'id',
+  field: 'refId',
   startAt: 1,
   incrementBy: 1
 });
