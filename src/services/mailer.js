@@ -67,6 +67,14 @@ class MailerService {
                     + encodeURIComponent(email) + '&' + encodeURIComponent(token) + '&' + ts + '&' + encodeURIComponent(nounce) + '">Verification Link</a></p>';
     this.sendMail(email,subject,mailbody);
   }
+  sentMailForgotPasswordLink(email){
+    // const nounce = this.genNounce();
+    // let base = email + ts + nounce;
+    // const token = this.genToken(base);
+    let subject = 'Forgot password Your Account';
+    let mailbody = '<p>You forgot your password .<br/><a href="http://www.google.com"> Forgot password Link</a></p>';
+    this.sendMail(email,subject,mailbody);
+  }
 }
 
 export default MailerService;
