@@ -17,11 +17,8 @@ const UserSchema = new mongoose.Schema ({
   resetPasswordToken: String,
   removedAt: { type: Date, default: null },
   resetPasswordExpires: Date,
-<<<<<<< HEAD
   ApproveFile: {type: Boolean,default:false},
-=======
   detail: {type:Schema.ObjectId, ref:"BrokerDetail"},
->>>>>>> 646570fe1d479f26f757eecadd9cc6cb4d8b0fc5
 });
 
 UserSchema.pre('save', function(next) {
