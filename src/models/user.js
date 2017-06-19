@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import timestamps from 'mongoose-timestamp';
 import autoIncrement from 'mongoose-auto-increment';
 import mongoose_delete from 'mongoose-delete';
+import { BrokerDetail } from '../models';
+const Schema = mongoose.Schema;
 
 const UserSchema = new mongoose.Schema ({
   refId: { type: Number, default: 0, unique: true },
@@ -15,9 +17,10 @@ const UserSchema = new mongoose.Schema ({
   resetPasswordToken: String,
   removedAt: { type: Date, default: null },
   resetPasswordExpires: Date,
+  detail: {type:Schema.ObjectId, ref:"BrokerDetail"},
 });
 
-UserSchema.pre('save', function(next) {  
+UserSchema.pre('save', function(next) {
   const user = this;
 
   if (!user.isModified('password')) {

@@ -1,9 +1,12 @@
 import RegisterCompany from './registerCompany';
 import EditCompany from './editCompany';
+import CreateBrokerProfile from './createBrokerProfile';
 
 export const register = (server, options, next) => {
   RegisterCompany(server);
   EditCompany(server);
+  CreateBrokerProfile(server);
+
   server.route([
     {
       method: 'GET',
