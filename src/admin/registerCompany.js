@@ -12,15 +12,14 @@ const registerCompany = {
     payload: {
       CompanyName: Joi.string().required(),
       location: Joi.string().required(),
-      CompanyNum: Joi.string().required(),
-      CompanyLegalStructure: Joi.string().required(),
-      EmpolyeeNumber: Joi.string().required(),
+      CompanyNumber: Joi.string().required(),
+      NumberOfEmployee: Joi.string().required(),
       CompanyBroker: Joi.string().required(),
       CompanyInsurer: Joi.string().required(),
     },
   },
   handler: (request, reply) => {
-    const { CompanyName, location, CompanyNum, CompanyLegalStructure , EmpolyeeNumber, CompanyBroker, CompanyInsurer } = request.payload;
+    const { CompanyName, location, CompanyNumber, NumberOfEmployee, CompanyBroker, CompanyInsurer } = request.payload;
 
     Company.findOne({ CompanyName })
       .then((company) => {
@@ -28,7 +27,7 @@ const registerCompany = {
         if (company) {
           reply(Boom.badData('Company \'${CompanyName}\' existed', { CompanyName }));
         } else {
-          company = new Company({ CompanyName, location, CompanyNum, CompanyLegalStructure , EmpolyeeNumber, CompanyBroker, CompanyInsurer });
+          company = new Company({ CompanyName, location, CompanyNumber, NumberOfEmployee, CompanyBroker, CompanyInsurer });
           company.save().then(() => {
             reply('Register Company complete!');
           });

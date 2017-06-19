@@ -12,15 +12,14 @@ const editCompany = {
       email:Joi.string().required().email(),
       CompanyName: Joi.string().required(),
       location: Joi.string().required(),
-      CompanyNum: Joi.string().required(),
-      CompanyLegalStructure: Joi.string().required(),
-      EmpolyeeNumber: Joi.string().required(),
+      CompanyNumber: Joi.string().required(),
+      NumberOfEmployee: Joi.string().required(),
       CompanyBroker: Joi.string().required(),
       CompanyInsurer: Joi.string().required(),
     },
   },
   handler: (request, reply) => {
-    const { email,CompanyName, location, CompanyNum, CompanyLegalStructure , EmpolyeeNumber, CompanyBroker, CompanyInsurer } = request.payload;
+    const { email,CompanyName, location, CompanyNumber, NumberOfEmployee, CompanyBroker, CompanyInsurer } = request.payload;
 
     User.findOne({ email })
       .then((user) => {
@@ -29,10 +28,9 @@ const editCompany = {
           Company.findOne({ 'CompanyName' : user.company})
             .then((company) => {
               if(company) {
-                company.CompanyLegalStructure = CompanyLegalStructure;
-                company.CompanyNum            = CompanyNum;
+                company.CompanyNumber         = CompanyNumber;
                 company.location              = location;
-                company.EmpolyeeNumber        = EmpolyeeNumber;
+                company.NumberOfEmployee      = NumberOfEmployee;
                 company.CompanyBroker         = CompanyBroker;
                 company.CompanyInsurer        = CompanyInsurer;
                 company.save(function(err) {
