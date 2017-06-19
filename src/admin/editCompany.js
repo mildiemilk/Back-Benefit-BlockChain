@@ -4,8 +4,6 @@ import { Company } from '../models';
 import { User } from '../models';
 import timestamps from 'mongoose-timestamp';
 
-
-
 const editCompany = {
   auth: { strategy: 'jwt', scope: 'admin',},
   tags: ['admin', 'api'],

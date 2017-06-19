@@ -61,7 +61,7 @@ const verify = {
           reply('You account is verified');
         });
       } else reply('invalid');
-    } else reply('Link expired DN ='+DateNow+' DV='+Dateconfirm);
+    } else reply('Link expired ');
 
   },
 };
