@@ -1,6 +1,6 @@
 import aws from 'aws-sdk';
 import nodemailer from 'nodemailer';
-import config from '../api/Config';
+import config from '../api/config';
 import bcrypt from 'bcrypt';
 
 class MailerService {
