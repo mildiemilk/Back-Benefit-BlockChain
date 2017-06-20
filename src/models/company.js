@@ -13,7 +13,6 @@ const CompanySchema = new mongoose.Schema ({
   NumberOfEmployee: { type: Number, required: true},
   CompanyBroker: {type: String, required: true},
   CompanyInsurer: {type: String, required: true},
-  Hr: { type: Schema.Types.ObjectId, ref: "User", required: true },
 });
 
 
