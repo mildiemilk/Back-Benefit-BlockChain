@@ -68,20 +68,20 @@ class MailerService {
     this.sendMail(email,subject,mailbody);
   }
   sendMailForgotPasswordLink(email){
-    // const nounce = this.genNounce();
-    // let base = email + ts + nounce;
-    // const token = this.genToken(base);
     let subject = 'Forgot password Your Account';
     let mailbody = '<p>You forgot your password .<br/><a href="http://www.google.com"> Forgot password Link</a></p>';
     this.sendMail(email,subject,mailbody);
   }
   sendMailApproveAccount(email){
-    // const nounce = this.genNounce();
-    // let base = email + ts + nounce;
-    // const token = this.genToken(base);
     let subject = 'Approved Account';
     let mailbody = '<p>ConGrats! Your Account is Approved </p>';
     this.sendMail(email,subject,mailbody);
+  }
+  sendMailToAdminApproveAccount(email){
+    let subject = 'Approved Account';
+    let mailbody = email +'<p> register in the system, please approve this account </p>';
+    this.sendMail(config.email.username,subject,mailbody);
+    console.log('emailfrom : '+ this.mailer.user);
   }
 }
 
