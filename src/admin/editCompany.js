@@ -24,24 +24,28 @@ const editCompany = {
     User.findOne({ email })
       .then((user) => {
         if(user){
-          console.log(user);
-          Company.findOne({ 'CompanyName' : user.company})
-            .then((company) => {
-              if(company) {
-                company.CompanyNumber         = CompanyNumber;
-                company.location              = location;
-                company.NumberOfEmployee      = NumberOfEmployee;
-                company.CompanyBroker         = CompanyBroker;
-                company.CompanyInsurer        = CompanyInsurer;
-                company.save(function(err) {
-                  if (err) throw err;
-                  reply('Company has Edit.');
-                });
-              }
-              else{
-                reply(Boom.badData('Company \'${CompanyName}\'is not match', { CompanyName }));
-              }
-            });
+          if( user.role == 'HR' || user.role == 'Hr'){
+            Company.findOne({ 'CompanyName' : user.company})
+              .then((company) => {
+                if(company) {
+                  company.CompanyNumber         = CompanyNumber;
+                  company.location              = location;
+                  company.NumberOfEmployee      = NumberOfEmployee;
+                  company.CompanyBroker         = CompanyBroker;
+                  company.CompanyInsurer        = CompanyInsurer;
+                  company.save(function(err) {
+                    if (err) throw err;
+                    reply('Company has Edit.');
+                  });
+                }
+                else{
+                  reply(Boom.badData('Company \'${CompanyName}\'is not match', { CompanyName }));
+                }
+              });
+          }
+          else{
+            reply(Boom.badData('Only Hr can edit it'));
+          }
         }
         else{
           reply(Boom.badData('Email \'${email}\'is not  existed', { email }));
