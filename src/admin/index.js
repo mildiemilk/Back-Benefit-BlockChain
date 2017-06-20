@@ -1,15 +1,15 @@
 import RegisterCompany from './registerCompany';
 import EditCompany from './editCompany';
-import Approve from './Approve';
+import Approve from './approve';
 import CreateBrokerProfile from './createBrokerProfile';
-
+import FillsimpleRequirement from './FillsimpleRequirement';
 
 export const register = (server, options, next) => {
   RegisterCompany(server);
   EditCompany(server);
   Approve(server);
   CreateBrokerProfile(server);
-
+  FillsimpleRequirement(server);
   server.route([
     {
       method: 'GET',
