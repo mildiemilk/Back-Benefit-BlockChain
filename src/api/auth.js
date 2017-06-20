@@ -92,7 +92,7 @@ const ForgotPassword = {
         if (user) {
           user.save().then(() => {
             const { mailer } = request.server.app.services;
-            mailer.sentMailForgotPasswordLink(email);
+            mailer.sendMailForgotPasswordLink(email);
             reply({ message:'please check your email'});
           });
         }

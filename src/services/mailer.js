@@ -57,7 +57,7 @@ class MailerService {
     return token;
   }
 
-  sentMailVerificationLink(ts,email){
+  sendMailVerificationLink(ts,email){
     const nounce = this.genNounce();
     let base = email + ts + nounce;
     const token = this.genToken(base);
@@ -67,12 +67,20 @@ class MailerService {
                     + encodeURIComponent(email) + '&' + encodeURIComponent(token) + '&' + ts + '&' + encodeURIComponent(nounce) + '">Verification Link</a></p>';
     this.sendMail(email,subject,mailbody);
   }
-  sentMailForgotPasswordLink(email){
+  sendMailForgotPasswordLink(email){
     // const nounce = this.genNounce();
     // let base = email + ts + nounce;
     // const token = this.genToken(base);
     let subject = 'Forgot password Your Account';
     let mailbody = '<p>You forgot your password .<br/><a href="http://www.google.com"> Forgot password Link</a></p>';
+    this.sendMail(email,subject,mailbody);
+  }
+  sendMailApproveAccount(email){
+    // const nounce = this.genNounce();
+    // let base = email + ts + nounce;
+    // const token = this.genToken(base);
+    let subject = 'Approved Account';
+    let mailbody = '<p>ConGrats! Your Account is Approved </p>';
     this.sendMail(email,subject,mailbody);
   }
 }

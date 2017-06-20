@@ -13,6 +13,8 @@ const approve = {
   handler: (request, reply) => {
     const { email } = request.payload;
     User.findOneAndUpdate({ email: email }, { $set: { ApproveFile: true }},() => {
+      const { mailer } = request.server.app.services;
+      mailer.sendMailApproveAccount(email);
       reply({ message:'Account Approved'});
     });   
   },

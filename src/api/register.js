@@ -29,7 +29,7 @@ const register = {
           user = new User({ email, password, role, company });
           user.save().then(() => {
             const { mailer } = request.server.app.services;
-            mailer.sentMailVerificationLink(Date.now(),email);
+            mailer.sendMailVerificationLink(Date.now(),email);
             reply({ message:'Register complete! plaese click confirm link in your email'});
           });
         }
