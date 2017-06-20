@@ -81,7 +81,6 @@ class MailerService {
     let subject = 'Approved Account';
     let mailbody = email +'<p> register in the system, please approve this account </p>';
     this.sendMail(config.email.username,subject,mailbody);
-    console.log('emailfrom : '+ this.mailer.user);
   }
 }
 
