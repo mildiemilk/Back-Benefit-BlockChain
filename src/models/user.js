@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 import mongoose from 'mongoose';
 import timestamps from 'mongoose-timestamp';
 import autoIncrement from 'mongoose-auto-increment';
-import mongoose_delete from 'mongoose-delete';
+import mongooseDelete from 'mongoose-delete';
 const Schema = mongoose.Schema;
 
 const UserSchema = new mongoose.Schema ({
@@ -50,7 +50,7 @@ UserSchema.methods.getScopes = () => {
 
 UserSchema.plugin(timestamps);
 autoIncrement.initialize(mongoose.connection);
-UserSchema.plugin(mongoose_delete, { deletedAt : true });
+UserSchema.plugin(mongooseDelete, { deletedAt : true });
 UserSchema.plugin(autoIncrement.plugin,{
   model: 'UserSchema',
   field: 'refId',
