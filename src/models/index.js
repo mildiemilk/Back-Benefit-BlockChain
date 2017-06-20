@@ -1,7 +1,7 @@
 import UserModel from './user';
 import CompanyModel from './company';
 import InsurerModel from './insurer';
-import BrokerDetailModel from './brokerdetail';
+import BrokerDetailModel from './brokerDetail';
 import SimpleRequirementModel from './simpleRequirement';
 
 export const User = UserModel;

@@ -6,12 +6,12 @@ import { User } from '../models';
 const Schema = mongoose.Schema;
 
 const BrokerDetailSchema = new mongoose.Schema ({
-  refId: {type: Number, default: 0, unique: true},
-  BrokerCompanyName: { type: String, required: true},
-  BrokerCompanyWebsite: { type: String, required: true},
-  BrokerCompanyNumber: { type: Number, required: true},
+  brokerId: {type: Number, default: 0, unique: true},
+  brokerCompanyName: { type: String, required: true},
+  brokerCompanyWebsite: { type: String, required: true},
+  brokerCompanyNumber: { type: Number, required: true},
   location: { type: String, required: true},
-  BrokerSignature:{ type: String, required: true},
+  brokerSignature:{ type: String, required: true},
   broker: { type: Schema.Types.ObjectId, ref: "User", required: true },
 });
 
@@ -21,7 +21,7 @@ autoIncrement.initialize(mongoose.connection);
 BrokerDetailSchema.plugin(mongooseDelete, { deletedAt : true });
 BrokerDetailSchema.plugin(autoIncrement.plugin,{
   model: 'BrokerDetailSchema',
-  field: 'refId',
+  field: 'brokerId',
   startAt: 1,
   incrementBy: 1
 });

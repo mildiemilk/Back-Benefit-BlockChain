@@ -10,24 +10,25 @@ const registerCompany = {
   tags: ['admin', 'api'],
   validate: {
     payload: {
-      CompanyName: Joi.string().required(),
+      companyName: Joi.string().required(),
       location: Joi.string().required(),
-      CompanyNumber: Joi.string().required(),
-      NumberOfEmployee: Joi.string().required(),
-      CompanyBroker: Joi.string().required(),
-      CompanyInsurer: Joi.string().required(),
+      companyNumber: Joi.string().required(),
+      numberOfEmployee: Joi.string().required(),
+      companyBroker: Joi.string().required(),
+      companyInsurer: Joi.string().required(),
     },
   },
   handler: (request, reply) => {
-    const { CompanyName, location, CompanyNumber, NumberOfEmployee, CompanyBroker, CompanyInsurer } = request.payload;
-
-    Company.findOne({ CompanyName })
+    const { companyName, location, companyNumber, numberOfEmployee, companyBroker, companyInsurer } = request.payload;
+    const { user } = request.auth.credentials;
+    let hr = user._id;
+    Company.findOne({ companyName })
       .then((company) => {
 
         if (company) {
-          reply(Boom.badData('Company \'${CompanyName}\' existed', { CompanyName }));
+          reply(Boom.badData('Company \'${companyName}\' existed', { companyName }));
         } else {
-          company = new Company({ CompanyName, location, CompanyNumber, NumberOfEmployee, CompanyBroker, CompanyInsurer });
+          company = new Company({ companyName, location, companyNumber, numberOfEmployee, companyBroker, companyInsurer, hr });
           company.save().then(() => {
             reply('Register Company complete!');
           });

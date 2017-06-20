@@ -1,7 +1,7 @@
 import secret from '../../config/secret';
 import AuthService from '../services/auth';
 import MailerService from '../services/mailer'
-import Config from '../api/Config';
+import Config from '../../config/config';
 
 export const register = (plugin, options, next) => {
   const services = {};

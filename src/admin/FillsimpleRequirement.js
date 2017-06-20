@@ -5,29 +5,27 @@ import timestamps from 'mongoose-timestamp';
 
 
 
-const FillsimpleRequirement = {
+const fillSimpleRequirement = {
 
   tags: ['admin', 'api'],
   auth: 'jwt',
   validate: {
     payload: {
-      NumberOfEmployee: Joi.string().required(),
-      numberofwantedplan: Joi.string().required(),
+      numberOfEmployee: Joi.string().required(),
+      numberOfPlan: Joi.string().required(),
       IPD: Joi.string().required(),
       OPD: Joi.string().required(),
-      Dental: Joi.string().required(),
-      Life: Joi.string().required(),
+      dental: Joi.string().required(),
+      life: Joi.string().required(),
       other: Joi.string().required(),
-
     },
   },
   handler: (request, reply) => {
-    const { NumberOfEmployee,numberofwantedplan,IPD,OPD,Dental,Life,other } = request.payload;
+    const { numberOfEmployee,numberOfPlan,IPD,OPD,dental,life,other } = request.payload;
     const { user } = request.auth.credentials;
-    const refId = user.refId;
+    const userId = user.userId;
     if (user.role=='HR'||user.role=='hr') {
-      console.log(refId);
-      let simpleRequirement = new SimpleRequirement({NumberOfEmployee,numberofwantedplan,IPD,OPD,Dental,Life,other});
+      let simpleRequirement = new SimpleRequirement({userId,numberOfEmployee,numberOfPlan,IPD,OPD,dental,life,other});
       simpleRequirement.save().then(() => {
         reply('the simpleRequirement has complete');
       });
@@ -37,6 +35,6 @@ const FillsimpleRequirement = {
 
 export default function(app) {
   app.route([
-    { method: 'POST', path: '/FillsimpleRequirement', config: FillsimpleRequirement },
+    { method: 'POST', path: '/fillSimpleRequirement', config: fillSimpleRequirement },
   ]);
 }

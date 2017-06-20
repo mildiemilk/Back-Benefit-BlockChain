@@ -1,6 +1,6 @@
 import aws from 'aws-sdk';
 import nodemailer from 'nodemailer';
-import config from '../api/config';
+import Config from '../../config/config';
 import bcrypt from 'bcrypt';
 
 class MailerService {
@@ -50,7 +50,7 @@ class MailerService {
   }
 
   genToken(base){
-    let token = bcrypt.hashSync(base, config.key.privateKey, function(err, hash) {
+    let token = bcrypt.hashSync(base, Config.key.privateKey, function(err, hash) {
       if (err) return err;
       return hash;
     });
@@ -63,7 +63,7 @@ class MailerService {
     const token = this.genToken(base);
     let subject = 'Verify Your Account';
     let mailbody = '<p>Thanks for Registering on Benefitable</p><p>Please verify your email by clicking on the verification link below.<br/><a href="http://'
-                    + config.server.host + ':' + config.server.port + '/' + config.email.verifyEmailUrl + '/'
+                    + Config.server.host + ':' + Config.server.port + '/' + Config.email.verifyEmailUrl + '/'
                     + encodeURIComponent(email) + '&' + encodeURIComponent(token) + '&' + ts + '&' + encodeURIComponent(nounce) + '">Verification Link</a></p>';
     this.sendMail(email,subject,mailbody);
   }
@@ -80,7 +80,7 @@ class MailerService {
   sendMailToAdminApproveAccount(email){
     let subject = 'Approved Account';
     let mailbody = email +'<p> register in the system, please approve this account </p>';
-    this.sendMail(config.email.username,subject,mailbody);
+    this.sendMail(Config.email.username,subject,mailbody);
   }
 }
 

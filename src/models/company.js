@@ -6,13 +6,14 @@ import { User } from '../models';
 const Schema = mongoose.Schema;
 
 const CompanySchema = new mongoose.Schema ({
-  refId: {type: Number, default: 0, unique: true},
-  CompanyName: { type: String, required: true},
+  companyId: {type: Number, default: 0, unique: true},
+  companyName: { type: String, required: true},
   location: { type: String, required: true},
-  CompanyNumber: { type: Number, required: true},
-  NumberOfEmployee: { type: Number, required: true},
-  CompanyBroker: {type: String, required: true},
-  CompanyInsurer: {type: String, required: true},
+  companyNumber: { type: Number, required: true},
+  numberOfEmployee: { type: Number, required: true},
+  companyBroker: {type: String, required: true},
+  companyInsurer: {type: String, required: true},
+  hr: { type: Schema.Types.ObjectId, ref: "User", required: true },
 });
 
 
@@ -21,7 +22,7 @@ autoIncrement.initialize(mongoose.connection);
 CompanySchema.plugin(mongooseDelete, { deletedAt : true });
 CompanySchema.plugin(autoIncrement.plugin,{
   model: 'CompanySchema',
-  field: 'refId',
+  field: 'companyId',
   startAt: 1,
   incrementBy: 1
 });

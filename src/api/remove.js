@@ -3,7 +3,7 @@ import Boom from 'boom';
 import { User } from '../models';
 import timestamps from 'mongoose-timestamp';
 
-const Remove = {
+const remove = {
   tags: ['api','remove'],
 
   validate: {
@@ -25,6 +25,6 @@ const Remove = {
 
 export default function(app) {
   app.route([
-    { method: 'POST', path: '/Remove', config: Remove },
+    { method: 'POST', path: '/remove', config: remove },
   ]);
 }

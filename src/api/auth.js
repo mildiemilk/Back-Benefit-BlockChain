@@ -76,7 +76,7 @@ const changepassword = {
 };
 
 
-const ForgotPassword = {
+const forgotPassword = {
   tags: ['api'],
   validate: {
     payload: {
@@ -105,7 +105,7 @@ export default function(server) {
   server.route([
     { method: 'POST', path: '/login', config: login },
     { method: 'GET', path: '/logout', config: logout },
-    { method: 'POST', path: '/ForgotPassword', config: ForgotPassword },
-    { method: 'POST', path: '/user/changepassword', config: changepassword },
+    { method: 'POST', path: '/forgot-password', config: forgotPassword },
+    { method: 'POST', path: '/user/change-password', config: changepassword },
   ]);
 }

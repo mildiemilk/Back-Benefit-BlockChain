@@ -12,15 +12,15 @@ const createBrokerProfile = {
   validate: {
     payload: {
       email:Joi.string().required().email(),
-      CompanyName: Joi.string().required(),
+      companyName: Joi.string().required(),
       location: Joi.string().required(),
-      CompanyNumber: Joi.string().required(),
-      CompanyWebsite: Joi.string().required(),
-      BrokerSignature: Joi.string().required(),
+      companyNumber: Joi.string().required(),
+      companyWebsite: Joi.string().required(),
+      brokerSignature: Joi.string().required(),
     },
   },
   handler: (request, reply) => {
-    const { email,CompanyName, location, CompanyNumber, CompanyWebsite, BrokerSignature} = request.payload;
+    const { email,companyName, location, companyNumber, companyWebsite, brokerSignature} = request.payload;
 
     User.findOne({ email })
       .then((user) => {
@@ -28,11 +28,11 @@ const createBrokerProfile = {
           console.log(user);
           if( user.role == "BR" || user.role == "broker"){
             let brokerdetail = new BrokerDetail({
-              BrokerCompanyName: CompanyName,
-              BrokerCompanyWebsite: CompanyWebsite,
-              BrokerCompanyNumber: CompanyNumber,
+              brokerCompanyName: companyName,
+              brokerCompanyWebsite: companyWebsite,
+              brokerCompanyNumber: companyNumber,
               location: location,
-              BrokerSignature: BrokerSignature,
+              brokerSignature: brokerSignature,
               broker: user._id,
             });
             brokerdetail.save(function(err) {

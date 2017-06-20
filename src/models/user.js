@@ -6,7 +6,7 @@ import mongooseDelete from 'mongoose-delete';
 const Schema = mongoose.Schema;
 
 const UserSchema = new mongoose.Schema ({
-  refId: { type: Number, default: 0, unique: true },
+  userId: { type: Number, default: 0, unique: true },
   email: { type: String, required: true, index: { unique: true } },
   password: { type: String, required: true  },
   isSuperAdmin: { type: Boolean, default: false },
@@ -16,7 +16,7 @@ const UserSchema = new mongoose.Schema ({
   resetPasswordToken: String,
   removedAt: { type: Date, default: null },
   resetPasswordExpires: Date,
-  ApproveFile: {type: Boolean,default:false},
+  approveFile: {type: Boolean,default:false},
 });
 
 UserSchema.pre('save', function(next) {
@@ -53,7 +53,7 @@ autoIncrement.initialize(mongoose.connection);
 UserSchema.plugin(mongooseDelete, { deletedAt : true });
 UserSchema.plugin(autoIncrement.plugin,{
   model: 'UserSchema',
-  field: 'refId',
+  field: 'userId',
   startAt: 1,
   incrementBy: 1
 });

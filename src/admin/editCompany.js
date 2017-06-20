@@ -10,47 +10,44 @@ const editCompany = {
   validate: {
     payload: {
       email:Joi.string().required().email(),
-      CompanyName: Joi.string().required(),
+      companyName: Joi.string().required(),
       location: Joi.string().required(),
-      CompanyNumber: Joi.string().required(),
-      NumberOfEmployee: Joi.string().required(),
-      CompanyBroker: Joi.string().required(),
-      CompanyInsurer: Joi.string().required(),
+      companyNumber: Joi.string().required(),
+      numberOfEmployee: Joi.string().required(),
+      companyBroker: Joi.string().required(),
+      companyInsurer: Joi.string().required(),
     },
   },
   handler: (request, reply) => {
-    const { email,CompanyName, location, CompanyNumber, NumberOfEmployee, CompanyBroker, CompanyInsurer } = request.payload;
-
-    User.findOne({ email })
-      .then((user) => {
-        if(user){
-          if( user.role == 'HR' || user.role == 'Hr'){
-            Company.findOne({ 'CompanyName' : user.company})
-              .then((company) => {
-                if(company) {
-                  company.CompanyNumber         = CompanyNumber;
-                  company.location              = location;
-                  company.NumberOfEmployee      = NumberOfEmployee;
-                  company.CompanyBroker         = CompanyBroker;
-                  company.CompanyInsurer        = CompanyInsurer;
-                  company.save(function(err) {
-                    if (err) throw err;
-                    reply('Company has Edit.');
-                  });
-                }
-                else{
-                  reply(Boom.badData('Company \'${CompanyName}\'is not match', { CompanyName }));
-                }
+    const { email,companyName, location, companyNumber, numberOfEmployee, companyBroker, companyInsurer } = request.payload;
+    const { user } = request.auth.credentials;
+    if(user){
+      if( user.role == 'HR' || user.role == 'Hr'){
+        Company.findOne({ 'CompanyName' : user.company})
+          .then((company) => {
+            if(company) {
+              company.companyNumber         = companyNumber;
+              company.location              = location;
+              company.numberOfEmployee      = numberOfEmployee;
+              company.companyBroker         = companyBroker;
+              company.companyInsurer        = companyInsurer;
+              company.save(function(err) {
+                if (err) throw err;
+                reply('Company has Edit.');
               });
-          }
-          else{
-            reply(Boom.badData('Only Hr can edit it'));
-          }
-        }
-        else{
-          reply(Boom.badData('Email \'${email}\'is not  existed', { email }));
-        }
-      });
+            }
+            else{
+              reply(Boom.badData('Company \'${CompanyName}\'is not match', { companyName }));
+            }
+          });
+      }
+      else{
+        reply(Boom.badData('Only Hr can edit it'));
+      }
+    }
+    else{
+      reply(Boom.badData('Email \'${email}\'is not  existed', { email }));
+    }
   },
 };
 
