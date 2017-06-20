@@ -27,18 +27,13 @@ const createBrokerProfile = {
         if(user){
           console.log(user);
           if( user.role == "BR" || user.role == "broker"){
-            // let brokerdetail = new BrokerDetail({ CompanyName, CompanyWebsite, CompanyNumber, location, BrokerSignature, broker : user.refId});
-            // brokerdetail.save(function(err) {
-            //   if (err) throw err;
-            //   reply('Profie has created');
-            // });
             let brokerdetail = new BrokerDetail({
               BrokerCompanyName: CompanyName,
               BrokerCompanyWebsite: CompanyWebsite,
               BrokerCompanyNumber: CompanyNumber,
               location: location,
               BrokerSignature: BrokerSignature,
-              broker: user.refId,
+              broker: user._id,
             });
             brokerdetail.save(function(err) {
               if (err) throw err;

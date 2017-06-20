@@ -3,7 +3,6 @@ import mongoose from 'mongoose';
 import timestamps from 'mongoose-timestamp';
 import autoIncrement from 'mongoose-auto-increment';
 import mongoose_delete from 'mongoose-delete';
-import { BrokerDetail } from '../models';
 const Schema = mongoose.Schema;
 
 const UserSchema = new mongoose.Schema ({
@@ -18,7 +17,6 @@ const UserSchema = new mongoose.Schema ({
   removedAt: { type: Date, default: null },
   resetPasswordExpires: Date,
   ApproveFile: {type: Boolean,default:false},
-  detail: {type:Schema.ObjectId, ref:"BrokerDetail"},
 });
 
 UserSchema.pre('save', function(next) {
