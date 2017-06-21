@@ -21,11 +21,11 @@ const fillSimpleRequirement = {
     },
   },
   handler: (request, reply) => {
-    const { numberOfEmployee,numberOfPlan,IPD,OPD,dental,life,other } = request.payload;
+    const { numberOfEmployee, numberOfPlan, IPD, OPD, dental, life, other } = request.payload;
     const { user } = request.auth.credentials;
-    const userId = user.userId;
-    if (user.role=='HR'||user.role=='hr') {
-      let simpleRequirement = new SimpleRequirement({userId,numberOfEmployee,numberOfPlan,IPD,OPD,dental,life,other});
+    let hr = user._id;
+    if (user.role =='HR'||user.role =='hr') {
+      let simpleRequirement = new SimpleRequirement({ numberOfEmployee, numberOfPlan, IPD, OPD, dental, life, other, hr});
       simpleRequirement.save().then(() => {
         reply('the simpleRequirement has complete');
       });

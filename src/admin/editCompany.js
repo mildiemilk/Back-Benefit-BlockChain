@@ -9,7 +9,6 @@ const editCompany = {
   tags: ['admin', 'api'],
   validate: {
     payload: {
-      email:Joi.string().required().email(),
       companyName: Joi.string().required(),
       location: Joi.string().required(),
       companyNumber: Joi.string().required(),
@@ -19,7 +18,7 @@ const editCompany = {
     },
   },
   handler: (request, reply) => {
-    const { email,companyName, location, companyNumber, numberOfEmployee, companyBroker, companyInsurer } = request.payload;
+    const { companyName, location, companyNumber, numberOfEmployee, companyBroker, companyInsurer } = request.payload;
     const { user } = request.auth.credentials;
     if(user){
       if( user.role == 'HR' || user.role == 'Hr'){

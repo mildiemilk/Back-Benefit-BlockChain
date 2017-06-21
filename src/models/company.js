@@ -7,13 +7,14 @@ const Schema = mongoose.Schema;
 
 const CompanySchema = new mongoose.Schema ({
   companyId: {type: Number, default: 0, unique: true},
-  companyName: { type: String, required: true},
+  companyName: { type: String, required: true },
   location: { type: String, required: true},
   companyNumber: { type: Number, required: true},
   numberOfEmployee: { type: Number, required: true},
   companyBroker: {type: String, required: true},
   companyInsurer: {type: String, required: true},
   hr: { type: Schema.Types.ObjectId, ref: "User", required: true },
+
 });
 
 

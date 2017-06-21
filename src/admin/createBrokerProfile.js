@@ -11,7 +11,6 @@ const createBrokerProfile = {
   tags: ['admin', 'api'],
   validate: {
     payload: {
-      email:Joi.string().required().email(),
       companyName: Joi.string().required(),
       location: Joi.string().required(),
       companyNumber: Joi.string().required(),

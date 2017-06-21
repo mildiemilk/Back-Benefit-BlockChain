@@ -12,7 +12,7 @@ const BrokerDetailSchema = new mongoose.Schema ({
   brokerCompanyNumber: { type: Number, required: true},
   location: { type: String, required: true},
   brokerSignature:{ type: String, required: true},
-  broker: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  broker: { type: Schema.Types.ObjectId, ref: "User", required: true},
 });
 
 
