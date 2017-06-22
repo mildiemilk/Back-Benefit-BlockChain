@@ -45,7 +45,7 @@ const editCompany = {
       }
     }
     else{
-      reply(Boom.badData('Email \'${email}\'is not  existed', { email }));
+      reply(Boom.badData('User is not  existed'));
     }
   },
 };
