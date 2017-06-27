@@ -13,25 +13,35 @@ const register = {
     payload: {
       email: Joi.string().required().email(),
       password: Joi.string().required().trim().regex(passwordPattern),
+      confirmPassword: Joi.string().required().trim().regex(passwordPattern),
       role: Joi.string().required(),
-      company: Joi.string().required(),
     },
   },
   handler: (request, reply) => {
-    const { email, password, role, company } = request.payload;
+
+    console.log('5555555555555555555555');
+    const { email, password, confirmPassword, role } = request.payload;
 
     User.findOne({ email })
       .then((user) => {
-
+        console.log('666'+user);
         if (user) {
           reply(Boom.badData('Email \'${email}\' existed', { email }));
-        } else {
-          user = new User({ email, password, role, company });
-          user.save().then(() => {
-            const { mailer } = request.server.app.services;
-            mailer.sendMailVerificationLink(Date.now(),email);
-            reply({ message:'Register complete! plaese click confirm link in your email'});
-          });
+        }
+        else {
+          if( password===confirmPassword ){
+            console.log('7777'+user);
+            user = new User({ email, password, role });
+            console.log(user);
+            user.save().then(() => {
+              console.log('888'+user);
+              const { mailer } = request.server.app.services;
+              mailer.sendMailVerificationLink(Date.now(),email);
+              reply({ message:'Register complete! plaese click confirm link in your email'});
+            });
+          }else {
+            reply({ message:'กรุณากรอกรหัสผ่านอีกครั้งค่ะ' });
+          }
         }
 
       });
