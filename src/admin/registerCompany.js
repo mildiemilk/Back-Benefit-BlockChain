@@ -12,29 +12,30 @@ const registerCompany = {
     payload: {
       companyName: Joi.string().required(),
       location: Joi.string().required(),
-      companyNumber: Joi.string().required(),
-      numberOfEmployee: Joi.string().required(),
+      typeOfBusiness: Joi.string().required(),
+      numberOfEmployees: Joi.string().required(),
+      tel: Joi.string().required(),
       companyBroker: Joi.string().required(),
       companyInsurer: Joi.string().required(),
     },
   },
   handler: (request, reply) => {
-    const { companyName, location, companyNumber, numberOfEmployee, companyBroker, companyInsurer } = request.payload;
+    const { companyName, location, typeOfBusiness, numberOfEmployees, tel, companyBroker, companyInsurer } = request.payload;
     const { user } = request.auth.credentials;
     let hr = user._id;
-    Company.findOne({ companyName })
-      .then((company) => {
-
-        if (company) {
-          reply(Boom.badData('Company \'${companyName}\' existed', { companyName }));
-        } else {
-          company = new Company({ companyName, location, companyNumber, numberOfEmployee, companyBroker, companyInsurer, hr });
-          company.save().then(() => {
-            reply('Register Company complete!');
-          });
-        }
-
-      });
+    if( user.role === 'HR' ) {
+      Company.findOne({ companyName })
+         .then((company) => {
+           if (company) {
+             reply(Boom.badData('Company \'${companyName}\' existed', { companyName }));
+           } else {
+             company = new Company({ companyName, location, typeOfBusiness, numberOfEmployees, tel, companyBroker, companyInsurer, hr });
+             company.save().then(() => {
+               reply({profile: company});
+             });
+           }
+         });    
+    } else reply('หน้านี้สำหรับ HR เท่านั้น');
 
   },
 };
