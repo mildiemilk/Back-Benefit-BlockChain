@@ -1,7 +1,13 @@
+import fs from 'fs';
+import path from 'path';
+import ejs from 'ejs';
 import aws from 'aws-sdk';
-import nodemailer from 'nodemailer';
-import Config from '../../config/config';
 import bcrypt from 'bcrypt';
+import nodemailer from 'nodemailer';
+
+import { merge } from 'lodash';
+
+import Config from '../../config/config';
 
 class MailerService {
   constructor(options) {
@@ -26,20 +32,56 @@ class MailerService {
     }
   }
 
-  sendMail(to,subject,mailbody) {
+  templateOptions(options) {
+    const { APP_BASE_URL } = process.env;
+
+    return merge({
+      baseURL: APP_BASE_URL,
+    }, options);
+  }
+
+  getTemplateSubject(template) {
+    switch (template) {
+      case 'verify-email':
+        return 'Verify your account';
+      default:
+        return '';
+    }
+  }
+
+  sendTemplateEmail(template, to, options) {
+    const templatePath = path.join(this.options.templatesPath, 'email', `${template}.ejs`);
+    const content = fs.readFileSync(templatePath, 'utf-8');
+    const html = ejs.render(content, this.templateOptions(options));
+
+    const mailOptions = {
+      to,
+      html,
+      from: 'no-reply@benefitable.com',
+      subject: this.getTemplateSubject(template),
+    };
+
+    this.mailer.sendMail(mailOptions, (err, info) => {
+      if (err) {
+        console.log(err);
+      }
+
+      this.mailer.close();
+    });
+  }
+
+  sendMail(to, subject, mailbody) {
     let mailOption = {
       from: this.mailer.user,
       to: to,
       subject: subject,
       html: mailbody,
     };
-    
+
     this.mailer.sendMail(mailOption,(error,info) => {
-      if(error){
+      if (error) {
         console.log(error);
       }
-      console.log("the message was sent");
-      console.log(info);
       this.mailer.close(); // shut down the connection pool, no more messages
     });
   }
