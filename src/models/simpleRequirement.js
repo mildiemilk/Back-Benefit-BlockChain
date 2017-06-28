@@ -7,13 +7,14 @@ const Schema = mongoose.Schema;
 
 const SimpleRequirementSchema = new mongoose.Schema ({
   simpleRequirementId:{type: Number, default: 0, unique: true},
-  numberOfEmployee:{ type: Number, required: true},
-  numberOfPlan:{ type: String, required: true},
+  numberOfEmployee:{ type: String, required: true},
+  typeOfInsurance:{ type: String, required: true},
   IPD:{ type: Boolean, required: true},
   OPD:{ type: Boolean, required: true},
   dental:{ type: Boolean, required: true},
   life:{ type: Boolean, required: true},
-  other:{ type: String, required: true},
+  other:{ type: Boolean, required: true},
+  otherDes:{ type: String, default: null},
   hr: { type: Schema.Types.ObjectId, ref: "User" },
 });
 

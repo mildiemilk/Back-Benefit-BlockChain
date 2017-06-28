@@ -18,23 +18,17 @@ const register = {
     },
   },
   handler: (request, reply) => {
-
-    console.log('5555555555555555555555');
     const { email, password, confirmPassword, role } = request.payload;
 
     User.findOne({ email })
       .then((user) => {
-        console.log('666'+user);
         if (user) {
           reply(Boom.badData('Email \'${email}\' existed', { email }));
         }
         else {
           if( password===confirmPassword ){
-            console.log('7777'+user);
             user = new User({ email, password, role });
-            console.log(user);
             user.save().then(() => {
-              console.log('888'+user);
               const { mailer } = request.server.app.services;
               mailer.sendMailVerificationLink(Date.now(),email);
               reply({ message:'Register complete! plaese click confirm link in your email'});

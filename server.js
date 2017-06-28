@@ -4,10 +4,11 @@ import Inert from 'inert';
 import Vision from 'vision';
 import HapiSwagger from 'hapi-swagger';
 import Promise from 'bluebird';
-import manifest from './config/manifest';
+import Manifest from './config/manifest';
 import dotenv from 'dotenv';
 
 dotenv.config();
+const manifest = Manifest();
 
 Promise.promisifyAll(mongoose);
 mongoose.Promise = Promise;
