@@ -5,8 +5,8 @@ module.exports = () => {
   const { env } = process;
 
   const secretKey = env.APP_SECRET_KEY;
-  const jwtKey = fs.readFileSync(env.PWD + '/config/jwt.key');
-  const jwtPub = fs.readFileSync(env.PWD + '/config/jwt.key.pub');
+  const jwtKey = fs.readFileSync('./config/jwt.key');
+  const jwtPub = fs.readFileSync('./config/jwt.key.pub');
 
   const serviceOptions = {
     auth: { jwtKey, jwtPub },
@@ -17,7 +17,7 @@ module.exports = () => {
         user: env.MAILER_USER,
         pass: env.MAILER_PASS,
       },
-      templatesPath: path.join(env.PWD, 'src/templates'),
+      templatesPath: path.join('src/templates'),
     },
   };
 

@@ -14,6 +14,7 @@
   "dependencies": {
     "aws-sdk": "^2.67.0",
     "bcrypt": "^1.0.2",
+    "bcryptjs": "^2.4.3",
     "bluebird": "^3.5.0",
     "boom": "^5.1.0",
     "catbox-redis": "^3.0.1",
