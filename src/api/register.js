@@ -23,7 +23,7 @@ const register = {
     User.findOne({ email })
       .then((user) => {
         if (user) {
-          reply(Boom.badData('Email \'${email}\' existed', { email }));
+          reply(Boom.badData('Email already existed'));
         }
         else {
           if( password===confirmPassword ){
@@ -34,7 +34,7 @@ const register = {
               reply({ message:'Register complete! plaese click confirm link in your email'});
             });
           }else {
-            reply({ message:'กรุณากรอกรหัสผ่านอีกครั้งค่ะ' });
+            reply(Boom.badData('password not match'));
           }
         }
 

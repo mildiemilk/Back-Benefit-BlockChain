@@ -13,6 +13,7 @@ const registerCompany = {
       companyName: Joi.string().required(),
       location: Joi.string().required(),
       typeOfBusiness: Joi.string().required(),
+      hrDetail: Joi.string().required(),
       numberOfEmployees: Joi.string().required(),
       tel: Joi.string().required(),
       companyBroker: Joi.string().required(),
@@ -20,21 +21,21 @@ const registerCompany = {
     },
   },
   handler: (request, reply) => {
-    const { companyName, location, typeOfBusiness, numberOfEmployees, tel, companyBroker, companyInsurer } = request.payload;
+    const { companyName, location, typeOfBusiness, hrDetail, numberOfEmployees, tel, companyBroker, companyInsurer } = request.payload;
     const { user } = request.auth.credentials;
     let hr = user._id;
     if( user.role === 'HR' ) {
       Company.findOne({ companyName })
          .then((company) => {
            if (company) {
-             reply(Boom.badData('Company \'${companyName}\' existed', { companyName }));
+             reply(Boom.badData('Company already existed'));
            } else {
-             company = new Company({ companyName, location, typeOfBusiness, numberOfEmployees, tel, companyBroker, companyInsurer, hr });
+             company = new Company({ companyName, location, typeOfBusiness, hrDetail, numberOfEmployees, tel, companyBroker, companyInsurer, hr });
              company.save().then(() => {
                reply({profile: company});
              });
            }
-         });    
+         });
     } else reply('หน้านี้สำหรับ HR เท่านั้น');
 
   },

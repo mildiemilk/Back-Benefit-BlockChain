@@ -10,6 +10,7 @@ const CompanySchema = new mongoose.Schema ({
   companyName: { type: String, required: true },
   location: { type: String, required: true},
   typeOfBusiness: { type: String, required: true},
+  hrDetail: {type: String, required: true},
   numberOfEmployees: { type: String, required: true},
   tel: { type: String, required: true },
   companyBroker: {type: String, required: true},
