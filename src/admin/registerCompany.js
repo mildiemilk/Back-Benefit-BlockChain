@@ -32,11 +32,11 @@ const registerCompany = {
            } else {
              company = new Company({ companyName, location, typeOfBusiness, hrDetail, numberOfEmployees, tel, companyBroker, companyInsurer, hr });
              company.save().then(() => {
-               reply({profile: company});
+               reply({message: 'Create Company Success'});
              });
            }
          });
-    } else reply('หน้านี้สำหรับ HR เท่านั้น');
+    } else reply(Boom.badData('This page for HR only'));
 
   },
 };

@@ -20,20 +20,34 @@ const simpleRequirements = {
       life: Joi.boolean().required(),
       other: Joi.boolean().required(),
       otherDes: Joi.string().allow(''),
+      day: Joi.string().required(),
+      month: Joi.string().required(),
+      year: Joi.string().required(),
     },
   },
   handler: (request, reply) => {
-    const { numberOfEmployee, typeOfInsurance, IPD, OPD, dental, life, other, otherDes } = request.payload;
+    const { numberOfEmployee, typeOfInsurance, IPD, OPD, dental, life, other, otherDes, day, month, year } = request.payload;
     const { user } = request.auth.credentials;
     console.log(user);
     if(user.role == 'HR'){
-      let simpleRequirement = new SimpleRequirement({ numberOfEmployee, typeOfInsurance, IPD, OPD, dental, life, other, otherDes });
+      let simpleRequirement = new SimpleRequirement({ numberOfEmployee, typeOfInsurance, IPD, OPD, dental, life, other, otherDes, day, month, year });
       console.log(simpleRequirement);
       simpleRequirement.save().then(() => {
-        reply({ message:'กรอก simpleRequirement เรียนร้อยแล้ว'});
+        reply({ message:'กรอก simpleRequirement เรียนร้อยแล้ว',
+          numberOfEmployee:numberOfEmployee,
+          typeOfInsurance:typeOfInsurance,
+          IPD:IPD,
+          OPD:OPD,
+          dental:dental,
+          life:life,
+          other:other,
+          otherDes:otherDes,
+          day:day,
+          month:month,
+          year:year });
       });
     }else{
-      reply({ message:'หน้านี้สำหรับ HR เท่านั้น'});
+      reply(Boom.badData('This page for HR only'));
     }
   },
 };
