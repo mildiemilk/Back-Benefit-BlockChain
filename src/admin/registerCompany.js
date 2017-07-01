@@ -1,6 +1,6 @@
 import Joi from 'joi';
 import Boom from 'boom';
-import { Company } from '../models';
+import { Company, User } from '../models';
 import timestamps from 'mongoose-timestamp';
 
 
@@ -32,6 +32,9 @@ const registerCompany = {
            } else {
              company = new Company({ companyName, location, typeOfBusiness, hrDetail, numberOfEmployees, tel, companyBroker, companyInsurer, hr });
              company.save().then(() => {
+               User.findOneAndUpdate({ _id: hr }, { $set: { company: company._id }}, () => {
+                 console.log('create company complete!')
+               });
                reply({profile: company});
              });
            }

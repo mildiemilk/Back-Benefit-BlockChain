@@ -6,7 +6,7 @@ import { User } from '../models';
 const Schema = mongoose.Schema;
 
 const SimpleRequirementSchema = new mongoose.Schema ({
-  simpleRequirementId:{type: Number, default: 0, unique: true},
+  simpleRequirementId:{ type: Number, default: 0, unique: true},
   numberOfEmployee:{ type: String, required: true},
   typeOfInsurance:{ type: String, required: true},
   IPD:{ type: Boolean, required: true},

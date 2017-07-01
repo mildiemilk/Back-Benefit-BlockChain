@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import timestamps from 'mongoose-timestamp';
 import autoIncrement from 'mongoose-auto-increment';
 import mongooseDelete from 'mongoose-delete';
+import { Company } from '../models';
 const Schema = mongoose.Schema;
 
 const UserSchema = new mongoose.Schema ({
@@ -12,7 +13,7 @@ const UserSchema = new mongoose.Schema ({
   isSuperAdmin: { type: Boolean, default: false },
   role:{ type: String, required: true},
   emailConfirmedAt: Date,
-  company: { type: String, default: null},
+  company: { type: Schema.Types.ObjectId, ref: "Company", default: null },
   resetPasswordToken: String,
   removedAt: { type: Date, default: null },
   resetPasswordExpires: Date,
