@@ -26,7 +26,7 @@ const register = {
           reply(Boom.badData('Email already existed'));
         }
         else {
-          if( password===confirmPassword ){
+          if( password === confirmPassword ){
             user = new User({ email, password, role });
             user.save().then(() => {
               const { mailer } = request.server.app.services;
