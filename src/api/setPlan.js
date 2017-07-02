@@ -97,14 +97,14 @@ const editPlan = {
 
     if(user.role == 'HR' || user.role === 'BROKER'){
       switch(typeEdit) {
-        case 'profilePlan' : MasterPlan.findOneAndUpdate({ planId: planId }, { $set: 
-        { 
+        case 'profilePlan' : MasterPlan.findOneAndUpdate({ planId: planId }, { $set:
+        {
           planName: planName,
           employeeOfPlan: employeeOfPlan,
           updateBy: updateBy
         }}, () => reply({message: 'edit Profile Plan complete!'})); break;
-        case 'ipd' : MasterPlan.findOneAndUpdate({ planId: planId }, { $set: 
-        { 
+        case 'ipd' : MasterPlan.findOneAndUpdate({ planId: planId }, { $set:
+        {
           ipdLumsumPerYear: ipdLumsumPerYear,
           ipdLumsumPerTime: ipdLumsumPerTime,
           ipdLumsumTimeNotExceedPerYear: ipdLumsumTimeNotExceedPerYear,
@@ -131,8 +131,8 @@ const editPlan = {
           ipdCoPlayMixYear: ipdCoPlayMixYear,
           updateBy: updateBy
         }}, () => reply({message: 'edit IPD complete!'})); break;
-        case 'opd' : MasterPlan.findOneAndUpdate({ planId: planId }, { $set: 
-        { 
+        case 'opd' : MasterPlan.findOneAndUpdate({ planId: planId }, { $set:
+        {
           opdPerYear: opdPerYear,
           opdPerTime: opdPerTime,
           opdTimeNotExceedPerYear: opdTimeNotExceedPerYear,
@@ -145,15 +145,15 @@ const editPlan = {
           updateBy: updateBy
         }}, () => reply({message: 'edit OPD complete!'})); break;
         case 'dental' :  MasterPlan.findOneAndUpdate({ planId: planId }, { $set: { dentalPerYear: dentalPerYear, updateBy: updateBy}},() => {
-          reply({message: 'edit Dental complete!'}); 
+          reply({message: 'edit Dental complete!'});
         }); break;
-        case 'life' : MasterPlan.findOneAndUpdate({ planId: planId }, { $set: 
-        { 
+        case 'life' : MasterPlan.findOneAndUpdate({ planId: planId }, { $set:
+        {
           lifePerYear: lifePerYear,
           lifeTimeOfSalary: lifeTimeOfSalary,
           lifeNotExceed: lifeNotExceed,
           updateBy: updateBy
-        }}, () => reply({message: 'edit Life complete!'})); break;      
+        }}, () => reply({message: 'edit Life complete!'})); break;
       }
     }else{
       reply({ message:'หน้านี้สำหรับ HR หรือ Broker เท่านั้น'});
@@ -161,9 +161,26 @@ const editPlan = {
   },
 };
 
+
+const deletePlan = {
+  tags: ['api'],
+  auth: 'jwt',
+
+  validate: {
+    params: {
+      planId: Joi.number().integer().required(),
+    },
+  },
+  handler: (request, reply) => {
+    const { planId } = request.params;
+    MasterPlan.find({ planId }).remove().exec();
+  },
+};
+
 export default function(app) {
   app.route([
     { method: 'POST', path: '/createPlan', config: createPlan },
     { method: 'PUT', path: '/editPlan/{planId}/{typeEdit}', config: editPlan },
+    { method: 'DELETE', path: '/deletePlan/{planId}', config: deletePlan },
   ]);
 }

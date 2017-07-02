@@ -35,7 +35,8 @@ const registerCompany = {
                User.findOneAndUpdate({ _id: hr }, { $set: { company: company._id }}, () => {
                  console.log('create company complete!')
                });
-               reply({profile: company});
+               reply({profile: company,
+                 message: 'setting profile success'});
              });
            }
          });
