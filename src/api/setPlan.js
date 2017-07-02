@@ -173,7 +173,76 @@ const deletePlan = {
   },
   handler: (request, reply) => {
     const { planId } = request.params;
-    MasterPlan.find({ planId }).remove().exec();
+    MasterPlan.find({ planId })
+  },
+};
+
+const copyPlan = {
+  tags: ['api'],
+  auth: 'jwt',
+
+  validate: {
+    params: {
+      planId: Joi.number().integer().required(),
+    },
+  },
+
+  handler: (request, reply) => {
+    const { planId } = request.params;
+    const { user } = request.auth.credentials;
+    const updateBy = user.role;
+    MasterPlan.findOne({ planId })
+      .then((masterPlan) => {
+        const planName = masterPlan.planName
+        const company = masterPlan.company
+        const employeeOfPlan = masterPlan.employeeOfPlan
+        let newPlan = new MasterPlan({ planName, company, employeeOfPlan, updateBy });
+        newPlan.save().then(() => {
+          console.log(masterPlan)
+          console.log(newPlan.planId)
+          MasterPlan.findOneAndUpdate({ planId: newPlan.planId }, { $set:
+          {
+            ipdLumsumPerYear: masterPlan.ipdLumsumPerYear,
+            ipdLumsumPerTime: masterPlan.ipdLumsumPerTime,
+            ipdLumsumTimeNotExceedPerYear: masterPlan.ipdLumsumTimeNotExceedPerYear,
+            rbLumsumRoomPerNight: masterPlan.rbLumsumRoomPerNight,
+            rbLumsumNigthNotExceedPerYear: masterPlan.rbLumsumPayNotExceedPerYear,
+            rbLumsumPayNotExceedPerNight: masterPlan.rbLumsumPayNotExceedPerNight,
+            rbLumsumPayNotExceedPerYear: masterPlan.rbLumsumPayNotExceedPerYear,
+            rbSchedulePatient: masterPlan.rbSchedulePatient,
+            rbScheduleIntensiveCarePatient: masterPlan.rbScheduleIntensiveCarePatient,
+            rbScheduleDoctor: masterPlan.rbScheduleDoctor,
+            rbScheduleSurgery: masterPlan.rbScheduleSurgery,
+            rbScheduleService: masterPlan.rbScheduleService,
+            rbScheduleSmallSurgery: masterPlan.rbScheduleSmallSurgery,
+            rbScheduleAdviser: masterPlan.rbScheduleAdviser,
+            rbScheduleAmbulance: masterPlan.rbScheduleAmbulance,
+            rbScheduleAccident: masterPlan.rbScheduleAccident,
+            rbScheduleTreatment: masterPlan.rbScheduleTreatment,
+            rbScheduleTransplant: masterPlan.rbScheduleTransplant,
+            ipdCoPlay: masterPlan.ipdCoPlay,
+            ipdCoPlayQuota: masterPlan.ipdCoPlayQuota,
+            ipdCoPlayDeductable: masterPlan.ipdCoPlayDeductable,
+            ipdCoPlayMixPercentage: masterPlan.ipdCoPlayMixPercentage,
+            ipdCoPlayMixNotExceed: masterPlan.ipdCoPlayMixNotExceed,
+            ipdCoPlayMixYear: masterPlan.ipdCoPlayMixYear,
+            opdPerYear: masterPlan.opdPerYear,
+            opdPerTime: masterPlan.opdPerTime,
+            opdTimeNotExceedPerYear: masterPlan.opdTimeNotExceedPerYear,
+            opdCoPlay: masterPlan.opdCoPlay,
+            opdCoPlayQuota: masterPlan.opdCoPlayQuota,
+            opdCoPlayDeductable: masterPlan.opdCoPlayDeductable,
+            opdCoPlayMixPercentage: masterPlan.opdCoPlayMixPercentage,
+            opdCoPlayMixNotExceed: masterPlan.opdCoPlayMixNotExceed,
+            opdCoPlayMixYear: masterPlan.opdCoPlayMixYear,
+            lifePerYear: masterPlan.lifePerYear,
+            lifeTimeOfSalary: masterPlan.lifeTimeOfSalary,
+            lifeNotExceed: masterPlan.lifeNotExceed,
+            dentalPerYear: masterPlan.dentalPerYear,
+            updateBy: updateBy,
+          }}, () => reply({message: 'copy plan complete'}));
+        });
+      });
   },
 };
 
@@ -182,5 +251,6 @@ export default function(app) {
     { method: 'POST', path: '/createPlan', config: createPlan },
     { method: 'PUT', path: '/editPlan/{planId}/{typeEdit}', config: editPlan },
     { method: 'DELETE', path: '/deletePlan/{planId}', config: deletePlan },
+    { method: 'POST', path: '/copyPlan/{planId}', config: copyPlan },
   ]);
 }
