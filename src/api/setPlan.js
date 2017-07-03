@@ -246,11 +246,25 @@ const copyPlan = {
   },
 };
 
+const getAllPlan = {
+  tags: ['api'],
+  auth: 'jwt',
+
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    MasterPlan.find({ company: user.company }, function(err, plans) {
+      if (err) throw err;
+      reply(plans);
+    });
+  },
+};
+
 export default function(app) {
   app.route([
     { method: 'POST', path: '/createPlan', config: createPlan },
     { method: 'PUT', path: '/editPlan/{planId}/{typeEdit}', config: editPlan },
     { method: 'DELETE', path: '/deletePlan/{planId}', config: deletePlan },
     { method: 'POST', path: '/copyPlan/{planId}', config: copyPlan },
+    { method: 'GET', path: '/getAllPlan', config: getAllPlan },
   ]);
 }
