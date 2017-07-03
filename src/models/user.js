@@ -12,7 +12,7 @@ const UserSchema = new mongoose.Schema ({
   password: { type: String, required: true  },
   isSuperAdmin: { type: Boolean, default: false },
   role:{ type: String, required: true},
-  emailConfirmedAt: Date,
+  emailConfirmedAt: { type:Date, default: null } ,
   company: { type: Schema.Types.ObjectId, ref: "Company", default: null },
   resetPasswordToken: String,
   removedAt: { type: Date, default: null },

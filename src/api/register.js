@@ -62,7 +62,7 @@ const verify = {
     if((DateNow-Dateconfirm)<5*60000){
       if (token === mailer.genToken(base)) {
         User.findOneAndUpdate({ email: email }, { $set: { emailConfirmedAt: Date.now() }},() => {
-          reply({message:'You account is verified,Please wait Admin approve your account'});
+          reply.redirect('http://localhost:8080/login');
           mailer.sendMailToAdminApproveAccount(email);
         });
       } else reply('invalid');

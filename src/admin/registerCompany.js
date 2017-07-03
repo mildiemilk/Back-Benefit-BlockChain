@@ -26,20 +26,20 @@ const registerCompany = {
     let hr = user._id;
     if( user.role === 'HR' ) {
       Company.findOne({ companyName })
-         .then((company) => {
-           if (company) {
-             reply(Boom.badData('Company already existed'));
-           } else {
-             company = new Company({ companyName, location, typeOfBusiness, hrDetail, numberOfEmployees, tel, companyBroker, companyInsurer, hr });
-             company.save().then(() => {
-               User.findOneAndUpdate({ _id: hr }, { $set: { company: company._id }}, () => {
-                 console.log('create company complete!')
-               });
-               reply({profile: company,
-                 message: 'setting profile success'});
-             });
-           }
-         });
+        .then((company) => {
+          if (company) {
+            reply(Boom.badData('Company already existed'));
+          } else {
+            company = new Company({ companyName, location, typeOfBusiness, hrDetail, numberOfEmployees, tel, companyBroker, companyInsurer, hr });
+            company.save().then(() => {
+              User.findOneAndUpdate({ _id: hr }, { $set: { company: company._id }}, () => {
+                console.log('create company complete!')
+              });
+              reply({profile: company,
+                message: 'setting profile success'});
+            });
+          }
+        });
     } else reply(Boom.badData('This page for HR only'));
 
   },

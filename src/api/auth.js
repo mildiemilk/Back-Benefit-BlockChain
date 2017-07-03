@@ -17,15 +17,21 @@ const login = {
 
     User.findOne({ email })
       .then((user) => {
-        if (!user) {
-          reply(Boom.unauthorized('Invalid email or password'));
+        if (!user || user.emailConfirmedAt === null) {
+          if(!user){
+            reply(Boom.unauthorized('Invalid email or password'));
+          }else{
+            reply(Boom.unauthorized('please verify email'));
+          }
         } else {
           if (!user.comparePassword(password)) {
             reply(Boom.unauthorized('Invalid email or password'));
           } else {
             const { auth } = request.server.app.services;
             const token = auth.createAuthToken(user);
-            reply({token});
+            reply({token,
+              Havecompany:user.company,
+              Approve:user.approveFile});
           }
         }
       });
