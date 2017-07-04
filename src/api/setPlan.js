@@ -173,7 +173,11 @@ const deletePlan = {
   },
   handler: (request, reply) => {
     const { planId } = request.params;
-    MasterPlan.find({ planId })
+    MasterPlan.findOneAndRemove({ planId }, (err) => {
+      if (!err)
+        reply({message:'deleted complete!'})
+    })
+    
   },
 };
 
