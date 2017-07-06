@@ -18,7 +18,9 @@ const SimpleRequirementSchema = new mongoose.Schema ({
   day:{ type: String, default: null, required:true },
   month:{ type: String, default: null, required:true },
   year:{ type: String, default: null, required:true },
-  hr: { type: Schema.Types.ObjectId, ref: "User" },
+  hr: { type: Schema.Types.ObjectId, ref: "User", required:true  },
+  insurers: { type : Array, default: [] },
+  timeout: { type : Date, default: null }
 });
 
 

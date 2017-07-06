@@ -28,9 +28,10 @@ const simpleRequirements = {
   handler: (request, reply) => {
     const { numberOfEmployee, typeOfInsurance, IPD, OPD, dental, life, other, otherDes, day, month, year } = request.payload;
     const { user } = request.auth.credentials;
+    let hr = user._id;
     console.log(user);
     if(user.role == 'HR'){
-      let simpleRequirement = new SimpleRequirement({ numberOfEmployee, typeOfInsurance, IPD, OPD, dental, life, other, otherDes, day, month, year });
+      let simpleRequirement = new SimpleRequirement({ numberOfEmployee, typeOfInsurance, IPD, OPD, dental, life, other, otherDes, day, month, year, hr });
       console.log(simpleRequirement);
       simpleRequirement.save().then(() => {
         reply({ message:'กรอก simpleRequirement เรียนร้อยแล้ว',
