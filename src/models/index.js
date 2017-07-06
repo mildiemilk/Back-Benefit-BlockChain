@@ -4,6 +4,7 @@ import InsurerModel from './insurer';
 import BrokerDetailModel from './brokerDetail';
 import SimpleRequirementModel from './simpleRequirement';
 import MasterPlanModel from './masterPlan';
+import BiddingModel from './bidding';
 
 export const User = UserModel;
 export const Company = CompanyModel;
@@ -11,6 +12,7 @@ export const Insurer = InsurerModel;
 export const BrokerDetail = BrokerDetailModel;
 export const SimpleRequirement = SimpleRequirementModel;
 export const MasterPlan = MasterPlanModel;
+export const Bidding = BiddingModel;
 
 export default {
   User,
@@ -19,4 +21,5 @@ export default {
   BrokerDetail,
   SimpleRequirement,
   MasterPlan,
+  Bidding,
 };

@@ -12,7 +12,7 @@ const createInsurer = {
     payload: {
       insurerName: Joi.string().required(),
       location: Joi.string().required(),
-      insurerCode: Joi.number().integer().required(),
+      insurerCode: Joi.number().required(),
     },
   },
   handler: (request, reply) => {
