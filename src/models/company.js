@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import timestamps from 'mongoose-timestamp';
 import autoIncrement from 'mongoose-auto-increment';
 import mongooseDelete from 'mongoose-delete';
-import { User } from '../models';
+import { User, Bidding } from '../models';
 const Schema = mongoose.Schema;
 
 const CompanySchema = new mongoose.Schema ({
@@ -16,6 +16,7 @@ const CompanySchema = new mongoose.Schema ({
   companyBroker: {type: String, required: true},
   companyInsurer: {type: String, required: true},
   hr: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  bidding: { type: Schema.Types.ObjectId, ref: "Bidding", required: true },
 
 });
 

@@ -45,9 +45,23 @@ const registerCompany = {
   },
 };
 
+const getCompanyName  = {
+  auth: { strategy: 'jwt', scope: 'admin',},
+  tags: ['admin', 'api'],
+
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    Company.findOne({ _id: user.company })
+      .then((company) => {
+        reply({companyName:company.companyName})
+      });
+  }
+};
+
 
 export default function(app) {
   app.route([
     { method: 'POST', path: '/registerCompany', config: registerCompany },
+    { method: 'GET', path: '/getCompanyName', config: getCompanyName },
   ]);
 }
