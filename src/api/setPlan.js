@@ -202,8 +202,6 @@ const copyPlan = {
         const employeeOfPlan = masterPlan.employeeOfPlan
         let newPlan = new MasterPlan({ planName, company, employeeOfPlan, updateBy });
         newPlan.save().then(() => {
-          console.log(masterPlan)
-          console.log(newPlan.planId)
           MasterPlan.findOneAndUpdate({ planId: newPlan.planId }, { $set:
           {
             ipdLumsumPerYear: masterPlan.ipdLumsumPerYear,

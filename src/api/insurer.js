@@ -19,7 +19,7 @@ const createInsurer = {
     const { insurerName, location, insurerCode } = request.payload;
     const { user } = request.auth.credentials;
     const insurerUser = user._id;
-    if(user.role == 'Insurer'){
+    if(user.role === 'HR'){
       const insurer = new Insurer({ insurerName, location, insurerCode, insurerUser });
       insurer.save().then((err) => {
         if (!err)
@@ -39,7 +39,7 @@ const getAllInsurer = {
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
     if(user.role == 'HR'){
-      Insurer.find({}, (insurers) => {
+      Insurer.find({}).then((insurers) => {
         reply(insurers);
       });
     }else{
@@ -53,14 +53,17 @@ const chooseInsurer = {
   auth: 'jwt',
   validate: {
     payload: {
-      insurers: Joi.array().required(),
+      insurers: Joi.array().items(Joi.object()),
     },
   },
   handler: (request, reply) => {
     const { insurers } = request.payload;
     const { user } = request.auth.credentials;
     if(user.role == 'HR'){
-      SimpleRequirement.findOneAndUpdate({ hr: user._id }, { insurers }, () => {
+      SimpleRequirement.findOne({ hr: user._id }).then((simpleRequirement) => {
+        console.log(simpleRequirement);
+        simpleRequirement.insurers = insurers;
+        simpleRequirement.save();
         reply(insurers);
       });
     }else{

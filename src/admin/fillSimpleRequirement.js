@@ -32,7 +32,6 @@ const simpleRequirements = {
     console.log(user);
     if(user.role == 'HR'){
       let simpleRequirement = new SimpleRequirement({ numberOfEmployee, typeOfInsurance, IPD, OPD, dental, life, other, otherDes, day, month, year, hr });
-      console.log(simpleRequirement);
       simpleRequirement.save().then(() => {
         reply({ message:'กรอก simpleRequirement เรียนร้อยแล้ว',
           numberOfEmployee:numberOfEmployee,

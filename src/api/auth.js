@@ -9,7 +9,7 @@ const login = {
   validate: {
     payload: {
       email: Joi.string().required().email(),
-      password: Joi.string().required().trim().regex(passwordPattern),
+      password: Joi.string().required().trim().regex(passwordPattern).error(new Error('Invalid email or password')),
     },
   },
   handler: (request, reply) => {
