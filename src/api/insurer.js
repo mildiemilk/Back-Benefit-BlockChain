@@ -19,7 +19,7 @@ const createInsurer = {
     const { insurerName, location, insurerCode } = request.payload;
     const { user } = request.auth.credentials;
     const insurerUser = user._id;
-    if(user.role === 'HR'){
+    if(user.role === 'Insurer'){
       const insurer = new Insurer({ insurerName, location, insurerCode, insurerUser });
       insurer.save().then((err) => {
         if (!err)
@@ -31,6 +31,7 @@ const createInsurer = {
     }
   },
 };
+
 
 const getAllInsurer = {
   tags: ['api'],

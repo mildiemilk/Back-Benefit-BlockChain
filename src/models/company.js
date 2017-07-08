@@ -16,7 +16,7 @@ const CompanySchema = new mongoose.Schema ({
   companyBroker: {type: String, required: true},
   companyInsurer: {type: String, required: true},
   hr: { type: Schema.Types.ObjectId, ref: "User", required: true },
-  bidding: { type: Schema.Types.ObjectId, ref: "Bidding", required: true },
+  bidding: { type: Schema.Types.ObjectId, ref: "Bidding" },
 
 });
 

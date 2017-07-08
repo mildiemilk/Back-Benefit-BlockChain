@@ -9,6 +9,7 @@ const InsurerSchema = new mongoose.Schema ({
   insurerName: { type: String, required: true },
   location: { type: String, required: true },
   insurerCode: { type: Number, required: true },
+  status: { type: String, default: 'waiting', required: true},
   insurerUser: { type: Schema.Types.ObjectId, ref: "User", required: true },
 });
 

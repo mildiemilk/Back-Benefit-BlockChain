@@ -42,45 +42,57 @@ const bidding = {
                 });
               }
             });
-
+          insurer.status = 'join';
+          insurer.save().then((err) => {
+            if(!err)
+              reply('status has change');
+            else reply(err)
+          });
         });
-
     }else{
       reply(Boom.badData('This page for Insurer only'));
     }
   },
 };
 
-const editBidding = {
+const cancleBidding = {
   tags: ['api'],
   auth: 'jwt',
 
-  validate: {
-    payload: {
-      planName: Joi.string().required(),
-      priceOfBidding: Joi.number().required(),
-    },
-  },
   handler: (request, reply) => {
-    const { planName, priceOfBidding } = request.payload;
     const { user } = request.auth.credentials;
     const insurerUser = user._id;
     if(user.role == 'Insurer'){
       Insurer.findOne({insurerUser})
         .then((insurer) => {
-          Bidding.findOne({planName})
-            .then((bidding) => {
-            });
+          insurer.status = 'cancle';
+          insurer.save().then((err) => {
+            if(!err)
+              reply({message:'status has change'});
+            else reply(err)
+          });
         });
-
     }else{
       reply(Boom.badData('This page for Insurer only'));
     }
   },
 };
 
+const getBidding = {
+  tags: ['api'],
+  auth: 'jwt',
+
+  handler: (request, reply) => {
+    Bidding.find({}).then((bidding) => {
+      reply(bidding);
+    });
+  },
+}
+
 export default function(app) {
   app.route([
     { method: 'POST', path: '/bidding', config: bidding },
+    { method: 'PUT', path: '/canclebidding', config: cancleBidding },
+    { method: 'GET', path: '/getbidding', config: getBidding },
   ]);
 }
