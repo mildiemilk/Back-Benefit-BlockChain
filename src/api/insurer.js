@@ -1,6 +1,6 @@
 import Joi from 'joi';
 import Boom from 'boom';
-import { Insurer, SimpleRequirement } from '../models';
+import { Insurer, SimpleRequirement, BiddingRelation } from '../models';
 import Config from '../../config/config';
 import moment from 'moment';
 
@@ -19,7 +19,7 @@ const createInsurer = {
     const { insurerName, location, insurerCode } = request.payload;
     const { user } = request.auth.credentials;
     const insurerUser = user._id;
-    if(user.role === 'HR'){
+    if(user.role === 'Insurer' || user.role === 'HR'){
       const insurer = new Insurer({ insurerName, location, insurerCode, insurerUser });
       insurer.save().then((err) => {
         if (!err)
@@ -60,13 +60,33 @@ const chooseInsurer = {
   handler: (request, reply) => {
     const { insurers } = request.payload;
     const { user } = request.auth.credentials;
+    console.log(user);
+    const hr = user._id;
+    const status = [];
+    const insurer = [];
+    insurers.forEach(() => {
+      status.push('waiting');
+    });
     if(user.role == 'HR'){
-      SimpleRequirement.findOne({ hr: user._id }).then((simpleRequirement) => {
-        console.log(simpleRequirement);
-        simpleRequirement.insurers = insurers;
-        simpleRequirement.save();
-        reply(insurers);
-      });
+      BiddingRelation.findOne({hr})
+        .then((biddingrelation) => {
+          console.log(biddingrelation)
+          if(biddingrelation){
+            biddingrelation.insurers = insurers;
+            biddingrelation.save().then((err) => {
+              if (!err)
+                reply(BiddingRelation);
+              else reply(err)
+            });
+          }else{
+            const biddingrelation = new BiddingRelation({ hr, insurers, status });
+            biddingrelation.save().then((err) => {
+              if (!err)
+                reply(biddingrelation);
+              else reply(err)
+            });
+          }
+        });
     }else{
       reply(Boom.badData('This page for HR only'));
     }

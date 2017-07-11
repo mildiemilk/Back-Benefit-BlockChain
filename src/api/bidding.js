@@ -1,6 +1,6 @@
 import Joi from 'joi';
 import Boom from 'boom';
-import { Insurer, Bidding } from '../models';
+import { Insurer, Bidding, BiddingRelation } from '../models';
 import Config from '../../config/config';
 import moment from 'moment';
 
@@ -18,9 +18,22 @@ const bidding = {
     const { planName, priceOfBidding } = request.payload;
     const { user } = request.auth.credentials;
     const insurerUser = user._id;
-    if(user.role == 'Insurer'){
+    if(user.role == 'Insurer' || user.role == 'HR'){
       Insurer.findOne({insurerUser})
         .then((insurer) => {
+          BiddingRelation.findOne({hr:user._id})
+            .then((biddingrelation) =>{
+              const index = biddingrelation.insurers.findIndex((element) => {
+                return element.insurerName === insurer.insurerName
+              });
+              biddingrelation.status[index] = 'join';
+              biddingrelation.markModified('status');
+              biddingrelation.save().then((err)=>{
+                console.log(err);
+              });
+              console.log(index);
+            });
+
           Bidding.findOne({planName,insurerName:insurer.insurerName})
             .then((bidding) => {
               if(bidding){
@@ -42,12 +55,6 @@ const bidding = {
                 });
               }
             });
-          insurer.status = 'join';
-          insurer.save().then((err) => {
-            if(!err)
-              reply('status has change');
-            else reply(err)
-          });
         });
     }else{
       reply(Boom.badData('This page for Insurer only'));
