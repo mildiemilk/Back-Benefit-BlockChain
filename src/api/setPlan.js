@@ -49,7 +49,8 @@ const editPlan = {
       rbSchedulePatient: Joi.number().allow(null),
       rbScheduleIntensiveCarePatient: Joi.number().allow(null),
       rbScheduleDoctor: Joi.number().allow(null),
-      rbScheduleSurgery: Joi.number().allow(null),
+      rbScheduleSurgerySchedule: Joi.number().allow(null),
+      rbScheduleSurgeryNonSchedule: Joi.number().allow(null),
       rbScheduleService: Joi.number().allow(null),
       rbScheduleSmallSurgery: Joi.number().allow(null),
       rbScheduleAdviser: Joi.number().allow(null),
@@ -85,7 +86,7 @@ const editPlan = {
   handler: (request, reply) => {
     const { planName, employeeOfPlan, ipdType, ipdLumsumPerYear, ipdLumsumPerTime, ipdLumsumTimeNotExceedPerYear, rbLumsumRoomPerNight,
       rbLumsumNigthNotExceedPerYear, rbLumsumPayNotExceedPerNight, rbLumsumPayNotExceedPerYear,
-      rbSchedulePatient, rbScheduleIntensiveCarePatient, rbScheduleDoctor, rbScheduleSurgery,
+      rbSchedulePatient, rbScheduleIntensiveCarePatient, rbScheduleDoctor, rbScheduleSurgerySchedule, rbScheduleSurgeryNonSchedule,
       rbScheduleService, rbScheduleSmallSurgery, rbScheduleAdviser, rbScheduleAmbulance,
       rbScheduleAccident, rbScheduleTreatment, rbScheduleTransplant, ipdCoPlay, ipdCoPlayQuota,
       ipdCoPlayDeductable, ipdCoPlayMixPercentage, ipdCoPlayMixNotExceed, ipdCoPlayMixYear, opdPerYear, opdPerTime, opdTimeNotExceedPerYear,
@@ -115,7 +116,8 @@ const editPlan = {
           rbSchedulePatient: rbSchedulePatient,
           rbScheduleIntensiveCarePatient: rbScheduleIntensiveCarePatient,
           rbScheduleDoctor: rbScheduleDoctor,
-          rbScheduleSurgery: rbScheduleSurgery,
+          rbScheduleSurgerySchedule: rbScheduleSurgerySchedule,
+          rbScheduleSurgeryNonSchedule: rbScheduleSurgeryNonSchedule,
           rbScheduleService: rbScheduleService,
           rbScheduleSmallSurgery: rbScheduleSmallSurgery,
           rbScheduleAdviser: rbScheduleAdviser,
@@ -197,7 +199,7 @@ const copyPlan = {
     const updateBy = user.role;
     MasterPlan.findOne({ planId })
       .then((masterPlan) => {
-        const planName = masterPlan.planName
+        const planName = masterPlan.planName + ' (Copy)'
         const company = masterPlan.company
         const employeeOfPlan = masterPlan.employeeOfPlan
         let newPlan = new MasterPlan({ planName, company, employeeOfPlan, updateBy });
@@ -214,7 +216,8 @@ const copyPlan = {
             rbSchedulePatient: masterPlan.rbSchedulePatient,
             rbScheduleIntensiveCarePatient: masterPlan.rbScheduleIntensiveCarePatient,
             rbScheduleDoctor: masterPlan.rbScheduleDoctor,
-            rbScheduleSurgery: masterPlan.rbScheduleSurgery,
+            rbScheduleSurgerySchedule: masterPlan.rbScheduleSurgerySchedule,
+            rbScheduleSurgeryNonSchedule: masterPlan.rbScheduleSurgeryNonSchedule,
             rbScheduleService: masterPlan.rbScheduleService,
             rbScheduleSmallSurgery: masterPlan.rbScheduleSmallSurgery,
             rbScheduleAdviser: masterPlan.rbScheduleAdviser,
