@@ -31,7 +31,6 @@ const bidding = {
               biddingrelation.save().then((err)=>{
                 console.log(err);
               });
-              console.log(index);
             });
 
           Bidding.findOne({planName,insurerName:insurer.insurerName})
@@ -69,15 +68,20 @@ const cancleBidding = {
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
     const insurerUser = user._id;
-    if(user.role == 'Insurer'){
+    if(user.role == 'Insurer' || user.role == 'HR'){
       Insurer.findOne({insurerUser})
         .then((insurer) => {
-          insurer.status = 'cancle';
-          insurer.save().then((err) => {
-            if(!err)
-              reply({message:'status has change'});
-            else reply(err)
-          });
+          BiddingRelation.findOne({hr:user._id})
+            .then((biddingrelation) =>{
+              const index = biddingrelation.insurers.findIndex((element) => {
+                return element.insurerName === insurer.insurerName
+              });
+              biddingrelation.status[index] = 'cancel';
+              biddingrelation.markModified('status');
+              biddingrelation.save().then((err)=>{
+                reply(err);
+              });
+            });
         });
     }else{
       reply(Boom.badData('This page for Insurer only'));
