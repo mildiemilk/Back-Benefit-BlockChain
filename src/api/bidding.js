@@ -10,15 +10,15 @@ const bidding = {
 
   validate: {
     payload: {
-      planName: Joi.string().required(),
-      priceOfBidding: Joi.number().required(),
+      detail: Joi.array().items(Joi.object()),
+      hrId: Joi.string().required(),
     },
   },
   handler: (request, reply) => {
-    const { planName, priceOfBidding } = request.payload;
     const { user } = request.auth.credentials;
     const insurerUser = user._id;
-    if(user.role == 'Insurer' || user.role == 'HR'){
+    const { detail, hrId } = request.payload;
+    if(user.role == 'Insurer'){
       Insurer.findOne({insurerUser})
         .then((insurer) => {
           BiddingRelation.findOne({hr:user._id})
@@ -32,21 +32,28 @@ const bidding = {
                 console.log(err);
               });
             });
-
-          Bidding.findOne({planName,insurerName:insurer.insurerName})
-            .then((bidding) => {
-              if(bidding){
-                bidding.priceOfBidding = priceOfBidding;
-                bidding.timeOfBidding = bidding.timeOfBidding + 1;
+          console.log(insurer.insurerName)
+          Bidding.findOne({insurerName:insurer.insurerName, status:'valid'})
+            .then((nowBidding) => {
+              if(nowBidding){
+                nowBidding.status = 'invalid'
+                nowBidding.save();
+                const status = 'valid';
+                const insurerName = insurer.insurerName;
+                const hr = hrId;
+                const timeOfBidding = nowBidding.timeOfBidding + 1;
+                const bidding = new Bidding({ insurerName, detail, timeOfBidding, status, hr });
                 bidding.save().then((err) => {
                   if (!err)
                     reply(bidding);
                   else reply(err)
                 });
               }else{
+                const status = 'valid'
                 const insurerName = insurer.insurerName;
                 const timeOfBidding = 1;
-                const bidding = new Bidding({ insurerName, planName,  priceOfBidding, timeOfBidding });
+                const hr = hrId;
+                const bidding = new Bidding({ insurerName, detail, timeOfBidding, status, hr });
                 bidding.save().then((err) => {
                   if (!err)
                     reply(bidding);

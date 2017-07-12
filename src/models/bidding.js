@@ -7,9 +7,10 @@ const Schema = mongoose.Schema;
 const BiddingSchema = new mongoose.Schema ({
   biddingId: { type: Number, default: 0, unique: true },
   insurerName: { type: String, required: true },
-  planName: { type: String, required: true },
-  priceOfBidding: { type: Number, required: true },
-  timeOfBidding : { type: Number, default: 0 },
+  detail: { type: Array, required: true },
+  timeOfBidding : { type: Number, default: 0, required: true },
+  status: { type: String, required: true },
+  hr: { type: String, required: true },
 });
 
 BiddingSchema.plugin(timestamps);
