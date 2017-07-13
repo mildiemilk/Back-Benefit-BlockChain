@@ -19,7 +19,7 @@ const createInsurer = {
     const { insurerName, location, insurerCode } = request.payload;
     const { user } = request.auth.credentials;
     const insurerUser = user._id;
-    if(user.role === 'Insurer'){
+    if(user.role === 'HR'){
       const insurer = new Insurer({ insurerName, location, insurerCode, insurerUser });
       insurer.save().then((err) => {
         if (!err)
@@ -75,14 +75,14 @@ const chooseInsurer = {
             biddingrelation.insurers = insurers;
             biddingrelation.save().then((err) => {
               if (!err)
-                reply(BiddingRelation);
+                reply(BiddingRelation.insurers);
               else reply(err)
             });
           }else{
             const biddingrelation = new BiddingRelation({ hr, insurers, status });
             biddingrelation.save().then((err) => {
               if (!err)
-                reply(biddingrelation);
+                reply(biddingrelation.insurers);
               else reply(err)
             });
           }
