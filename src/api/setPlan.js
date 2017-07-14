@@ -110,7 +110,7 @@ const editPlan = {
           ipdLumsumPerTime: ipdLumsumPerTime,
           ipdLumsumTimeNotExceedPerYear: ipdLumsumTimeNotExceedPerYear,
           rbLumsumRoomPerNight: rbLumsumRoomPerNight,
-          rbLumsumNigthNotExceedPerYear: rbLumsumPayNotExceedPerYear,
+          rbLumsumNigthNotExceedPerYear: rbLumsumNigthNotExceedPerYear,
           rbLumsumPayNotExceedPerNight: rbLumsumPayNotExceedPerNight,
           rbLumsumPayNotExceedPerYear: rbLumsumPayNotExceedPerYear,
           rbSchedulePatient: rbSchedulePatient,
