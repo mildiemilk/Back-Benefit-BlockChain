@@ -1,6 +1,6 @@
 import Joi from 'joi';
 import Boom from 'boom';
-import { Insurer, Bidding } from '../models';
+import { Insurer, Bidding, BiddingRelation } from '../models';
 import Config from '../../config/config';
 import moment from 'moment';
 
@@ -10,31 +10,50 @@ const bidding = {
 
   validate: {
     payload: {
-      planName: Joi.string().required(),
-      priceOfBidding: Joi.number().required(),
+      detail: Joi.array().items(Joi.object()),
+      hrId: Joi.string().required(),
     },
   },
   handler: (request, reply) => {
-    const { planName, priceOfBidding } = request.payload;
     const { user } = request.auth.credentials;
     const insurerUser = user._id;
+    const { detail, hrId } = request.payload;
     if(user.role == 'Insurer'){
       Insurer.findOne({insurerUser})
         .then((insurer) => {
-          Bidding.findOne({planName,insurerName:insurer.insurerName})
-            .then((bidding) => {
-              if(bidding){
-                bidding.priceOfBidding = priceOfBidding;
-                bidding.timeOfBidding = bidding.timeOfBidding + 1;
+          BiddingRelation.findOne({hr:user._id})
+            .then((biddingrelation) =>{
+              const index = biddingrelation.insurers.findIndex((element) => {
+                return element.insurerName === insurer.insurerName
+              });
+              biddingrelation.status[index] = 'join';
+              biddingrelation.markModified('status');
+              biddingrelation.save().then((err)=>{
+                console.log(err);
+              });
+            });
+          console.log(insurer.insurerName)
+          Bidding.findOne({insurerName:insurer.insurerName, status:'valid'})
+            .then((nowBidding) => {
+              if(nowBidding){
+                nowBidding.status = 'invalid'
+                nowBidding.save();
+                const status = 'valid';
+                const insurerName = insurer.insurerName;
+                const hr = hrId;
+                const timeOfBidding = nowBidding.timeOfBidding + 1;
+                const bidding = new Bidding({ insurerName, detail, timeOfBidding, status, hr });
                 bidding.save().then((err) => {
                   if (!err)
                     reply(bidding);
                   else reply(err)
                 });
               }else{
+                const status = 'valid'
                 const insurerName = insurer.insurerName;
                 const timeOfBidding = 1;
-                const bidding = new Bidding({ insurerName, planName,  priceOfBidding, timeOfBidding });
+                const hr = hrId;
+                const bidding = new Bidding({ insurerName, detail, timeOfBidding, status, hr });
                 bidding.save().then((err) => {
                   if (!err)
                     reply(bidding);
@@ -42,12 +61,6 @@ const bidding = {
                 });
               }
             });
-          insurer.status = 'join';
-          insurer.save().then((err) => {
-            if(!err)
-              reply('status has change');
-            else reply(err)
-          });
         });
     }else{
       reply(Boom.badData('This page for Insurer only'));
@@ -62,15 +75,20 @@ const cancleBidding = {
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
     const insurerUser = user._id;
-    if(user.role == 'Insurer'){
+    if(user.role == 'Insurer' || user.role == 'HR'){
       Insurer.findOne({insurerUser})
         .then((insurer) => {
-          insurer.status = 'cancle';
-          insurer.save().then((err) => {
-            if(!err)
-              reply({message:'status has change'});
-            else reply(err)
-          });
+          BiddingRelation.findOne({hr:user._id})
+            .then((biddingrelation) =>{
+              const index = biddingrelation.insurers.findIndex((element) => {
+                return element.insurerName === insurer.insurerName
+              });
+              biddingrelation.status[index] = 'cancel';
+              biddingrelation.markModified('status');
+              biddingrelation.save().then((err)=>{
+                reply(err);
+              });
+            });
         });
     }else{
       reply(Boom.badData('This page for Insurer only'));
