@@ -6,6 +6,7 @@ import SimpleRequirementModel from './simpleRequirement';
 import MasterPlanModel from './masterPlan';
 import BiddingModel from './bidding';
 import BiddingRelationModel from './biddingRelation';
+import BenefitPlanModel from './benefit-plan';
 
 export const User = UserModel;
 export const Company = CompanyModel;
@@ -15,6 +16,7 @@ export const SimpleRequirement = SimpleRequirementModel;
 export const MasterPlan = MasterPlanModel;
 export const Bidding = BiddingModel;
 export const BiddingRelation = BiddingRelationModel;
+export const BenefitPlan = BenefitPlanModel;
 
 export default {
   User,
@@ -25,4 +27,5 @@ export default {
   MasterPlan,
   Bidding,
   BiddingRelation,
+  BenefitPlan,
 };

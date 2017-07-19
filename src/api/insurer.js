@@ -115,6 +115,24 @@ const setTimeout = {
   },
 };
 
+const getSelectInsurer = {
+  tags: ['api'],
+  auth: 'jwt',
+
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    if(user.role == 'HR'){
+      BiddingRelation.findOne({ hr: user._id })
+      .then((biddingrelation) => {
+        console.log(biddingrelation)
+        reply(biddingrelation.insurers);
+      });
+    }else{
+      reply(Boom.badData('This page for HR only'));
+    }
+  },
+};
+
 
 export default function(app) {
   app.route([
@@ -122,5 +140,6 @@ export default function(app) {
     { method: 'GET', path: '/getAllInsurer', config: getAllInsurer },
     { method: 'PUT', path: '/chooseInsurer', config: chooseInsurer },
     { method: 'PUT', path: '/setTimeout', config: setTimeout },
+    { method: 'GET', path: '/getSelectInsurer', config: getSelectInsurer },
   ]);
 }
