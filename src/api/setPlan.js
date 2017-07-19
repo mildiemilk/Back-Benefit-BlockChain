@@ -106,6 +106,7 @@ const editPlan = {
         }}, () => reply({message: 'edit Profile Plan complete!'})); break;
         case 'ipd' : MasterPlan.findOneAndUpdate({ planId: planId }, { $set:
         {
+          ipdType: ipdType,
           ipdLumsumPerYear: ipdLumsumPerYear,
           ipdLumsumPerTime: ipdLumsumPerTime,
           ipdLumsumTimeNotExceedPerYear: ipdLumsumTimeNotExceedPerYear,
