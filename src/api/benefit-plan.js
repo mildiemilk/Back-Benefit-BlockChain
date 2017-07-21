@@ -1,6 +1,6 @@
 import Joi from 'joi';
 import Boom from 'boom';
-import { User, BenefitPlan } from '../models';
+import { User, BenefitPlan, MasterPlan } from '../models';
 import Config from '../../config/config';
 import moment from 'moment';
 
@@ -89,9 +89,34 @@ const editBenefitPlan = {
   },
 };
 
+const settingBenefit = {
+  tags: ['api'],
+  auth: 'jwt',
+  validate: {
+    payload: {
+      benefitPlans: Joi.array().items(Joi.object().required()),
+    },
+  },
+
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    const { benefitPlans } = request.payload;
+    if(user.role == 'HR'){
+      User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+        u.company.benefitPlans = benefitPlans;
+        u.company.save();
+        reply('success')
+      });
+    }else{
+      reply(Boom.badData('This page for HR only'));
+    }
+  },
+};
+
 export default function(app) {
   app.route([
     { method: 'POST', path: '/benefit-plan', config: benefitPlan },
     { method: 'POST', path: '/edit-benefit-plan', config: editBenefitPlan },
+    { method: 'POST', path: '/setting-benefit', config: settingBenefit },
   ]);
 }
