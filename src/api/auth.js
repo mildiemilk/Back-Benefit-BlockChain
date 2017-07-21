@@ -30,8 +30,9 @@ const login = {
             const { auth } = request.server.app.services;
             const token = auth.createAuthToken(user);
             reply({token,
-              Havecompany:user.company,
-              Approve:user.approveFile});
+              Havecompany: user.company,
+              Approve: user.approveFile,
+              role: user.role});
           }
         }
       });
