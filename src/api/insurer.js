@@ -60,7 +60,6 @@ const chooseInsurer = {
   handler: (request, reply) => {
     const { insurers } = request.payload;
     const { user } = request.auth.credentials;
-    console.log(user);
     const hr = user._id;
     const status = [];
     const insurer = [];
@@ -70,9 +69,9 @@ const chooseInsurer = {
     if(user.role == 'HR'){
       BiddingRelation.findOne({hr})
         .then((biddingrelation) => {
-          console.log(biddingrelation)
           if(biddingrelation){
             biddingrelation.insurers = insurers;
+            biddingrelation.status = status;
             biddingrelation.save().then((err) => {
               if (!err)
                 reply(BiddingRelation.insurers);

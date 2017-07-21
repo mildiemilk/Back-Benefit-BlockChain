@@ -18,16 +18,26 @@ const benefitPlan = {
     const { plan } = request.payload;
     const insurerUser = user._id;
     if(user.role == 'HR'){
-      User.findOne({_id:user._id})
-        .then((user)=>{
-          const company = user.company
-          const benefitplan = new BenefitPlan({ plan, company })
+      BenefitPlan.findOne({ company: user.company }).then((benefitplan) => {
+        if(benefitplan){
+          benefitplan.plan = plan;
           benefitplan.save().then((err) => {
             if (!err)
               reply(benefitplan);
             else reply(err)
           });
-        });
+        } else {
+          User.findOne({_id:user._id}).then((user)=>{
+            const company = user.company
+            const benefitplan = new BenefitPlan({ plan, company })
+            benefitplan.save().then((err) => {
+              if (!err)
+                reply(benefitplan);
+              else reply(err)
+            });
+          });
+        }
+      });
     }else{
       reply(Boom.badData('This page for HR only'));
     }
@@ -39,17 +49,27 @@ const editBenefitPlan = {
   auth: 'jwt',
   validate: {
     payload: {
-      health: Joi.object(),
-      isHealth: Joi.boolean().required(),
-      expense: Joi.object(),
       isExpense: Joi.boolean().required(),
+      isHealth: Joi.boolean().required(),
+      HealthList: Joi.array(),
+      ExpenseList: Joi.array(),
+      selectedOptionHealth1: Joi.string().required(),
+      selectedOptionHealth2: Joi.string().required(),
+      selectedOptionHealth3: Joi.string().required(),
+      selectedOptionExpense1: Joi.string().required(),
+      selectedOptionExpense2: Joi.string().required(),
+      selectedOptionExpense3: Joi.string().required(),
     },
   },
 
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
-    const { health, isHealth, expense, isExpense } = request.payload;
+    const { isExpense, isHealth, HealthList, ExpenseList, selectedOptionHealth1,
+    selectedOptionHealth2, selectedOptionHealth3, selectedOptionExpense1,
+    selectedOptionExpense2, selectedOptionExpense3 } = request.payload;
     const insurerUser = user._id;
+    const health = { HealthList, selectedOptionHealth1, selectedOptionHealth2, selectedOptionHealth3}
+    const expense = { ExpenseList, selectedOptionExpense1, selectedOptionExpense2, selectedOptionExpense3}
     if(user.role == 'HR'){
       BenefitPlan.findOne({company:user.company})
         .then((benefitplan)=>{

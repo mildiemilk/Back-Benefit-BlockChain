@@ -1,6 +1,6 @@
 import Joi from 'joi';
 import Boom from 'boom';
-import { Insurer, Bidding, BiddingRelation } from '../models';
+import { Insurer, Bidding, BiddingRelation, Company } from '../models';
 import Config from '../../config/config';
 import moment from 'moment';
 
@@ -107,10 +107,43 @@ const getBidding = {
   },
 }
 
+const chooseFinalInsurer = {
+  tags: ['api'],
+  auth: 'jwt',
+
+  validate: {
+    payload: {
+      passwordToConfirm: Joi.string().required(),
+      insurerName: Joi.string().required(),
+    },
+  },
+  handler: (request, reply) => {
+    const { passwordToConfirm, insurerName } = request.payload;
+    const { user } = request.auth.credentials;
+    console.log(user);
+    if(user.role == 'HR'){
+      if (!user.comparePassword(passwordToConfirm)) {
+        reply(Boom.badData('Invalid password'));
+      } else {
+        Company.findOne({hr:user._id})
+          .then((company) =>{
+            company.companyInsurer = insurerName;
+            company.save().then((err)=>{
+              reply({ company, message:'เลือก broker เรียบร้อยแล้ว' });
+            });
+          })
+      }
+    }else{
+      reply(Boom.badData('This page for HR only'));
+    }
+  },
+};
+
 export default function(app) {
   app.route([
     { method: 'POST', path: '/bidding', config: bidding },
     { method: 'PUT', path: '/canclebidding', config: cancleBidding },
     { method: 'GET', path: '/getbidding', config: getBidding },
+    { method: 'POST', path: '/choosefinalinsurer', config: chooseFinalInsurer },
   ]);
 }
