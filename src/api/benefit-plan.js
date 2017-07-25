@@ -89,12 +89,12 @@ const editBenefitPlan = {
   },
 };
 
-const settingBenefit = {
+const settingBenefitPlan = {
   tags: ['api'],
   auth: 'jwt',
   validate: {
     payload: {
-      benefitPlans: Joi.array().items(Joi.object().required()),
+      benefitPlans: Joi.array().items(Joi.object()),
     },
   },
 
@@ -105,7 +105,40 @@ const settingBenefit = {
       User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
         u.company.benefitPlans = benefitPlans;
         u.company.save();
-        reply('success')
+        reply(u.company.benefitPlans)
+      });
+    }else{
+      reply(Boom.badData('This page for HR only'));
+    }
+  },
+};
+
+const getOptionPlan = {
+  tags: ['api'],
+  auth: 'jwt',
+
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    if(user.role == 'HR'){
+      BenefitPlan.findOne({company:user.company})
+      .then((benefitplan)=>{
+        reply(benefitplan);
+      });
+    }else{
+      reply(Boom.badData('This page for HR only'));
+    }
+  },
+};
+
+const getBenefitPlan = {
+  tags: ['api'],
+  auth: 'jwt',
+
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    if(user.role == 'HR'){
+      User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+        reply(u.company.benefitPlans)
       });
     }else{
       reply(Boom.badData('This page for HR only'));
@@ -117,6 +150,8 @@ export default function(app) {
   app.route([
     { method: 'POST', path: '/benefit-plan', config: benefitPlan },
     { method: 'POST', path: '/edit-benefit-plan', config: editBenefitPlan },
-    { method: 'POST', path: '/setting-benefit', config: settingBenefit },
+    { method: 'POST', path: '/set-benefit-plan', config: settingBenefitPlan },
+    { method: 'GET', path: '/get-option-plan', config: getOptionPlan },
+    { method: 'GET', path: '/get-benefit-plan', config: getBenefitPlan },
   ]);
 }
