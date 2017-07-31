@@ -1,8 +1,6 @@
 import mongoose from 'mongoose';
 import timestamps from 'mongoose-timestamp';
 import autoIncrement from 'mongoose-auto-increment';
-import mongoose_delete from 'mongoose-delete';
-import { User, Insurer } from '../models';
 const Schema = mongoose.Schema;
 
 const SimpleRequirementSchema = new mongoose.Schema ({

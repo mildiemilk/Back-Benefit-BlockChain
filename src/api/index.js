@@ -6,7 +6,8 @@ import SetPlan from './setPlan';
 import PostBox from './postBox';
 import Insurer from './insurer';
 import Bidding from './bidding';
-import BenefitPlan from './benefit-plan'
+import BenefitPlan from './benefit-plan';
+import UploadFile from './upload-file';
 
 export const register = (server, options, next) => {
   Register(server);
@@ -18,6 +19,7 @@ export const register = (server, options, next) => {
   Insurer(server);
   Bidding(server);
   BenefitPlan(server);
+  UploadFile(server);
   next();
 };
 export const test = (server, options, next) => {

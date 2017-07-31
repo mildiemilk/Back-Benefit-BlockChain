@@ -1,9 +1,6 @@
 import Joi from 'joi';
 import Boom from 'boom';
 import { Company, User } from '../models';
-import timestamps from 'mongoose-timestamp';
-
-
 
 const registerCompany = {
   auth: { strategy: 'jwt', scope: 'admin',},
@@ -33,7 +30,7 @@ const registerCompany = {
             company = new Company({ companyName, location, typeOfBusiness, hrDetail, numberOfEmployees, tel, companyBroker, companyInsurer, hr });
             company.save().then(() => {
               User.findOneAndUpdate({ _id: hr }, { $set: { company: company._id }}, () => {
-                console.log('create company complete!')
+                console.log('create company complete!');
               });
               reply({profile: company,
                 message: 'setting profile success'});
@@ -53,7 +50,7 @@ const getCompanyName  = {
     const { user } = request.auth.credentials;
     Company.findOne({ _id: user.company })
       .then((company) => {
-        reply({companyName:company.companyName})
+        reply({companyName:company.companyName});
       });
   }
 };

@@ -106,7 +106,7 @@ const forgotPassword = {
       });
 
   }
-}
+};
 
 export default function(server) {
   server.route([

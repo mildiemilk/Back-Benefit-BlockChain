@@ -1,8 +1,6 @@
 import Joi from 'joi';
 import Boom from 'boom';
 import { User } from '../models';
-import Config from '../../config/config';
-import timestamps from 'mongoose-timestamp';
 import moment from 'moment';
 
 const passwordPattern = /^(?=.*\d)(?=.*[A-Z]).{8,20}/;

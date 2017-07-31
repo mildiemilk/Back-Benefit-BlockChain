@@ -1,9 +1,7 @@
 import mongoose from 'mongoose';
 import timestamps from 'mongoose-timestamp';
 import autoIncrement from 'mongoose-auto-increment';
-import mongoose_delete from 'mongoose-delete';
-import { User } from '../models';
-const Schema = mongoose.Schema;
+//const Schema = mongoose.Schema;
 
 const PostBoxSchema = new mongoose.Schema ({
   simpleRequirementId:{type: Number, default: 0, unique: true },

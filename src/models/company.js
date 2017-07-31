@@ -2,7 +2,6 @@ import mongoose from 'mongoose';
 import timestamps from 'mongoose-timestamp';
 import autoIncrement from 'mongoose-auto-increment';
 import mongooseDelete from 'mongoose-delete';
-import { User, Bidding } from '../models';
 const Schema = mongoose.Schema;
 
 const CompanySchema = new mongoose.Schema ({

@@ -4,7 +4,7 @@ import path from 'path';
 module.exports = () => {
   const { env } = process;
 
-  const secretKey = env.APP_SECRET_KEY;
+  //const secretKey = env.APP_SECRET_KEY;
   const jwtKey = fs.readFileSync('./config/jwt.key');
   const jwtPub = fs.readFileSync('./config/jwt.key.pub');
 

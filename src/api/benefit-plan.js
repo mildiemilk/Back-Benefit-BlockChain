@@ -1,8 +1,6 @@
 import Joi from 'joi';
 import Boom from 'boom';
-import { User, BenefitPlan, MasterPlan } from '../models';
-import Config from '../../config/config';
-import moment from 'moment';
+import { User, BenefitPlan } from '../models';
 
 const benefitPlan = {
   tags: ['api'],
@@ -16,7 +14,7 @@ const benefitPlan = {
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
     const { plan } = request.payload;
-    const insurerUser = user._id;
+    //const insurerUser = user._id;
     if(user.role == 'HR'){
       BenefitPlan.findOne({ company: user.company }).then((benefitplan) => {
         if(benefitplan){
@@ -24,16 +22,16 @@ const benefitPlan = {
           benefitplan.save().then((err) => {
             if (!err)
               reply(benefitplan);
-            else reply(err)
+            else reply(err);
           });
         } else {
           User.findOne({_id:user._id}).then((user)=>{
-            const company = user.company
-            const benefitplan = new BenefitPlan({ plan, company })
+            const company = user.company;
+            const benefitplan = new BenefitPlan({ plan, company });
             benefitplan.save().then((err) => {
               if (!err)
                 reply(benefitplan);
-              else reply(err)
+              else reply(err);
             });
           });
         }
@@ -67,9 +65,9 @@ const editBenefitPlan = {
     const { isExpense, isHealth, HealthList, ExpenseList, selectedOptionHealth1,
     selectedOptionHealth2, selectedOptionHealth3, selectedOptionExpense1,
     selectedOptionExpense2, selectedOptionExpense3 } = request.payload;
-    const insurerUser = user._id;
-    const health = { HealthList, selectedOptionHealth1, selectedOptionHealth2, selectedOptionHealth3}
-    const expense = { ExpenseList, selectedOptionExpense1, selectedOptionExpense2, selectedOptionExpense3}
+    //const insurerUser = user._id;
+    const health = { HealthList, selectedOptionHealth1, selectedOptionHealth2, selectedOptionHealth3 };
+    const expense = { ExpenseList, selectedOptionExpense1, selectedOptionExpense2, selectedOptionExpense3 };
     if(user.role == 'HR'){
       BenefitPlan.findOne({company:user.company})
         .then((benefitplan)=>{
@@ -80,7 +78,7 @@ const editBenefitPlan = {
           benefitplan.save().then((err) => {
             if (!err)
               reply(benefitplan);
-            else reply(err)
+            else reply(err);
           });
         });
     }else{
@@ -105,7 +103,7 @@ const settingBenefit = {
       User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
         u.company.benefitPlans = benefitPlans;
         u.company.save();
-        reply('success')
+        reply('success');
       });
     }else{
       reply(Boom.badData('This page for HR only'));

@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import timestamps from 'mongoose-timestamp';
 import autoIncrement from 'mongoose-auto-increment';
 import mongooseDelete from 'mongoose-delete';
-const Schema = mongoose.Schema;
+//const Schema = mongoose.Schema;
 
 const BiddingSchema = new mongoose.Schema ({
   biddingId: { type: Number, default: 0, unique: true },

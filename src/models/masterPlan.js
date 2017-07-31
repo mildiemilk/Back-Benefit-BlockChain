@@ -1,9 +1,7 @@
-import bcrypt from 'bcrypt';
 import mongoose from 'mongoose';
 import timestamps from 'mongoose-timestamp';
 import autoIncrement from 'mongoose-auto-increment';
 import mongooseDelete from 'mongoose-delete';
-import { Company } from '../models';
 const Schema = mongoose.Schema;
 
 const masterPlanSchema = new mongoose.Schema ({

@@ -61,7 +61,7 @@ class MailerService {
       subject: this.getTemplateSubject(template),
     };
 
-    this.mailer.sendMail(mailOptions, (err, info) => {
+    this.mailer.sendMail(mailOptions, (err) => {
       if (err) {
         console.log(err);
       }
@@ -78,7 +78,7 @@ class MailerService {
       html: mailbody,
     };
 
-    this.mailer.sendMail(mailOption,(error,info) => {
+    this.mailer.sendMail(mailOption,(error) => {
       if (error) {
         console.log(error);
       }

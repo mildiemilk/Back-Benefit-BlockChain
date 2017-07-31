@@ -13,5 +13,4 @@ module.exports = {
     accountName: 'MILK',
     verifyEmailUrl: 'api/register-confirmation'
   }
-
-}
+};

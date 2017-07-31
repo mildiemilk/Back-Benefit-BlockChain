@@ -2,9 +2,6 @@ import Joi from 'joi';
 import Boom from 'boom';
 import { BrokerDetail } from '../models';
 import { User } from '../models';
-import timestamps from 'mongoose-timestamp';
-
-
 
 const createBrokerProfile = {
   auth: { strategy: 'jwt', scope: 'admin',},

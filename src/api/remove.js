@@ -1,7 +1,6 @@
 import Joi from 'joi';
 import Boom from 'boom';
 import { User } from '../models';
-import timestamps from 'mongoose-timestamp';
 
 const remove = {
   tags: ['api','remove'],

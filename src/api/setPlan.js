@@ -1,8 +1,5 @@
 import Joi from 'joi';
-import Boom from 'boom';
 import { MasterPlan } from '../models';
-import Config from '../../config/config';
-import timestamps from 'mongoose-timestamp';
 
 const createPlan = {
   tags: ['api'],
@@ -178,9 +175,9 @@ const deletePlan = {
     const { planId } = request.params;
     MasterPlan.findOneAndRemove({ planId }, (err) => {
       if (!err)
-        reply({message:'deleted complete!'})
-    })
-    
+        reply({message:'deleted complete!'});
+    });
+
   },
 };
 
@@ -200,9 +197,9 @@ const copyPlan = {
     const updateBy = user.role;
     MasterPlan.findOne({ planId })
       .then((masterPlan) => {
-        const planName = masterPlan.planName + ' (Copy)'
-        const company = masterPlan.company
-        const employeeOfPlan = masterPlan.employeeOfPlan
+        const planName = masterPlan.planName + ' (Copy)';
+        const company = masterPlan.company;
+        const employeeOfPlan = masterPlan.employeeOfPlan;
         let newPlan = new MasterPlan({ planName, company, employeeOfPlan, updateBy });
         newPlan.save().then(() => {
           MasterPlan.findOneAndUpdate({ planId: newPlan.planId }, { $set:

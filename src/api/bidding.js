@@ -1,8 +1,6 @@
 import Joi from 'joi';
 import Boom from 'boom';
 import { Insurer, Bidding, BiddingRelation, Company } from '../models';
-import Config from '../../config/config';
-import moment from 'moment';
 
 const bidding = {
   tags: ['api'],
@@ -24,7 +22,7 @@ const bidding = {
           BiddingRelation.findOne({hr:user._id})
             .then((biddingrelation) =>{
               const index = biddingrelation.insurers.findIndex((element) => {
-                return element.insurerName === insurer.insurerName
+                return element.insurerName === insurer.insurerName;
               });
               biddingrelation.status[index] = 'join';
               biddingrelation.markModified('status');
@@ -32,11 +30,10 @@ const bidding = {
                 console.log(err);
               });
             });
-          console.log(insurer.insurerName)
           Bidding.findOne({insurerName:insurer.insurerName, status:'valid'})
             .then((nowBidding) => {
               if(nowBidding){
-                nowBidding.status = 'invalid'
+                nowBidding.status = 'invalid';
                 nowBidding.save();
                 const status = 'valid';
                 const insurerName = insurer.insurerName;
@@ -46,10 +43,10 @@ const bidding = {
                 bidding.save().then((err) => {
                   if (!err)
                     reply(bidding);
-                  else reply(err)
+                  else reply(err);
                 });
               }else{
-                const status = 'valid'
+                const status = 'valid';
                 const insurerName = insurer.insurerName;
                 const timeOfBidding = 1;
                 const hr = hrId;
@@ -57,7 +54,7 @@ const bidding = {
                 bidding.save().then((err) => {
                   if (!err)
                     reply(bidding);
-                  else reply(err)
+                  else reply(err);
                 });
               }
             });
@@ -81,7 +78,7 @@ const cancleBidding = {
           BiddingRelation.findOne({hr:user._id})
             .then((biddingrelation) =>{
               const index = biddingrelation.insurers.findIndex((element) => {
-                return element.insurerName === insurer.insurerName
+                return element.insurerName === insurer.insurerName;
               });
               biddingrelation.status[index] = 'cancel';
               biddingrelation.markModified('status');
@@ -105,7 +102,7 @@ const getBidding = {
       reply(bidding);
     });
   },
-}
+};
 
 const chooseFinalInsurer = {
   tags: ['api'],
@@ -128,10 +125,10 @@ const chooseFinalInsurer = {
         Company.findOne({hr:user._id})
           .then((company) =>{
             company.companyInsurer = insurerName;
-            company.save().then((err)=>{
+            company.save().then(()=>{
               reply({ company, message:'เลือก broker เรียบร้อยแล้ว' });
             });
-          })
+          });
       }
     }else{
       reply(Boom.badData('This page for HR only'));
