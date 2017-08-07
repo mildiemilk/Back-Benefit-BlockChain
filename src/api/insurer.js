@@ -102,7 +102,7 @@ const setTimeout = {
     const { timeout } = request.payload;
     const { user } = request.auth.credentials;
     if(user.role == 'HR'){
-      SimpleRequirement.findOneAndUpdate({ hr: user._id },{ timeout }, (err) => {
+      BiddingRelation.findOneAndUpdate({ hr: user._id },{ timeout }, (err) => {
         if (err) console.log(err);
         reply(timeout);
       });

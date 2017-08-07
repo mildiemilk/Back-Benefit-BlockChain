@@ -255,7 +255,7 @@ const getAllPlan = {
 
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
-    MasterPlan.find({ company: user.company }, function(err, plans) {
+    MasterPlan.find({ company: user.company }).sort({planId: 1}).exec(function(err, plans) {
       if (err) throw err;
       reply(plans);
     });

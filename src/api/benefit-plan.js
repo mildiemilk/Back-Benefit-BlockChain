@@ -103,7 +103,7 @@ const settingBenefitPlan = {
       User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
         u.company.benefitPlans = benefitPlans;
         u.company.save();
-        reply(u.company.benefitPlans)
+        reply(u.company.benefitPlans);
       });
     }else{
       reply(Boom.badData('This page for HR only'));

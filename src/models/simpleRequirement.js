@@ -18,7 +18,6 @@ const SimpleRequirementSchema = new mongoose.Schema ({
   year:{ type: String, default: null, required:true },
   hr: { type: Schema.Types.ObjectId, ref: "User", required:true },
   insurers: { type: Array },
-  timeout: { type : Date, default: null }
 });
 
 

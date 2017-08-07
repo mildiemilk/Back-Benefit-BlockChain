@@ -7,8 +7,9 @@ const Schema = mongoose.Schema;
 const BiddingRelationSchema = new mongoose.Schema ({
   BiddingrelationId: {type: Number, default: 0, unique: true},
   insurers: { type: Array },
-  status: { type: Array, required: true},
+  status: { type: Array },
   hr: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  timeout: { type : Date, default: null },
 });
 
 
