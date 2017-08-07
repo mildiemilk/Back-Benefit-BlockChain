@@ -16,18 +16,15 @@ const simpleRequirements = {
       life: Joi.boolean().required(),
       other: Joi.boolean().required(),
       otherDes: Joi.string().allow(''),
-      day: Joi.string().required(),
-      month: Joi.string().required(),
-      year: Joi.string().required(),
+      date: Joi.date().required(),   
     },
   },
   handler: (request, reply) => {
-    const { numberOfEmployee, typeOfInsurance, IPD, OPD, dental, life, other, otherDes, day, month, year } = request.payload;
+    const { numberOfEmployee, typeOfInsurance, IPD, OPD, dental, life, other, otherDes, date } = request.payload;
     const { user } = request.auth.credentials;
     let hr = user._id;
-    console.log(user);
     if(user.role == 'HR'){
-      let simpleRequirement = new SimpleRequirement({ numberOfEmployee, typeOfInsurance, IPD, OPD, dental, life, other, otherDes, day, month, year, hr });
+      let simpleRequirement = new SimpleRequirement({ numberOfEmployee, typeOfInsurance, IPD, OPD, dental, life, other, otherDes, hr, date });
       simpleRequirement.save().then(() => {
         reply({ message:'กรอก simpleRequirement เรียนร้อยแล้ว',
           numberOfEmployee:numberOfEmployee,
@@ -38,9 +35,24 @@ const simpleRequirements = {
           life:life,
           other:other,
           otherDes:otherDes,
-          day:day,
-          month:month,
-          year:year });
+          date:date, });
+      });
+    }else{
+      reply(Boom.badData('This page for HR only'));
+    }
+  },
+};
+
+const getSimpleRequirements = {
+  tags: ['api'],
+  auth: 'jwt',
+
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    if(user.role == 'HR'){
+      SimpleRequirement.findOne({ hr: user._id })
+      .then((simpleRequirement) => {
+        reply(simpleRequirement);
       });
     }else{
       reply(Boom.badData('This page for HR only'));
@@ -51,5 +63,6 @@ const simpleRequirements = {
 export default function(app) {
   app.route([
     { method: 'POST', path: '/simpleRequirement', config: simpleRequirements },
+    { method: 'GET', path: '/getSimpleRequirement', config: getSimpleRequirements},
   ]);
 }

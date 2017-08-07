@@ -13,9 +13,7 @@ const SimpleRequirementSchema = new mongoose.Schema ({
   life:{ type: Boolean, required: true },
   other:{ type: Boolean, required: true },
   otherDes:{ type: String, default: null },
-  day:{ type: String, default: null, required:true },
-  month:{ type: String, default: null, required:true },
-  year:{ type: String, default: null, required:true },
+  date: { type : Date, default: null },
   hr: { type: Schema.Types.ObjectId, ref: "User", required:true },
   insurers: { type: Array },
 });
