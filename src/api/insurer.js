@@ -1,6 +1,6 @@
 import Joi from 'joi';
 import Boom from 'boom';
-import { Insurer, SimpleRequirement, BiddingRelation } from '../models';
+import { Insurer, BiddingRelation } from '../models';
 
 const createInsurer = {
   tags: ['api'],
@@ -121,7 +121,6 @@ const getSelectInsurer = {
     if(user.role == 'HR'){
       BiddingRelation.findOne({ hr: user._id })
       .then((biddingrelation) => {
-        console.log(biddingrelation);
         reply(biddingrelation.insurers);
       });
     }else{
@@ -130,6 +129,22 @@ const getSelectInsurer = {
   },
 };
 
+const getTimeout = {
+  tags: ['api'],
+  auth: 'jwt',
+
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    if(user.role == 'HR'){
+      BiddingRelation.findOne({ hr: user._id })
+      .then((biddingrelation) => {
+        reply(biddingrelation.timeout);
+      });
+    }else{    
+      reply(Boom.badData('This page for HR only'));
+    }
+  },
+};
 
 export default function(app) {
   app.route([
@@ -137,6 +152,7 @@ export default function(app) {
     { method: 'GET', path: '/getAllInsurer', config: getAllInsurer },
     { method: 'PUT', path: '/chooseInsurer', config: chooseInsurer },
     { method: 'PUT', path: '/setTimeout', config: setTimeout },
+    { method: 'GET', path: '/getTimeout', config: getTimeout },
     { method: 'GET', path: '/getSelectInsurer', config: getSelectInsurer },
   ]);
 }
