@@ -101,7 +101,11 @@ const settingBenefitPlan = {
     const { benefitPlans } = request.payload;
     if(user.role == 'HR'){
       User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
-        u.company.benefitPlans = benefitPlans;
+        const benefits = { 
+          benefitPlans: benefitPlans,
+          timeout: null,
+        };
+        u.company.benefitPlans = benefits;
         u.company.save();
         reply(u.company.benefitPlans);
       });
@@ -144,6 +148,33 @@ const getBenefitPlan = {
   },
 };
 
+const setTimeout = {
+  tags: ['api'],
+  auth: 'jwt',
+  validate: {
+    payload: {
+      timeout: Joi.date().required(),
+    },
+  },
+  handler: (request, reply) => {
+    const { timeout } = request.payload;
+    const { user } = request.auth.credentials;
+    if(user.role == 'HR'){
+      User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+        const benefitPlans = { 
+          benefitPlans: u.company.benefitPlans,
+          timeout: timeout,
+        };
+        u.company.benefitPlans = benefitPlans;
+        u.company.save();
+        reply(u.company.benefitPlans);
+      });
+    }else{
+      reply(Boom.badData('This page for HR only'));
+    }
+  },
+};
+
 export default function(app) {
   app.route([
     { method: 'POST', path: '/benefit-plan', config: benefitPlan },
@@ -151,5 +182,6 @@ export default function(app) {
     { method: 'POST', path: '/set-benefit-plan', config: settingBenefitPlan },
     { method: 'GET', path: '/get-option-plan', config: getOptionPlan },
     { method: 'GET', path: '/get-benefit-plan', config: getBenefitPlan },
+    { method: 'POST', path: '/set-benefit-timeout', config: setTimeout },
   ]);
 }
