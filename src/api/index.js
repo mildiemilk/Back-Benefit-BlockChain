@@ -8,6 +8,7 @@ import Insurer from './insurer';
 import Bidding from './bidding';
 import BenefitPlan from './benefit-plan';
 import UploadFile from './upload-file';
+import UserDetail from './userDetail'
 
 export const register = (server, options, next) => {
   Register(server);
@@ -20,6 +21,7 @@ export const register = (server, options, next) => {
   Bidding(server);
   BenefitPlan(server);
   UploadFile(server);
+  UserDetail(server);
   next();
 };
 export const test = (server, options, next) => {

@@ -16,7 +16,10 @@ const UserSchema = new mongoose.Schema ({
   resetPasswordToken: String,
   removedAt: { type: Date, default: null },
   resetPasswordExpires: Date,
-  approveFile: {type: Boolean,default:false},
+  approveFile: {type: Boolean, default:false},
+  phone: { type: String },
+  personalEmail: { type: String },
+  personalVerify: {type: Boolean}
 });
 
 UserSchema.pre('save', function(next) {

@@ -14,28 +14,31 @@ const login = {
   },
   handler: (request, reply) => {
     const { email, password } = request.payload;
-
     User.findOne({ email })
-      .then((user) => {
-        if (!user || user.emailConfirmedAt === null) {
-          if(!user){
-            reply(Boom.unauthorized('Invalid email or password'));
-          }else{
-            reply(Boom.unauthorized('please verify email'));
-          }
+    .then((user) => {
+      if (!user || user.emailConfirmedAt === null) {
+        if (!user){
+          reply(Boom.unauthorized('Invalid email or password'));
         } else {
-          if (!user.comparePassword(password)) {
-            reply(Boom.unauthorized('Invalid email or password'));
-          } else {
-            const { auth } = request.server.app.services;
-            const token = auth.createAuthToken(user);
-            reply({token,
-              Havecompany: user.company,
-              Approve: user.approveFile,
-              role: user.role});
-          }
+          reply(Boom.unauthorized('please verify email'));
         }
-      });
+      } else {
+        if (!user.comparePassword(password)) {
+          reply(Boom.unauthorized('Invalid email or password'));
+        } else {
+          const { auth } = request.server.app.services;
+          const token = auth.createAuthToken(user);
+          console.log(user)
+          reply({
+            token,
+            Havecompany: user.company,
+            Approve: user.approveFile,
+            role: user.role,
+            personalVerify: user.personalVerify
+          });
+        }
+      }
+    });
   },
 };
 
@@ -50,38 +53,25 @@ const logout = {
 const changepassword = {
   tags: ['auth','api'],
   auth: 'jwt',
-
   validate: {
     payload: {
-      password: Joi.string().required().trim().regex(passwordPattern),
-      newpassword: Joi.string().required().trim().regex(passwordPattern),
-      repassword: Joi.string().required().trim().regex(passwordPattern),
+      password: Joi.string().required(),
+      // newpassword: Joi.string().required().trim().regex(passwordPattern),
+      confirmPassword: Joi.string().required(),
     },
   },
-
   handler: (request, reply) => {
-    const { password, newpassword, repassword } = request.payload;
+    const { password, confirmPassword } = request.payload;
     const { user } = request.auth.credentials;
     if (user) {
-      if(user.comparePassword(password)){
-        if(newpassword === repassword){
-          user.password = newpassword;
-          user.save(function(err){
-            if (err) throw err;
-            reply('Password has changed.');
-          });
-        }else{
-          reply(Boom.badData('Please fill new password again!'));
-        }
-      }else{
-        reply(Boom.badData('Password is not correct!'));
-      }
-    }else{
-      reply(Boom.badData('Your e-mail is not correct!'));
+      user.password = password;
+      user.save(function(err) {
+        if (err) throw err;
+        reply('Change Password Complete.');
+      })
     }
   },
 };
-
 
 const forgotPassword = {
   tags: ['api'],
@@ -92,19 +82,16 @@ const forgotPassword = {
   },
   handler: (request, reply) => {
     const { email} = request.payload;
-
     User.findOne({ email })
-      .then((user) => {
-
-        if (user) {
-          user.save().then(() => {
-            const { mailer } = request.server.app.services;
-            mailer.sentMailForgotPasswordLink(email);
-            reply({ message:'please check your email'});
-          });
-        }
-      });
-
+    .then((user) => {
+      if (user) {
+        user.save().then(() => {
+          const { mailer } = request.server.app.services;
+          mailer.sentMailForgotPasswordLink(email);
+          reply({ message:'please check your email'});
+        });
+      }
+    });
   }
 };
 
@@ -113,6 +100,6 @@ export default function(server) {
     { method: 'POST', path: '/login', config: login },
     { method: 'GET', path: '/logout', config: logout },
     { method: 'POST', path: '/forgot-password', config: forgotPassword },
-    { method: 'POST', path: '/user/change-password', config: changepassword },
+    { method: 'PUT', path: '/user/change-password', config: changepassword },
   ]);
 }
