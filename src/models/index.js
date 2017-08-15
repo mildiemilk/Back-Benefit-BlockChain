@@ -7,6 +7,7 @@ import MasterPlanModel from './masterPlan';
 import BiddingModel from './bidding';
 import BiddingRelationModel from './biddingRelation';
 import BenefitPlanModel from './benefit-plan';
+import MediaModel from './media';
 
 export const User = UserModel;
 export const Company = CompanyModel;
@@ -17,6 +18,7 @@ export const MasterPlan = MasterPlanModel;
 export const Bidding = BiddingModel;
 export const BiddingRelation = BiddingRelationModel;
 export const BenefitPlan = BenefitPlanModel;
+export const Media = MediaModel;
 
 export default {
   User,
@@ -28,4 +30,5 @@ export default {
   Bidding,
   BiddingRelation,
   BenefitPlan,
+  Media,
 };

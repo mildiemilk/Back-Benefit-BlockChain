@@ -4,30 +4,29 @@ import aws from 'aws-sdk';
 const uploadFile = {
   tags: ['api'],
   auth: 'jwt',
-  validate: {
-    payload: {
-      files: Joi.array().items(Joi.object())
-    },
+  payload: {
+    output: 'stream',
+    parse: true,
+    allow: 'multipart/form-data'
   },
 
   handler: (request, reply) => {
-    const {env} = process;
-    aws.config.update({
-      accessKeyId: env.AWS_ACCESS_KEY,
-      secretAccessKey: env.AWS_SECRET_KEY,
-      region:'ap-southeast-1'
-    });
-    let s3 = new aws.S3();
-    let myBucket = 'benefitable-dev';
-    let myKey = 'test.txt';
-    const { files } = request.payload;
-    const params = {Bucket: myBucket, Key: myKey, Body: files[0]};
+    const { file } = request.payload;
+    const { storage } = request.server.app.services;
+    const { user } = request.auth.credentials;
 
-    s3.putObject(params, function(err) {
+    storage.upload({ file }, (err, media) => {
       if (err) {
         reply(err);
       } else {
-        reply({message:'Successfully uploaded data to myBucket/myKey'});
+        media.userId = user.id;
+        media.save(err => {
+          if (err) {
+            throw err;
+          }
+
+          reply({ media });
+        });
       }
     });
   },

@@ -20,9 +20,9 @@ const updatePersonalDetails = {
       user.personalVerify = true;
       user.save(function(err) {
         if (err) {
-            reply({ error: err });
+          reply({ error: err });
         } else {
-            reply(user)
+          reply(user)
         }
       })
     }

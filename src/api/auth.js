@@ -28,7 +28,6 @@ const login = {
         } else {
           const { auth } = request.server.app.services;
           const token = auth.createAuthToken(user);
-          console.log(user)
           reply({
             token,
             Havecompany: user.company,
