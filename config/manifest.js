@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import aws from 'aws-sdk';
 
 module.exports = () => {
   const { env } = process;
@@ -7,6 +8,11 @@ module.exports = () => {
   //const secretKey = env.APP_SECRET_KEY;
   const jwtKey = fs.readFileSync('./config/jwt.key');
   const jwtPub = fs.readFileSync('./config/jwt.key.pub');
+
+  aws.config.update({
+    accessKeyId: env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
+  });
 
   const serviceOptions = {
     auth: { jwtKey, jwtPub },

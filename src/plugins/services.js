@@ -1,6 +1,7 @@
 import secret from '../../config/secret';
 import AuthService from '../services/auth';
 import MailerService from '../services/mailer';
+import StorageService from '../services/storage';
 import Config from '../../config/config';
 
 export const register = (plugin, options, next) => {
@@ -23,6 +24,11 @@ export const register = (plugin, options, next) => {
     tlsL:{
       rejectUnauthorized: false
     }
+  });
+
+  services.storage = new StorageService({
+    bucket: process.env.APP_BUCKET,
+    region: process.env.AWS_REGION,
   });
 
   plugin.app.services = services;
