@@ -28,7 +28,6 @@ const login = {
         } else {
           const { auth } = request.server.app.services;
           const token = auth.createAuthToken(user);
-          console.log(user)
           reply({
             token,
             Havecompany: user.company,
@@ -61,14 +60,14 @@ const changepassword = {
     },
   },
   handler: (request, reply) => {
-    const { password, confirmPassword } = request.payload;
+    const { password } = request.payload;
     const { user } = request.auth.credentials;
     if (user) {
       user.password = password;
       user.save(function(err) {
         if (err) throw err;
         reply('Change Password Complete.');
-      })
+      });
     }
   },
 };
