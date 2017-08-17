@@ -4,6 +4,7 @@ import merge from 'lodash/merge';
 import tmp from 'tmp';
 import crypto from 'crypto';
 import { Media } from '../models';
+import fs from 'fs';
 
 class StorageService {
   constructor(options) {
@@ -45,7 +46,7 @@ class StorageService {
           mime: info.mime,
         });
 
-        callback(err, media)
+        callback(err, media);
       }
     });
   }
@@ -65,6 +66,43 @@ class StorageService {
 
     return `${pad(c1)}/${pad(c2)}/${hash}.${ext}`;
   }
+
+  getUrl(data, callback) {
+    const path = data;
+
+    const params = {
+      Bucket: this.bucket,
+      Key: path,
+    };
+
+    this.s3.getSignedUrl('getObject', params, (err, url) => {
+      if (err) {
+        callback(err, null);
+      } else {
+        console.log('the url of the file is', url);
+        callback(err, url);
+      }
+      
+    });
+  }
+
+  download(data, callback) {
+    const path = data;
+
+    const params = {
+      Bucket: this.bucket,
+      Key: path,
+    };
+
+    this.s3.getObject(params, (err, data) => {
+      if (err) {
+        callback(err, null);
+      } else {
+        callback(err, data);
+      }
+    });
+  }
+
 }
 
 export default StorageService;
