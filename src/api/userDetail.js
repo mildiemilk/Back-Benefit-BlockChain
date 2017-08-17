@@ -1,6 +1,4 @@
 import Joi from 'joi';
-import Boom from 'boom';
-import { User } from '../models';
 
 const updatePersonalDetails = {
   tags: ['auth','api'],
@@ -22,9 +20,9 @@ const updatePersonalDetails = {
         if (err) {
           reply({ error: err });
         } else {
-          reply(user)
+          reply(user);
         }
-      })
+      });
     }
   },
 };
