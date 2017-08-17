@@ -162,7 +162,7 @@ const setTimeout = {
     if(user.role == 'HR'){
       User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
         const benefitPlans = { 
-          benefitPlans: u.company.benefitPlans,
+          benefitPlans: u.company.benefitPlans.benefitPlans,
           timeout: timeout,
         };
         u.company.benefitPlans = benefitPlans;
