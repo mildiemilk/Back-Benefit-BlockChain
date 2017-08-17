@@ -60,14 +60,14 @@ const changepassword = {
     },
   },
   handler: (request, reply) => {
-    const { password, confirmPassword } = request.payload;
+    const { password } = request.payload;
     const { user } = request.auth.credentials;
     if (user) {
       user.password = password;
       user.save(function(err) {
         if (err) throw err;
         reply('Change Password Complete.');
-      })
+      });
     }
   },
 };

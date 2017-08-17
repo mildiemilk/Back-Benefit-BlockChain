@@ -1,5 +1,5 @@
 import Joi from 'joi';
-import aws from 'aws-sdk';
+import { Media } from '../models';
 
 const uploadFile = {
   tags: ['api'],
@@ -24,7 +24,6 @@ const uploadFile = {
           if (err) {
             throw err;
           }
-
           reply({ media });
         });
       }
@@ -32,33 +31,63 @@ const uploadFile = {
   },
 };
 
-const getFile = {
+const getUrl = {
   tags: ['api'],
   auth: 'jwt',
+  validate: {
+    params: {
+      path: Joi.string().required(),
+    },
+  },
   handler: (request, reply) => {
-    const {env} = process;
-    aws.config.update({
-      accessKeyId: env.AWS_ACCESS_KEY,
-      secretAccessKey: env.AWS_SECRET_KEY,
-      region:'ap-southeast-1'
-    });
-    let s3 = new aws.S3();
-    let myBucket = 'benefitable-dev';
-    let myKey = 'test.txt';
-    const getParams = {Bucket: myBucket, Key: myKey};
-    s3.getObject(getParams, function(err, data) {
-      if (err)
-        return err;
-      let objectData = data.Body.toString('utf-8');
-      reply(objectData);
+    const { path } = request.params;
+    const { storage } = request.server.app.services;
+
+    storage.getUrl(path, (err, url) => {
+      if (err) {
+        reply(err);
+      } else {
+        reply(url);
+      }
     });
   },
 };
 
+const downloadfile = {
+  tags: ['api'],
+  auth: 'jwt',
+  validate: {
+    params: {
+      path: Joi.string().required(),
+    },
+  },
+  handler: (request, reply) => {
+    const { path } = request.params;
+    const { storage } = request.server.app.services;
+    console.log('path: ',path);
+    storage.download(path, (err, data) => {
+      if (err) {
+        reply(err);
+      } else {
+        Media.findOne({ path }, (err, media) => {
+          if (err) {
+            reply(err);
+          } else {
+            console.log(data);
+            const filename = 'attachment; filename='+ media.name + ';';
+            reply(data.Body).header('Content-Type', data.ContentType)
+            .header('content-disposition', filename);
+          }
+        });
+      }
+    });
+  },
+};
 
 export default function(app) {
   app.route([
     { method: 'POST', path: '/uploadfile', config: uploadFile },
-    { method: 'GET', path: '/getfile', config: getFile },
+    { method: 'GET', path: '/geturl/{path}', config: getUrl },
+    { method: 'GET', path: '/downloadfile/{path}', config: downloadfile }
   ]);
 }
