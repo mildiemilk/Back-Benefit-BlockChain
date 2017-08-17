@@ -42,23 +42,37 @@ const registerCompany = {
   },
 };
 
-const getCompanyName  = {
+const setLogo = {
   auth: { strategy: 'jwt', scope: 'admin',},
   tags: ['admin', 'api'],
+  payload: {
+    output: 'stream',
+    parse: true,
+    allow: 'multipart/form-data'
+  },
 
   handler: (request, reply) => {
+    const { file } = request.payload;
+    const { storage } = request.server.app.services;
     const { user } = request.auth.credentials;
-    Company.findOne({ _id: user.company })
-      .then((company) => {
-        reply({companyName:company.companyName});
-      });
+
+    storage.upload({ file }, (err, media) => {
+      if (!err) {
+        media.userId = user.id;
+        media.save();
+        User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+          u.company.logo = media._id;
+          u.company.save();
+          reply(u.company);
+        });
+      }
+    });
   }
 };
-
 
 export default function(app) {
   app.route([
     { method: 'POST', path: '/registerCompany', config: registerCompany },
-    { method: 'GET', path: '/getCompanyName', config: getCompanyName },
+    { method: 'PUT', path: '/set-logo', config: setLogo },
   ]);
 }

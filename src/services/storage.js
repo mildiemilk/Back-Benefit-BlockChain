@@ -4,7 +4,6 @@ import merge from 'lodash/merge';
 import tmp from 'tmp';
 import crypto from 'crypto';
 import { Media } from '../models';
-import fs from 'fs';
 
 class StorageService {
   constructor(options) {
@@ -79,7 +78,6 @@ class StorageService {
       if (err) {
         callback(err, null);
       } else {
-        console.log('the url of the file is', url);
         callback(err, url);
       }
       
