@@ -37,8 +37,8 @@ const login = {
                 storage.getUrl(path, (err, url) => {
                   reply({
                     token,
-                    companyName: u.company.companyName || null,
-                    logo: url || null,
+                    companyName: u.company.companyName || '',
+                    logo: url || '',
                     Approve: user.approveFile,
                     role: user.role,
                     personalVerify: user.personalVerify,
@@ -48,8 +48,8 @@ const login = {
             } else {
               reply({
                 token,
-                companyName: null,
-                logo: null,
+                companyName: '',
+                logo: '',
                 Approve: user.approveFile,
                 role: user.role,
                 personalVerify: user.personalVerify,

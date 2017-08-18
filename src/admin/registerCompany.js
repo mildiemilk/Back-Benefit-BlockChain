@@ -61,9 +61,13 @@ const setLogo = {
         media.userId = user.id;
         media.save();
         User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
-          u.company.logo = media._id;
-          u.company.save();
-          reply(u.company);
+          storage.getUrl(media.path, (err, url) => {
+            if (!err) {
+              u.company.logo = media._id;
+              u.company.save();
+              reply({logo: url});
+            }
+          });
         });
       }
     });
