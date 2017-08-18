@@ -29,21 +29,33 @@ const login = {
           const { auth } = request.server.app.services;
           const token = auth.createAuthToken(user);
           User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
-            Media.findOne({ _id: u.company.logo }).populate('logo').exec((err, l) => {
-              const { path } = l;
-              const { storage } = request.server.app.services;
+            if (u.company) {
+              Media.findOne({ _id: u.company.logo }).populate('logo').exec((err, l) => {
+                const { path } = l;
+                const { storage } = request.server.app.services;
 
-              storage.getUrl(path, (err, url) => {
-                reply({
-                  token,
-                  companyName: u.company.companyName || null,
-                  logo: url || null,
-                  Approve: user.approveFile,
-                  role: user.role,
-                  personalVerify: user.personalVerify,
+                storage.getUrl(path, (err, url) => {
+                  reply({
+                    token,
+                    companyName: u.company.companyName || null,
+                    logo: url || null,
+                    Approve: user.approveFile,
+                    role: user.role,
+                    personalVerify: user.personalVerify,
+                  });
                 });
               });
-            });
+            } else {
+              reply({
+                token,
+                companyName: null,
+                logo: null,
+                Approve: user.approveFile,
+                role: user.role,
+                personalVerify: user.personalVerify,
+              });
+            }
+            
           });
           
         }
