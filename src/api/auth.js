@@ -39,7 +39,7 @@ const login = {
                     token,
                     companyName: u.company.companyName || '',
                     logo: url || '',
-                    Approve: user.approveFile,
+                    approve: user.approveFile,
                     role: user.role,
                     personalVerify: user.personalVerify,
                   });
@@ -50,7 +50,7 @@ const login = {
                 token,
                 companyName: '',
                 logo: '',
-                Approve: user.approveFile,
+                approve: user.approveFile,
                 role: user.role,
                 personalVerify: user.personalVerify,
               });
