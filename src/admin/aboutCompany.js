@@ -102,36 +102,34 @@ const uploadEmployee = {
       let file = fs.createWriteStream(path);
 
       file.on('error', function (err) { 
-        console.error(err) 
+        console.error(err); 
       });
-
       data.pipe(file);
-
       data.on('end', function (err) { 
         let ret = {
           filename: data.hapi.filename,
           headers: data.hapi.headers
-        }
+        };
         reply(JSON.stringify(ret));
-      })
+      });
     }
-    // storage.upload({ file }, { info }, (err, media) => {
-    //   console.log('media', media);
-    //   if (!err) {
-    //     media.userId = user.id;
-    //     media.save();
-    //     User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
-    //       storage.getUrl(media.path, (err, url) => {
-    //         if (!err) {
-    //           console.log('upload complete');
-    //           u.company.fileEmployee = media._id;
-    //           u.company.save();
-    //           reply({FileEmpolyee: url});
-    //         }
-    //       });
-    //     });
-    //   }
-    // });
+    storage.upload({ file }, { info }, (err, media) => {
+      console.log('media', media);
+      if (!err) {
+        media.userId = user.id;
+        media.save();
+        User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+          storage.getUrl(media.path, (err, url) => {
+            if (!err) {
+              console.log('upload complete');
+              u.company.fileEmployee = media._id;
+              u.company.save();
+              reply({fileEmployee: url});
+            }
+          });
+        });
+      }
+    });
   }
 };
 export default function(app) {
