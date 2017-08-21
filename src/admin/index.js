@@ -1,11 +1,11 @@
-import RegisterCompany from './registerCompany';
+import AboutCompany from './aboutCompany';
 import EditCompany from './editCompany';
 import Approve from './approve';
 import CreateBrokerProfile from './createBrokerProfile';
 import FillSimpleRequirement from './fillSimpleRequirement';
 
 export const register = (server, options, next) => {
-  RegisterCompany(server);
+  AboutCompany(server);
   EditCompany(server);
   Approve(server);
   CreateBrokerProfile(server);

@@ -40,7 +40,8 @@
     "nodemailer": "^4.0.1",
     "nodemailer-ses-transport": "^1.5.1",
     "tmp": "^0.0.33",
-    "vision": "^4.1.1"
+    "vision": "^4.1.1",
+    "xlsx-to-json-lc": "^0.4.1"
   },
   "devDependencies": {
     "babel-cli": "^6.24.1",

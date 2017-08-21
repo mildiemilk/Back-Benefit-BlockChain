@@ -1,5 +1,6 @@
 import Joi from 'joi';
 import Boom from 'boom';
+import fs from 'fs';
 import { Company, User } from '../models';
 
 const registerCompany = {
@@ -56,7 +57,9 @@ const setLogo = {
     const { storage } = request.server.app.services;
     const { user } = request.auth.credentials;
 
-    storage.upload({ file }, (err, media) => {
+    storage.upload({ file }, null, (err, media) => {
+      console.log('err', err);
+      console.log('media', media);
       if (!err) {
         media.userId = user.id;
         media.save();
@@ -74,9 +77,67 @@ const setLogo = {
   }
 };
 
+const uploadEmployee = {
+  auth: { strategy: 'jwt', scope: 'admin',},
+  tags: ['admin', 'api'],
+  payload: {
+    output: 'stream',
+    parse: true,
+    allow: 'multipart/form-data'
+  },
+
+  handler: (request, reply) => {
+    const { file } = request.payload;
+    const data = file;
+    console.log('file', data);
+    const { storage } = request.server.app.services;
+    const { user } = request.auth.credentials;
+    const info = {ext:'xlsx', mime: 'vsd.ms-excel'};
+
+    if (data) {
+      console.log('yey');
+      let name = data.hapi.filename;
+      let path = __dirname + "/" + name;
+      console.log('path', path);
+      let file = fs.createWriteStream(path);
+
+      file.on('error', function (err) { 
+        console.error(err) 
+      });
+
+      data.pipe(file);
+
+      data.on('end', function (err) { 
+        let ret = {
+          filename: data.hapi.filename,
+          headers: data.hapi.headers
+        }
+        reply(JSON.stringify(ret));
+      })
+    }
+    // storage.upload({ file }, { info }, (err, media) => {
+    //   console.log('media', media);
+    //   if (!err) {
+    //     media.userId = user.id;
+    //     media.save();
+    //     User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+    //       storage.getUrl(media.path, (err, url) => {
+    //         if (!err) {
+    //           console.log('upload complete');
+    //           u.company.fileEmployee = media._id;
+    //           u.company.save();
+    //           reply({FileEmpolyee: url});
+    //         }
+    //       });
+    //     });
+    //   }
+    // });
+  }
+};
 export default function(app) {
   app.route([
     { method: 'POST', path: '/registerCompany', config: registerCompany },
     { method: 'PUT', path: '/set-logo', config: setLogo },
+    { method: 'PUT', path: '/upload-employee', config: uploadEmployee },
   ]);
 }

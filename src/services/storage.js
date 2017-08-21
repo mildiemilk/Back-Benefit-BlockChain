@@ -12,11 +12,15 @@ class StorageService {
     this.bucket = options.bucket;
   }
 
-  upload(data, callback) {
+  upload(data, options, callback) {
     const file = data.file;
-    const info = fileType(file._data);
+    let info = fileType(file._data);
     const filename = file.hapi.filename;
     const contentLength = file._data.length;
+    console.log('info', info);
+    if(options) {
+      info = options.info;
+    }
 
     if (!info) {
       return new Error("Invalid valid filetype");
