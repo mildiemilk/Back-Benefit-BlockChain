@@ -15,14 +15,14 @@ const uploadFile = {
     const { storage } = request.server.app.services;
     const { user } = request.auth.credentials;
 
-    storage.upload({ file }, (err, media) => {
+    storage.upload({ file }, null, (err, media) => {
       if (err) {
         reply(err);
       } else {
         media.userId = user.id;
         media.save(err => {
           if (err) {
-            throw err;
+            reply(err);
           }
           reply({ media });
         });

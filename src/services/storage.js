@@ -17,9 +17,10 @@ class StorageService {
     let info = fileType(file._data);
     const filename = file.hapi.filename;
     const contentLength = file._data.length;
-    console.log('info', info);
     if(options) {
-      info = options.info;
+      if(options.info) {
+        info = options.info;
+      }
     }
 
     if (!info) {
@@ -37,6 +38,12 @@ class StorageService {
       ServerSideEncryption : 'AES256',
     };
 
+    if (options) {
+      if (options.isPublic) {
+        params.ACL = 'public-read';
+      }
+    }
+
     this.s3.putObject(params, err => {
       if (err) {
         callback(err, null);
@@ -48,7 +55,6 @@ class StorageService {
           length: contentLength,
           mime: info.mime,
         });
-
         callback(err, media);
       }
     });
@@ -71,21 +77,8 @@ class StorageService {
   }
 
   getUrl(data, callback) {
-    const path = data;
-
-    const params = {
-      Bucket: this.bucket,
-      Key: path,
-    };
-
-    this.s3.getSignedUrl('getObject', params, (err, url) => {
-      if (err) {
-        callback(err, null);
-      } else {
-        callback(err, url);
-      }
-      
-    });
+    const url = 'https://' + this.bucket + '.s3.amazonaws.com' + '/' + data;
+    callback(url);
   }
 
   download(data, callback) {

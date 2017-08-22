@@ -56,15 +56,16 @@ const setLogo = {
     const { file } = request.payload;
     const { storage } = request.server.app.services;
     const { user } = request.auth.credentials;
+    const isPublic = true;
 
-    storage.upload({ file }, null, (err, media) => {
+    storage.upload({ file }, { isPublic }, (err, media) => {
       console.log('err', err);
       console.log('media', media);
       if (!err) {
         media.userId = user.id;
         media.save();
         User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
-          storage.getUrl(media.path, (err, url) => {
+          storage.getUrl(media.path, (url) => {
             if (!err) {
               u.company.logo = media._id;
               u.company.save();
@@ -119,7 +120,7 @@ const uploadEmployee = {
         media.userId = user.id;
         media.save();
         User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
-          storage.getUrl(media.path, (err, url) => {
+          storage.getUrl(media.path, (url) => {
             if (!err) {
               console.log('upload complete');
               u.company.fileEmployee = media._id;

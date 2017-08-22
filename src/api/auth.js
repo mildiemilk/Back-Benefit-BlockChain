@@ -34,11 +34,11 @@ const login = {
                 const { path } = l;
                 const { storage } = request.server.app.services;
 
-                storage.getUrl(path, (err, url) => {
+                storage.getUrl(path, (url) => {
                   reply({
                     token,
-                    companyName: u.company.companyName || '',
-                    logo: url || '',
+                    companyName: u.company.companyName || null,
+                    logo: url || null,
                     approve: user.approveFile,
                     role: user.role,
                     personalVerify: user.personalVerify,
@@ -48,8 +48,8 @@ const login = {
             } else {
               reply({
                 token,
-                companyName: '',
-                logo: '',
+                companyName: null,
+                logo: null,
                 approve: user.approveFile,
                 role: user.role,
                 personalVerify: user.personalVerify,
