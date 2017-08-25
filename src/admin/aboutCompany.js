@@ -1,7 +1,8 @@
 import Joi from 'joi';
 import Boom from 'boom';
+import exceltojson from 'xlsx-to-json-lc';
 import fs from 'fs';
-import { Company, User } from '../models';
+import { Company, User, Media } from '../models';
 
 const registerCompany = {
   auth: { strategy: 'jwt', scope: 'admin',},
@@ -90,53 +91,117 @@ const uploadEmployee = {
   handler: (request, reply) => {
     const { file } = request.payload;
     const data = file;
-    console.log('file', data);
     const { storage } = request.server.app.services;
     const { user } = request.auth.credentials;
-    const info = {ext:'xlsx', mime: 'vsd.ms-excel'};
-
+    const info = {ext:'xlsx', mime: 'vnd.ms-excel'};
+    const name = data.hapi.filename;
+    const path = __dirname + "/" + name;
+    //------------save to directory---------------//
     if (data) {
-      console.log('yey');
-      let name = data.hapi.filename;
-      let path = __dirname + "/" + name;
-      console.log('path', path);
       let file = fs.createWriteStream(path);
-
       file.on('error', function (err) { 
         console.error(err); 
       });
       data.pipe(file);
-      data.on('end', function (err) { 
-        let ret = {
-          filename: data.hapi.filename,
-          headers: data.hapi.headers
-        };
-        reply(JSON.stringify(ret));
+      file.on('finish', function(err){
+        if(err) console.log('file:error', err);
+        //-----------convert-to-json------------------
+        exceltojson({
+          input: path,
+          output: null,
+          lowerCaseHeaders: true //to convert all excel headers to lowr case in json
+        }, function(err, result) {
+          if(err) {
+            console.error(err);
+          } else {
+            console.log(result);
+            result.map((employee) => {
+              const detail = {
+                email: employee.email,
+                password: 'Donut555',
+                role: 'Employee',
+                company: user.company,
+                detail: {
+                  employee_code: employee.employee_code,
+                  prefix: employee.prefix,
+                  name: employee.name,
+                  lastname: employee.lastname,
+                  citizen_id: employee.citizen_id,
+                  phone_number: employee.phone_number,
+                  type_of_employee: employee.type_of_employee,
+                  title: employee.title,
+                  department: employee.department,
+                  level: employee.level,
+                  start_date: employee.start_date,
+                  benefit_group: employee.benefit_group,
+                  date_of_birth: employee.date_of_birth,
+                  account_number: employee.account_number,
+                  bank_name: employee.bank_name,
+                  marriage_status: employee.marriage_status,
+                }
+              };
+              const newEmployee = new User(detail);
+              newEmployee.save().then(() => {
+                const { mailer } = request.server.app.services;
+                mailer.sendMailToEmployee(detail.email, detail.password);
+              });
+              reply('success!!');
+            });
+          }
+        });
       });
     }
-    storage.upload({ file }, { info }, (err, media) => {
-      console.log('media', media);
-      if (!err) {
-        media.userId = user.id;
-        media.save();
-        User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
-          storage.getUrl(media.path, (url) => {
-            if (!err) {
-              console.log('upload complete');
-              u.company.fileEmployee = media._id;
-              u.company.save();
-              reply({fileEmployee: url});
-            }
-          });
+    
+    //------------upload to S3-----------------//
+    // storage.upload({ file }, { info }, (err, media) => {
+    //   console.log('media', media);
+    //   if (!err) {
+    //     media.userId = user.id;
+    //     media.save();
+    //     User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+    //       storage.getUrl(media.path, (url) => {
+    //         if (!err) {
+    //           console.log('upload complete');
+    //           u.company.fileEmployee = media._id;
+    //           u.company.save();
+    //           reply({fileEmployee: url});
+    //         }
+    //       });
+    //     });
+    //   }
+    // });
+  }
+};
+
+const getTemplate = {
+  auth: { strategy: 'jwt', scope: 'admin',},
+  tags: ['admin', 'api'],
+  handler: (request, reply) => {
+    const { storage } = request.server.app.services;
+    const path = '860/864/8d92ac9fbfec93f6b7e1f10e5cb149e7.xlsx';
+    storage.download(path, (err, data) => {
+      if (err) {
+        reply(err);
+      } else {
+        Media.findOne({ path }, (err, media) => {
+          if (err) {
+            reply(err);
+          } else {
+            const filename = 'attachment; filename='+ media.name + ';';
+            reply(data.Body).header('Content-Type', media.mime)
+            .header('content-disposition', filename);
+          }
         });
       }
     });
   }
 };
+
 export default function(app) {
   app.route([
     { method: 'POST', path: '/registerCompany', config: registerCompany },
     { method: 'PUT', path: '/set-logo', config: setLogo },
     { method: 'PUT', path: '/upload-employee', config: uploadEmployee },
+    { method: 'GET', path: '/get-template', config: getTemplate },
   ]);
 }

@@ -19,7 +19,8 @@ const UserSchema = new mongoose.Schema ({
   approveFile: {type: Boolean, default:false},
   phone: { type: String },
   personalEmail: { type: String },
-  personalVerify: {type: Boolean}
+  personalVerify: {type: Boolean},
+  detail: { type: Object },
 });
 
 UserSchema.pre('save', function(next) {

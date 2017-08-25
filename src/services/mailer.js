@@ -124,6 +124,11 @@ class MailerService {
     let mailbody = email +'<p> register in the system, please approve this account </p>';
     this.sendMail(Config.email.username,subject,mailbody);
   }
+  sendMailToEmployee(email, password){
+    let subject = 'Welcome to Benefitable';
+    let mailbody = '<p>Email:'+ email + ' password: ' + password + '</p>';
+    this.sendMail(email,subject,mailbody);
+  }
 }
 
 export default MailerService;
