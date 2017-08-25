@@ -236,6 +236,18 @@ const uploadClaimData = {
   }
 };
 
+const getEmployee = {
+  auth: { strategy: 'jwt', scope: 'admin',},
+  tags: ['admin', 'api'],
+
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    User.find({ company: user.company }, (err, employees) => {
+      reply(employees);
+    });
+  }
+};
+
 export default function(app) {
   app.route([
     { method: 'POST', path: '/registerCompany', config: registerCompany },
@@ -243,5 +255,6 @@ export default function(app) {
     { method: 'PUT', path: '/upload-employee', config: uploadEmployee },
     { method: 'GET', path: '/get-template', config: getTemplate },
     { method: 'PUT', path: '/upload-claimdata', config: uploadClaimData },
+    { method: 'GET', path: '/get-employee', config: getEmployee },
   ]);
 }
