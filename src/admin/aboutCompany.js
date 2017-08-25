@@ -242,7 +242,7 @@ const getEmployee = {
 
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
-    User.find({ company: user.company }, (err, employees) => {
+    User.find({ company: user.company, role: 'Employee' }, (err, employees) => {
       reply(employees);
     });
   }
