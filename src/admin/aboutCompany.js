@@ -133,10 +133,51 @@ const uploadEmployee = {
     });
   }
 };
+
+const uploadClaimData = {
+  auth: { strategy: 'jwt', scope: 'admin',},
+  tags: ['admin', 'api'],
+  payload: {
+    output: 'stream',
+    parse: true,
+    allow: 'multipart/form-data'
+  },
+
+  handler: (request, reply) => {
+    const { file } = request.payload;
+    const { storage } = request.server.app.services;
+    const { user } = request.auth.credentials;
+    const info = {ext:'xlsx', mime: 'vnd.ms-excel'};
+
+    const files = file.map((element) => {
+      return new Promise((resolve, reject) => {
+        storage.upload({ file: element }, { info }, (err, media) => {
+          if (!err) {
+            media.userId = user.id;
+            media.save();
+            const url = media._id;
+            resolve(url);
+          } else reject(err);
+        });
+      });
+    });
+
+    Promise.all(files).then((result) => {
+      User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+        u.company.claimData = result;
+        u.company.save().then(() => {
+          reply(result);
+        });  
+      });
+    });
+  }
+};
+
 export default function(app) {
   app.route([
     { method: 'POST', path: '/registerCompany', config: registerCompany },
     { method: 'PUT', path: '/set-logo', config: setLogo },
     { method: 'PUT', path: '/upload-employee', config: uploadEmployee },
+    { method: 'PUT', path: '/upload-claimdata', config: uploadClaimData },
   ]);
 }
