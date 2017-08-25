@@ -145,31 +145,31 @@ const uploadEmployee = {
                 const { mailer } = request.server.app.services;
                 mailer.sendMailToEmployee(detail.email, detail.password);
               });
-              reply('success!!');
             });
           }
         });
       });
+      //------------upload to S3-----------------//
+      storage.upload({ file: data }, { info }, (err, media) => {
+        if (err) reply(err);
+        if (!err) {
+          media.userId = user.id;
+          media.save();
+          User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+            storage.getUrl(media.path, (url) => {
+              if (!err) {
+                u.company.fileEmployee = media._id;
+                u.company.save();
+                fs.unlink(path, (err) => {
+                  if (err) throw err;
+                  reply({fileEmployee: url});
+                });
+              }
+            });
+          });
+        }
+      });
     }
-    
-    //------------upload to S3-----------------//
-    // storage.upload({ file }, { info }, (err, media) => {
-    //   console.log('media', media);
-    //   if (!err) {
-    //     media.userId = user.id;
-    //     media.save();
-    //     User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
-    //       storage.getUrl(media.path, (url) => {
-    //         if (!err) {
-    //           console.log('upload complete');
-    //           u.company.fileEmployee = media._id;
-    //           u.company.save();
-    //           reply({fileEmployee: url});
-    //         }
-    //       });
-    //     });
-    //   }
-    // });
   }
 };
 
@@ -197,11 +197,51 @@ const getTemplate = {
   }
 };
 
+const uploadClaimData = {
+  auth: { strategy: 'jwt', scope: 'admin',},
+  tags: ['admin', 'api'],
+  payload: {
+    output: 'stream',
+    parse: true,
+    allow: 'multipart/form-data'
+  },
+
+  handler: (request, reply) => {
+    const { file } = request.payload;
+    const { storage } = request.server.app.services;
+    const { user } = request.auth.credentials;
+    const info = {ext:'xlsx', mime: 'vnd.ms-excel'};
+
+    const files = file.map((element) => {
+      return new Promise((resolve, reject) => {
+        storage.upload({ file: element }, { info }, (err, media) => {
+          if (!err) {
+            media.userId = user.id;
+            media.save();
+            const url = media._id;
+            resolve(url);
+          } else reject(err);
+        });
+      });
+    });
+
+    Promise.all(files).then((result) => {
+      User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+        u.company.claimData = result;
+        u.company.save().then(() => {
+          reply(result);
+        });  
+      });
+    });
+  }
+};
+
 export default function(app) {
   app.route([
     { method: 'POST', path: '/registerCompany', config: registerCompany },
     { method: 'PUT', path: '/set-logo', config: setLogo },
     { method: 'PUT', path: '/upload-employee', config: uploadEmployee },
     { method: 'GET', path: '/get-template', config: getTemplate },
+    { method: 'PUT', path: '/upload-claimdata', config: uploadClaimData },
   ]);
 }

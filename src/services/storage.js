@@ -1,7 +1,5 @@
 import aws from 'aws-sdk';
 import fileType from 'file-type';
-import merge from 'lodash/merge';
-import tmp from 'tmp';
 import crypto from 'crypto';
 import { Media } from '../models';
 
