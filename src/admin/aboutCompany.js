@@ -114,36 +114,48 @@ const uploadEmployee = {
           if(err) {
             console.error(err);
           } else {
-            console.log(result);
-            result.map((employee) => {
-              const detail = {
-                email: employee.email,
-                password: 'Donut555',
-                role: 'Employee',
-                company: user.company,
-                detail: {
-                  employee_code: employee.employee_code,
-                  prefix: employee.prefix,
-                  name: employee.name,
-                  lastname: employee.lastname,
-                  citizen_id: employee.citizen_id,
-                  phone_number: employee.phone_number,
-                  type_of_employee: employee.type_of_employee,
-                  title: employee.title,
-                  department: employee.department,
-                  level: employee.level,
-                  start_date: employee.start_date,
-                  benefit_group: employee.benefit_group,
-                  date_of_birth: employee.date_of_birth,
-                  account_number: employee.account_number,
-                  bank_name: employee.bank_name,
-                  marriage_status: employee.marriage_status,
-                }
-              };
-              const newEmployee = new User(detail);
-              newEmployee.save().then(() => {
-                const { mailer } = request.server.app.services;
-                mailer.sendMailToEmployee(detail.email, detail.password);
+            const addEmployee = result.map((employee) => {
+              return new Promise((resolve) => {
+                const detail = {
+                  email: employee.email,
+                  password: 'Donut555',
+                  role: 'Employee',
+                  company: user.company,
+                  detail: {
+                    employee_code: employee.employee_code,
+                    prefix: employee.prefix,
+                    name: employee.name,
+                    lastname: employee.lastname,
+                    citizen_id: employee.citizen_id,
+                    phone_number: employee.phone_number,
+                    type_of_employee: employee.type_of_employee,
+                    title: employee.title,
+                    department: employee.department,
+                    level: employee.level,
+                    start_date: employee.start_date,
+                    benefit_group: employee.benefit_group,
+                    date_of_birth: employee.date_of_birth,
+                    account_number: employee.account_number,
+                    bank_name: employee.bank_name,
+                    marriage_status: employee.marriage_status,
+                  }
+                };
+                const newEmployee = new User(detail);
+                newEmployee.save().then((emp) => {
+                  const { mailer } = request.server.app.services;
+                  mailer.sendMailToEmployee(detail.email, detail.password);
+                  resolve(emp);
+                });
+              });
+            });
+            Promise.all(addEmployee).then(() => {
+              User.find({ company: user.company, role: 'Employee' }).distinct('detail.benefit_group', (err, groups) => {
+                groups.sort();
+                const groupBenefit = groups.map((element) => Object.assign({},{name:element}));
+                User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+                  u.company.groupBenefit = groupBenefit;
+                  u.company.save();
+                });
               });
             });
           }
