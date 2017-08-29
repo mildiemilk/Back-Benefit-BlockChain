@@ -151,7 +151,7 @@ const uploadEmployee = {
             Promise.all(addEmployee).then(() => {
               User.find({ company: user.company, role: 'Employee' }).distinct('detail.benefit_group', (err, groups) => {
                 groups.sort();
-                const groupBenefit = groups.map((element) => Object.assign({},{ name: element, type: '', plan: [] }));
+                const groupBenefit = groups.map((element) => Object.assign({},{ name: element, type: '', plan: [], default: '' }));
                 User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
                   u.company.groupBenefit = groupBenefit;
                   u.company.save();
