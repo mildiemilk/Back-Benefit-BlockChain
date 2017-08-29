@@ -19,6 +19,7 @@ const CompanySchema = new mongoose.Schema ({
   benefitPlans: { type: Object },
   logo: { type: Schema.Types.ObjectId, ref: "Media" },
   claimData: { type: Array },
+  completeStep: { type: Array },
   fileEmployee: { type: Schema.Types.ObjectId, ref: "Media" }
 });
 

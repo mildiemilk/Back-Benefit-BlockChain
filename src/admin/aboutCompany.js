@@ -210,9 +210,12 @@ const uploadClaimData = {
     const { file } = request.payload;
     const { storage } = request.server.app.services;
     const { user } = request.auth.credentials;
-    const info = {ext:'xlsx', mime: 'vnd.ms-excel'};
-
+    
     const files = file.map((element) => {
+      let info = null;
+      if(element.hapi.headers['content-type'] === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+        info = {ext:'xlsx', mime: 'vnd.ms-excel'};
+      }
       return new Promise((resolve, reject) => {
         storage.upload({ file: element }, { info }, (err, media) => {
           if (!err) {
@@ -236,6 +239,31 @@ const uploadClaimData = {
   }
 };
 
+const getClaimData = {
+  tags: ['api'],
+  auth: 'jwt',
+
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    if(user.role == 'HR'){
+      User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+        const files = u.company.claimData.map(element => {
+          return new Promise((resolve) => {
+            Media.findOne({ _id: element })
+            .then((media) => {
+              resolve(media);
+            });
+          });
+        });
+        Promise.all(files).then((result) => {
+          reply(result);
+        });
+      });
+    }else{    
+      reply(Boom.badData('This page for HR only'));
+    }
+  },
+};
 const getEmployee = {
   auth: { strategy: 'jwt', scope: 'admin',},
   tags: ['admin', 'api'],
@@ -247,7 +275,48 @@ const getEmployee = {
     });
   }
 };
-
+const setCompleteStep = {
+  tags: ['api'],
+  auth: 'jwt',
+  validate: {
+    payload: {
+      step: Joi.number().required(),
+      passwordToConfirm: Joi.string().required(),
+    },
+  },
+  handler: (request, reply) => {
+    const { step, passwordToConfirm } = request.payload;
+    const { user } = request.auth.credentials;
+    if(user.role == 'HR'){
+      if (!user.comparePassword(passwordToConfirm)) {
+        reply(Boom.badData('Invalid password'));
+      } else {
+        console.log('step', step);
+        console.log('user', user);
+        User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+          if (err) console.log(err);
+          u.company.completeStep[step] = true;
+          u.company.markModified('completeStep');
+          u.company.save().then((err)=>{
+            reply(err);
+          });
+        });
+      }
+    }else{
+      reply(Boom.badData('This page for HR only'));
+    }
+  },
+};
+const getCompleteStep = {
+  tags: ['api'],
+  auth: 'jwt',
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+      reply(u.company.completeStep);
+    });
+  },
+};
 export default function(app) {
   app.route([
     { method: 'POST', path: '/registerCompany', config: registerCompany },
@@ -256,5 +325,8 @@ export default function(app) {
     { method: 'GET', path: '/get-template', config: getTemplate },
     { method: 'PUT', path: '/upload-claimdata', config: uploadClaimData },
     { method: 'GET', path: '/get-employee', config: getEmployee },
+    { method: 'GET', path: '/get-claim-data', config: getClaimData },
+    { method: 'PUT', path: '/set-complete-step', config: setCompleteStep },
+    { method: 'GET', path: '/get-complete-step', config: getCompleteStep },
   ]);
 }
