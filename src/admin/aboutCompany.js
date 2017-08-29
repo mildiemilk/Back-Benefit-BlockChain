@@ -151,7 +151,7 @@ const uploadEmployee = {
             Promise.all(addEmployee).then(() => {
               User.find({ company: user.company, role: 'Employee' }).distinct('detail.benefit_group', (err, groups) => {
                 groups.sort();
-                const groupBenefit = groups.map((element) => Object.assign({},{name:element}));
+                const groupBenefit = groups.map((element) => Object.assign({},{ name: element, type: '', plan: [] }));
                 User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
                   u.company.groupBenefit = groupBenefit;
                   u.company.save();
@@ -260,6 +260,43 @@ const getEmployee = {
   }
 };
 
+const getGroupBenefit = {
+  auth: { strategy: 'jwt', scope: 'admin',},
+  tags: ['admin', 'api'],
+
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+      reply(u.company.groupBenefit);  
+    });
+  }
+};
+
+const setGroupBenefit = {
+  auth: { strategy: 'jwt', scope: 'admin',},
+  tags: ['admin', 'api'],
+  validate: {
+    payload: {
+      detail: Joi.object().required(),
+    },
+    params: {
+      groupNumber: Joi.number().integer().required(),
+    },
+  },
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    const { groupNumber } = request.params;
+    const { detail } = request.payload;
+    User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+      u.company.groupBenefit[groupNumber] = detail;
+      u.company.markModified('groupBenefit');
+      u.company.save().then((result)=>{
+        reply(result.groupBenefit);
+      });
+    });
+  }
+};
+
 export default function(app) {
   app.route([
     { method: 'POST', path: '/registerCompany', config: registerCompany },
@@ -268,5 +305,7 @@ export default function(app) {
     { method: 'GET', path: '/get-template', config: getTemplate },
     { method: 'PUT', path: '/upload-claimdata', config: uploadClaimData },
     { method: 'GET', path: '/get-employee', config: getEmployee },
+    { method: 'GET', path: '/get-group-benefit', config: getGroupBenefit },
+    { method: 'PUT', path: '/set-group-benefit/{groupNumber}', config: setGroupBenefit },
   ]);
 }
