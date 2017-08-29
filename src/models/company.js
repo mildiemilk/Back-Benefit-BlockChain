@@ -17,10 +17,15 @@ const CompanySchema = new mongoose.Schema ({
   hr: { type: Schema.Types.ObjectId, ref: "User", required: true },
   bidding: { type: Schema.Types.ObjectId, ref: "BiddingRelation" },
   benefitPlans: { type: Object },
+  groupBenefit: { type: Array },
   logo: { type: Schema.Types.ObjectId, ref: "Media" },
   claimData: { type: Array },
+<<<<<<< HEAD
   completeStep: { type: Array },
   fileEmployee: { type: Schema.Types.ObjectId, ref: "Media" }
+=======
+  fileEmployee: { type: Schema.Types.ObjectId, ref: "Media" },
+>>>>>>> 4cf41bd714223ae4f3eb92d6f6b705837f23dbc9
 });
 
 

@@ -114,36 +114,48 @@ const uploadEmployee = {
           if(err) {
             console.error(err);
           } else {
-            console.log(result);
-            result.map((employee) => {
-              const detail = {
-                email: employee.email,
-                password: 'Donut555',
-                role: 'Employee',
-                company: user.company,
-                detail: {
-                  employee_code: employee.employee_code,
-                  prefix: employee.prefix,
-                  name: employee.name,
-                  lastname: employee.lastname,
-                  citizen_id: employee.citizen_id,
-                  phone_number: employee.phone_number,
-                  type_of_employee: employee.type_of_employee,
-                  title: employee.title,
-                  department: employee.department,
-                  level: employee.level,
-                  start_date: employee.start_date,
-                  benefit_group: employee.benefit_group,
-                  date_of_birth: employee.date_of_birth,
-                  account_number: employee.account_number,
-                  bank_name: employee.bank_name,
-                  marriage_status: employee.marriage_status,
-                }
-              };
-              const newEmployee = new User(detail);
-              newEmployee.save().then(() => {
-                const { mailer } = request.server.app.services;
-                mailer.sendMailToEmployee(detail.email, detail.password);
+            const addEmployee = result.map((employee) => {
+              return new Promise((resolve) => {
+                const detail = {
+                  email: employee.email,
+                  password: 'Donut555',
+                  role: 'Employee',
+                  company: user.company,
+                  detail: {
+                    employee_code: employee.employee_code,
+                    prefix: employee.prefix,
+                    name: employee.name,
+                    lastname: employee.lastname,
+                    citizen_id: employee.citizen_id,
+                    phone_number: employee.phone_number,
+                    type_of_employee: employee.type_of_employee,
+                    title: employee.title,
+                    department: employee.department,
+                    level: employee.level,
+                    start_date: employee.start_date,
+                    benefit_group: employee.benefit_group,
+                    date_of_birth: employee.date_of_birth,
+                    account_number: employee.account_number,
+                    bank_name: employee.bank_name,
+                    marriage_status: employee.marriage_status,
+                  }
+                };
+                const newEmployee = new User(detail);
+                newEmployee.save().then((emp) => {
+                  const { mailer } = request.server.app.services;
+                  mailer.sendMailToEmployee(detail.email, detail.password);
+                  resolve(emp);
+                });
+              });
+            });
+            Promise.all(addEmployee).then(() => {
+              User.find({ company: user.company, role: 'Employee' }).distinct('detail.benefit_group', (err, groups) => {
+                groups.sort();
+                const groupBenefit = groups.map((element) => Object.assign({},{ name: element, type: '', plan: [], default: '' }));
+                User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+                  u.company.groupBenefit = groupBenefit;
+                  u.company.save();
+                });
               });
             });
           }
@@ -275,6 +287,7 @@ const getEmployee = {
     });
   }
 };
+<<<<<<< HEAD
 const setCompleteStep = {
   tags: ['api'],
   auth: 'jwt',
@@ -317,6 +330,46 @@ const getCompleteStep = {
     });
   },
 };
+=======
+
+const getGroupBenefit = {
+  auth: { strategy: 'jwt', scope: 'admin',},
+  tags: ['admin', 'api'],
+
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+      reply(u.company.groupBenefit);  
+    });
+  }
+};
+
+const setGroupBenefit = {
+  auth: { strategy: 'jwt', scope: 'admin',},
+  tags: ['admin', 'api'],
+  validate: {
+    payload: {
+      detail: Joi.object().required(),
+    },
+    params: {
+      groupNumber: Joi.number().integer().required(),
+    },
+  },
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    const { groupNumber } = request.params;
+    const { detail } = request.payload;
+    User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+      u.company.groupBenefit[groupNumber] = detail;
+      u.company.markModified('groupBenefit');
+      u.company.save().then((result)=>{
+        reply(result.groupBenefit);
+      });
+    });
+  }
+};
+
+>>>>>>> 4cf41bd714223ae4f3eb92d6f6b705837f23dbc9
 export default function(app) {
   app.route([
     { method: 'POST', path: '/registerCompany', config: registerCompany },
@@ -325,8 +378,13 @@ export default function(app) {
     { method: 'GET', path: '/get-template', config: getTemplate },
     { method: 'PUT', path: '/upload-claimdata', config: uploadClaimData },
     { method: 'GET', path: '/get-employee', config: getEmployee },
+<<<<<<< HEAD
     { method: 'GET', path: '/get-claim-data', config: getClaimData },
     { method: 'PUT', path: '/set-complete-step', config: setCompleteStep },
     { method: 'GET', path: '/get-complete-step', config: getCompleteStep },
+=======
+    { method: 'GET', path: '/get-group-benefit', config: getGroupBenefit },
+    { method: 'PUT', path: '/set-group-benefit/{groupNumber}', config: setGroupBenefit },
+>>>>>>> 4cf41bd714223ae4f3eb92d6f6b705837f23dbc9
   ]);
 }
