@@ -287,7 +287,6 @@ const getEmployee = {
     });
   }
 };
-<<<<<<< HEAD
 const setCompleteStep = {
   tags: ['api'],
   auth: 'jwt',
@@ -330,7 +329,6 @@ const getCompleteStep = {
     });
   },
 };
-=======
 
 const getGroupBenefit = {
   auth: { strategy: 'jwt', scope: 'admin',},
@@ -369,7 +367,6 @@ const setGroupBenefit = {
   }
 };
 
->>>>>>> 4cf41bd714223ae4f3eb92d6f6b705837f23dbc9
 export default function(app) {
   app.route([
     { method: 'POST', path: '/registerCompany', config: registerCompany },
@@ -378,13 +375,10 @@ export default function(app) {
     { method: 'GET', path: '/get-template', config: getTemplate },
     { method: 'PUT', path: '/upload-claimdata', config: uploadClaimData },
     { method: 'GET', path: '/get-employee', config: getEmployee },
-<<<<<<< HEAD
     { method: 'GET', path: '/get-claim-data', config: getClaimData },
     { method: 'PUT', path: '/set-complete-step', config: setCompleteStep },
     { method: 'GET', path: '/get-complete-step', config: getCompleteStep },
-=======
     { method: 'GET', path: '/get-group-benefit', config: getGroupBenefit },
     { method: 'PUT', path: '/set-group-benefit/{groupNumber}', config: setGroupBenefit },
->>>>>>> 4cf41bd714223ae4f3eb92d6f6b705837f23dbc9
   ]);
 }
