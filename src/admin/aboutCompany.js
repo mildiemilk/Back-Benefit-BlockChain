@@ -149,9 +149,34 @@ const uploadEmployee = {
               });
             });
             Promise.all(addEmployee).then(() => {
-              User.find({ company: user.company, role: 'Employee' }).distinct('detail.benefit_group', (err, groups) => {
-                groups.sort();
-                const groupBenefit = groups.map((element) => Object.assign({},{ name: element, type: '', plan: [], default: '' }));
+              const aggregatorOpts = [
+                { $match: { "company": user.company, "role": "Employee" } },
+                {
+                  $group: {
+                    _id: "$detail.benefit_group",
+                    count: { $sum: 1 }
+                  }
+                }
+              ];
+              User.aggregate(aggregatorOpts).exec((err, groups) => {
+                groups.sort((a, b) => {
+                  var nameA = a._id.toUpperCase(); // ignore upper and lowercase
+                  var nameB = b._id.toUpperCase(); // ignore upper and lowercase
+                  if (nameA < nameB) {
+                    return -1;
+                  }
+                  if (nameA > nameB) {
+                    return 1;
+                  }
+                  // names must be equal
+                  return 0;
+                });
+                const groupBenefit = groups.map((element) => Object.assign({},{
+                  name: element._id, type: '',
+                  plan: [],
+                  default: '',
+                  numberOfGroup: element.count,
+                }));
                 User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
                   u.company.groupBenefit = groupBenefit;
                   u.company.save();
