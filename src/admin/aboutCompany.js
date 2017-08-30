@@ -309,8 +309,8 @@ const setCompleteStep = {
           if (err) console.log(err);
           u.company.completeStep[step] = true;
           u.company.markModified('completeStep');
-          u.company.save().then((err)=>{
-            reply(err);
+          u.company.save().then((company)=>{
+            reply(company.completeStep);
           });
         });
       }

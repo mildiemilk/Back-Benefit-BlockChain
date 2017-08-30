@@ -1,6 +1,6 @@
 import Joi from 'joi';
 import Boom from 'boom';
-import { Insurer, Bidding, BiddingRelation, Company } from '../models';
+import { Insurer, Bidding, BiddingRelation, User } from '../models';
 
 const bidding = {
   tags: ['api'],
@@ -112,23 +112,26 @@ const chooseFinalInsurer = {
     payload: {
       passwordToConfirm: Joi.string().required(),
       insurerName: Joi.string().required(),
+      step: Joi.number().required(),
     },
   },
   handler: (request, reply) => {
-    const { passwordToConfirm, insurerName } = request.payload;
+    const { passwordToConfirm, insurerName, step } = request.payload;
     const { user } = request.auth.credentials;
     console.log(user);
     if(user.role == 'HR'){
       if (!user.comparePassword(passwordToConfirm)) {
         reply(Boom.badData('Invalid password'));
       } else {
-        Company.findOne({hr:user._id})
-          .then((company) =>{
-            company.companyInsurer = insurerName;
-            company.save().then(()=>{
-              reply({ company, message:'เลือก broker เรียบร้อยแล้ว' });
-            });
+        User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+          if (err) console.log(err);
+          u.company.companyInsurer = insurerName;
+          u.company.completeStep[step] = true;
+          u.company.markModified('completeStep');
+          u.company.save().then((company)=>{
+            reply({completeStep: company.completeStep, message:'เลือก broker เรียบร้อยแล้ว'});
           });
+        });
       }
     }else{
       reply(Boom.badData('This page for HR only'));
