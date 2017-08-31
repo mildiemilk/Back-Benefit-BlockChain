@@ -8,8 +8,8 @@ const login = {
   tags: ['auth', 'api'],
   validate: {
     payload: {
-      email: Joi.string().required().email(),
-      password: Joi.string().required().trim().regex(passwordPattern).error(new Error('Invalid email or password')),
+      email: Joi.string().required().email().error(new Error('กรุณากรอกอีเมลและพาสเวิร์ดด้วยค่ะ')),
+      password: Joi.string().required().trim().regex(passwordPattern).error(new Error('กรุณากรอกอีเมลและพาสเวิร์ดด้วยค่ะ')),
     },
   },
   handler: (request, reply) => {
@@ -18,13 +18,13 @@ const login = {
     .then((user) => {
       if (!user || user.emailConfirmedAt === null) {
         if (!user){
-          reply(Boom.unauthorized('Invalid email or password'));
+          reply(Boom.unauthorized('อีเมลหรือพาวเวิร์ดไม่ถูกต้อง'));
         } else {
-          reply(Boom.unauthorized('please verify email'));
+          reply(Boom.unauthorized('กรุณายืนยันอีเมลของคุณด้วยค่ะ'));
         }
       } else {
         if (!user.comparePassword(password)) {
-          reply(Boom.unauthorized('Invalid email or password'));
+          reply(Boom.unauthorized('อีเมลหรือพาวเวิร์ดไม่ถูกต้อง'));
         } else {
           const { auth } = request.server.app.services;
           const token = auth.createAuthToken(user);
@@ -83,14 +83,30 @@ const changepassword = {
     },
   },
   handler: (request, reply) => {
-    const { password } = request.payload;
+    const { password, confirmPassword } = request.payload;
     const { user } = request.auth.credentials;
     if (user) {
-      user.password = password;
-      user.save(function(err) {
-        if (err) throw err;
-        reply('Change Password Complete.');
-      });
+      if(password !== confirmPassword)
+      {
+        console.log('password !== confirmPassword');
+        if(user.comparePassword(password))
+        {
+          user.password = confirmPassword;
+          user.save(function(err) {
+            if (err) throw err;
+            reply('Change Password Complete.');
+          });
+        } else {
+          reply('Password is incorrect.');
+        }
+      } else {
+        console.log('password === confirmPassword');
+        user.password = password;
+        user.save(function(err) {
+          if (err) throw err;
+          reply('Change Password Complete.');
+        });
+      }
     }
   },
 };
