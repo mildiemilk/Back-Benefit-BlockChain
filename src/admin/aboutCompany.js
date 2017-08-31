@@ -114,36 +114,73 @@ const uploadEmployee = {
           if(err) {
             console.error(err);
           } else {
-            console.log(result);
-            result.map((employee) => {
-              const detail = {
-                email: employee.email,
-                password: 'Donut555',
-                role: 'Employee',
-                company: user.company,
-                detail: {
-                  employee_code: employee.employee_code,
-                  prefix: employee.prefix,
-                  name: employee.name,
-                  lastname: employee.lastname,
-                  citizen_id: employee.citizen_id,
-                  phone_number: employee.phone_number,
-                  type_of_employee: employee.type_of_employee,
-                  title: employee.title,
-                  department: employee.department,
-                  level: employee.level,
-                  start_date: employee.start_date,
-                  benefit_group: employee.benefit_group,
-                  date_of_birth: employee.date_of_birth,
-                  account_number: employee.account_number,
-                  bank_name: employee.bank_name,
-                  marriage_status: employee.marriage_status,
+            const addEmployee = result.map((employee) => {
+              return new Promise((resolve) => {
+                const detail = {
+                  email: employee.email,
+                  password: 'Donut555',
+                  role: 'Employee',
+                  company: user.company,
+                  detail: {
+                    employee_code: employee.employee_code,
+                    prefix: employee.prefix,
+                    name: employee.name,
+                    lastname: employee.lastname,
+                    citizen_id: employee.citizen_id,
+                    phone_number: employee.phone_number,
+                    type_of_employee: employee.type_of_employee,
+                    title: employee.title,
+                    department: employee.department,
+                    level: employee.level,
+                    start_date: employee.start_date,
+                    benefit_group: employee.benefit_group,
+                    date_of_birth: employee.date_of_birth,
+                    account_number: employee.account_number,
+                    bank_name: employee.bank_name,
+                    marriage_status: employee.marriage_status,
+                  }
+                };
+                const newEmployee = new User(detail);
+                newEmployee.save().then((emp) => {
+                  const { mailer } = request.server.app.services;
+                  mailer.sendMailToEmployee(detail.email, detail.password);
+                  resolve(emp);
+                });
+              });
+            });
+            Promise.all(addEmployee).then(() => {
+              const aggregatorOpts = [
+                { $match: { "company": user.company, "role": "Employee" } },
+                {
+                  $group: {
+                    _id: "$detail.benefit_group",
+                    count: { $sum: 1 }
+                  }
                 }
-              };
-              const newEmployee = new User(detail);
-              newEmployee.save().then(() => {
-                const { mailer } = request.server.app.services;
-                mailer.sendMailToEmployee(detail.email, detail.password);
+              ];
+              User.aggregate(aggregatorOpts).exec((err, groups) => {
+                groups.sort((a, b) => {
+                  var nameA = a._id.toUpperCase(); // ignore upper and lowercase
+                  var nameB = b._id.toUpperCase(); // ignore upper and lowercase
+                  if (nameA < nameB) {
+                    return -1;
+                  }
+                  if (nameA > nameB) {
+                    return 1;
+                  }
+                  // names must be equal
+                  return 0;
+                });
+                const groupBenefit = groups.map((element) => Object.assign({},{
+                  name: element._id, type: '',
+                  plan: [],
+                  default: '',
+                  numberOfGroup: element.count,
+                }));
+                User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+                  u.company.groupBenefit = groupBenefit;
+                  u.company.save();
+                });
               });
             });
           }
@@ -210,9 +247,12 @@ const uploadClaimData = {
     const { file } = request.payload;
     const { storage } = request.server.app.services;
     const { user } = request.auth.credentials;
-    const info = {ext:'xlsx', mime: 'vnd.ms-excel'};
-
+    
     const files = file.map((element) => {
+      let info = null;
+      if(element.hapi.headers['content-type'] === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+        info = {ext:'xlsx', mime: 'vnd.ms-excel'};
+      }
       return new Promise((resolve, reject) => {
         storage.upload({ file: element }, { info }, (err, media) => {
           if (!err) {
@@ -236,6 +276,31 @@ const uploadClaimData = {
   }
 };
 
+const getClaimData = {
+  tags: ['api'],
+  auth: 'jwt',
+
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    if(user.role == 'HR'){
+      User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+        const files = u.company.claimData.map(element => {
+          return new Promise((resolve) => {
+            Media.findOne({ _id: element })
+            .then((media) => {
+              resolve(media);
+            });
+          });
+        });
+        Promise.all(files).then((result) => {
+          reply(result);
+        });
+      });
+    }else{    
+      reply(Boom.badData('This page for HR only'));
+    }
+  },
+};
 const getEmployee = {
   auth: { strategy: 'jwt', scope: 'admin',},
   tags: ['admin', 'api'],
@@ -244,6 +309,85 @@ const getEmployee = {
     const { user } = request.auth.credentials;
     User.find({ company: user.company, role: 'Employee' }, (err, employees) => {
       reply(employees);
+    });
+  }
+};
+const setCompleteStep = {
+  tags: ['api'],
+  auth: 'jwt',
+  validate: {
+    payload: {
+      step: Joi.number().required(),
+      passwordToConfirm: Joi.string().required(),
+    },
+  },
+  handler: (request, reply) => {
+    const { step, passwordToConfirm } = request.payload;
+    const { user } = request.auth.credentials;
+    if(user.role == 'HR'){
+      if (!user.comparePassword(passwordToConfirm)) {
+        reply(Boom.badData('Invalid password'));
+      } else {
+        console.log('step', step);
+        console.log('user', user);
+        User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+          if (err) console.log(err);
+          u.company.completeStep[step] = true;
+          u.company.markModified('completeStep');
+          u.company.save().then((company)=>{
+            reply(company.completeStep);
+          });
+        });
+      }
+    }else{
+      reply(Boom.badData('This page for HR only'));
+    }
+  },
+};
+const getCompleteStep = {
+  tags: ['api'],
+  auth: 'jwt',
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+      reply(u.company.completeStep);
+    });
+  },
+};
+
+const getGroupBenefit = {
+  auth: { strategy: 'jwt', scope: 'admin',},
+  tags: ['admin', 'api'],
+
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+      reply(u.company.groupBenefit);  
+    });
+  }
+};
+
+const setGroupBenefit = {
+  auth: { strategy: 'jwt', scope: 'admin',},
+  tags: ['admin', 'api'],
+  validate: {
+    payload: {
+      detail: Joi.object().required(),
+    },
+    params: {
+      groupNumber: Joi.number().integer().required(),
+    },
+  },
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    const { groupNumber } = request.params;
+    const { detail } = request.payload;
+    User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+      u.company.groupBenefit[groupNumber] = detail;
+      u.company.markModified('groupBenefit');
+      u.company.save().then((result)=>{
+        reply(result.groupBenefit);
+      });
     });
   }
 };
@@ -256,5 +400,10 @@ export default function(app) {
     { method: 'GET', path: '/get-template', config: getTemplate },
     { method: 'PUT', path: '/upload-claimdata', config: uploadClaimData },
     { method: 'GET', path: '/get-employee', config: getEmployee },
+    { method: 'GET', path: '/get-claim-data', config: getClaimData },
+    { method: 'PUT', path: '/set-complete-step', config: setCompleteStep },
+    { method: 'GET', path: '/get-complete-step', config: getCompleteStep },
+    { method: 'GET', path: '/get-group-benefit', config: getGroupBenefit },
+    { method: 'PUT', path: '/set-group-benefit/{groupNumber}', config: setGroupBenefit },
   ]);
 }
