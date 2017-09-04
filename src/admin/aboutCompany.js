@@ -268,7 +268,7 @@ const uploadClaimData = {
     Promise.all(files).then((result) => {
       User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
         u.company.claimData = result;
-        u.company.save().then(() => {
+        u.company.save().then((result) => {
           reply(result);
         });  
       });
