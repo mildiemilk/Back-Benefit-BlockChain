@@ -23,42 +23,52 @@ const login = {
           reply(Boom.unauthorized('กรุณายืนยันอีเมลของคุณด้วยค่ะ'));
         }
       } else {
-        if (!user.comparePassword(password)) {
-          reply(Boom.unauthorized('อีเมลหรือพาวเวิร์ดไม่ถูกต้อง'));
-        } else {
-          const { auth } = request.server.app.services;
-          const token = auth.createAuthToken(user);
-          User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
-            if (u.company) {
-              Media.findOne({ _id: u.company.logo }).populate('logo').exec((err, l) => {
-                const { path } = l;
-                const { storage } = request.server.app.services;
-
-                storage.getUrl(path, (url) => {
-                  reply({
-                    token,
-                    companyName: u.company.companyName || null,
-                    logo: url || null,
-                    approve: user.approveFile,
-                    role: user.role,
-                    personalVerify: user.personalVerify,
+        let company = null;
+        let approve = null;
+        let logo = null;
+        User.findOne({ _id: user._id }).populate('company').exec((err, uCompany) => {
+          if (uCompany.company) {
+            company = uCompany.company.companyName;
+            approve = uCompany.company.approve;
+            logo = uCompany.company.logo;
+            if (uCompany.company.deleted) {
+              reply(Boom.unauthorized('สัญญาของคุณหมดอายุ กรุณาติดต่อเจ้าหน้าที่'));
+            } else if (!uCompany.company.approve) {
+              reply(Boom.unauthorized('บริษัทของคุณยังไม่ได้อนุมัติ กรุณาติดต่อเจ้าหน้าที่'));
+            } else if (user.deleted) {
+              reply(Boom.unauthorized('สัญญาของคุณหมดอายุ กรุณาติดต่อเจ้าหน้าที่'));
+            } else if (!user.comparePassword(password)) {
+              reply(Boom.unauthorized('อีเมลหรือพาวเวิร์ดไม่ถูกต้อง'));
+            } else {
+              const { auth } = request.server.app.services;
+              const token = auth.createAuthToken(user);
+              let role = null;
+              
+              User.findOne({ _id: user._id }).populate('role').exec((err, uRole) => {
+                if (uRole) {
+                  role = uRole.role.roleName;
+                }
+                Media.findOne({ _id: logo }).populate('logo').exec((err, l) => {
+                  const { path } = l;
+                  const { storage } = request.server.app.services;
+      
+                  storage.getUrl(path, (url) => {
+                    reply({
+                      token,
+                      companyName: company,
+                      logo: url || null,
+                      approve: approve,
+                      role: role,
+                      personalVerify: user.personalVerify,
+                    });
                   });
                 });
               });
-            } else {
-              reply({
-                token,
-                companyName: null,
-                logo: null,
-                approve: user.approveFile,
-                role: user.role,
-                personalVerify: user.personalVerify,
-              });
+             
+              
             }
-            
-          });
-          
-        }
+          }
+        });
       }
     });
   },
