@@ -5,11 +5,12 @@ import mongooseDelete from 'mongoose-delete';
 const Schema = mongoose.Schema;
 
 const BiddingRelationSchema = new mongoose.Schema ({
-  BiddingrelationId: {type: Number, default: 0, unique: true},
-  insurers: { type: Array },
-  status: { type: Array },
-  hr: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  biddingRelationId: {type: Number, default: 0, unique: true},
+  company: { type: Schema.Types.ObjectId, ref: "Company", required: true },
+  insurers: [{ insurerId: { type: Schema.Types.ObjectId, ref: "Company" },
+    status: { type: String, enum: ['waiting', 'join', 'reject'] }}],
   timeout: { type : Date, default: null },
+  minPrice: { type: Number },
 });
 
 
@@ -18,7 +19,7 @@ autoIncrement.initialize(mongoose.connection);
 BiddingRelationSchema.plugin(mongooseDelete, { deletedAt : true });
 BiddingRelationSchema.plugin(autoIncrement.plugin,{
   model: 'BiddingRelationSchema',
-  field: 'BiddingRelationId',
+  field: 'biddingRelationId',
   startAt: 1,
   incrementBy: 1
 });

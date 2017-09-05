@@ -52,35 +52,27 @@ const chooseInsurer = {
   auth: 'jwt',
   validate: {
     payload: {
-      insurers: Joi.array().items(Joi.object()),
+      insurers: Joi.array(),
     },
   },
   handler: (request, reply) => {
     const { insurers } = request.payload;
     const { user } = request.auth.credentials;
-    const hr = user._id;
-    const status = [];
-    //const insurer = [];
-    insurers.forEach(() => {
-      status.push('waiting');
-    });
+    const company = user.company;
+    const insurerBidding = insurers.map((insurer) => Object.assign({}, { insurerId: insurer, status: 'waiting' }));
+    console.log(insurerBidding);
     if(user.role == 'HR'){
-      BiddingRelation.findOne({hr})
+      BiddingRelation.findOne({ company })
         .then((biddingrelation) => {
           if(biddingrelation){
-            biddingrelation.insurers = insurers;
-            biddingrelation.status = status;
-            biddingrelation.save().then((err) => {
-              if (!err)
-                reply(BiddingRelation.insurers);
-              else reply(err);
+            biddingrelation.insurers = insurerBidding;
+            biddingrelation.save().then((result) => {
+              reply(result);
             });
           }else{
-            const biddingrelation = new BiddingRelation({ hr, insurers, status });
-            biddingrelation.save().then((err) => {
-              if (!err)
-                reply(biddingrelation.insurers);
-              else reply(err);
+            const biddingrelation = new BiddingRelation({ company, insurers: insurerBidding });
+            biddingrelation.save().then((result) => {
+              reply(result);
             });
           }
         });

@@ -5,13 +5,12 @@ import mongooseDelete from 'mongoose-delete';
 const Schema = mongoose.Schema;
 
 const BenefitPlanSchema = new mongoose.Schema ({
-  BenefitPlanId: { type: Number, default: 0, unique: true },
-  plan: { type: Array, required: true },
-  health: { type: Object },
-  isHealth: { type: Boolean },
-  expense: { type: Object },
-  isExpense: { type: Boolean },
+  benefitPlanId: { type: Number, default: 0, unique: true },
   company: { type: Schema.Types.ObjectId, ref: "Company", required: true },
+  benefitPlanName: { type: String, required: true },
+  benefitPlan: { type: Object, required: true },
+  effectiveDate: { type: Date },
+  expiredDate: { type: Date },
 });
 
 BenefitPlanSchema.plugin(timestamps);
@@ -19,8 +18,8 @@ autoIncrement.initialize(mongoose.connection);
 BenefitPlanSchema.plugin(mongooseDelete, { deletedAt : true });
 BenefitPlanSchema.plugin(autoIncrement.plugin,{
   model: 'BenefitPlanSchema',
-  field: 'BenefitPlanId',
+  field: 'benefitPlanId',
   startAt: 1,
   incrementBy: 1
 });
-export default mongoose.model('BenefitPlan', BenefitPlanSchema);
+export default mongoose.model('benefitPlan', BenefitPlanSchema);

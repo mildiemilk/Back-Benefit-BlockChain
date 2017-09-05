@@ -2,15 +2,16 @@ import mongoose from 'mongoose';
 import timestamps from 'mongoose-timestamp';
 import autoIncrement from 'mongoose-auto-increment';
 import mongooseDelete from 'mongoose-delete';
-//const Schema = mongoose.Schema;
+const Schema = mongoose.Schema;
 
 const BiddingSchema = new mongoose.Schema ({
   biddingId: { type: Number, default: 0, unique: true },
-  insurerName: { type: String, required: true },
-  detail: { type: Array, required: true },
-  timeOfBidding : { type: Number, default: 0, required: true },
-  status: { type: String, required: true },
-  hr: { type: String, required: true },
+  company: { type: Schema.Types.ObjectId, ref: "Company", required: true },
+  insurer: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  countBidding : { type: Number, default: 0, required: true },
+  plan: { type: Object, required: true },
+  totalPrice: { type: Number, required: true },
+  quotationId: { type: String },
 });
 
 BiddingSchema.plugin(timestamps);
