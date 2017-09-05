@@ -1,6 +1,6 @@
 import Joi from 'joi';
 import Boom from 'boom';
-import { User } from '../models';
+import { User, Role } from '../models';
 import moment from 'moment';
 
 const passwordPattern = /^(?=.*\d)(?=.*[A-Z]).{8,20}/;
@@ -25,19 +25,19 @@ const register = {
         }
         else {
           if( password === confirmPassword ){
-            user = new User({ email, password, role });
-            user.save().then(() => {
-              const { mailer } = request.server.app.services;
-              mailer.sendMailVerificationLink(Date.now(),email);
-              reply({ message:'Register complete! plaese click confirm link in your email'});
+            Role.findOne({ roleName: role }).then((roleId) => {
+              user = new User({ email, password, role: roleId });
+              user.save().then(() => {
+                const { mailer } = request.server.app.services;
+                mailer.sendMailVerificationLink(Date.now(),email);
+                reply({ message:'Register complete! plaese click confirm link in your email'});
+              });
             });
           }else {
             reply(Boom.badData('password not match'));
           }
         }
-
       });
-
   },
 };
 
