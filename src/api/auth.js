@@ -35,20 +35,23 @@ const login = {
               reply(Boom.unauthorized('สัญญาของคุณหมดอายุ กรุณาติดต่อเจ้าหน้าที่'));
             } else if (!uCompany.company.approve) {
               reply(Boom.unauthorized('บริษัทของคุณยังไม่ได้อนุมัติ กรุณาติดต่อเจ้าหน้าที่'));
-            } else if (user.deleted) {
-              reply(Boom.unauthorized('สัญญาของคุณหมดอายุ กรุณาติดต่อเจ้าหน้าที่'));
-            } else if (!user.comparePassword(password)) {
-              reply(Boom.unauthorized('อีเมลหรือพาวเวิร์ดไม่ถูกต้อง'));
-            } else {
-              const { auth } = request.server.app.services;
-              const token = auth.createAuthToken(user);
-              let role = null;
-              
-              User.findOne({ _id: user._id }).populate('role').exec((err, uRole) => {
-                if (uRole) {
-                  role = uRole.role.roleName;
-                }
-                Media.findOne({ _id: logo }).populate('logo').exec((err, l) => {
+            } 
+          }
+          if (user.deleted) {
+            reply(Boom.unauthorized('สัญญาของคุณหมดอายุ กรุณาติดต่อเจ้าหน้าที่'));
+          } else if (!user.comparePassword(password)) {
+            reply(Boom.unauthorized('อีเมลหรือพาวเวิร์ดไม่ถูกต้อง'));
+          } else {
+            const { auth } = request.server.app.services;
+            const token = auth.createAuthToken(user);
+            let role = null;
+            
+            User.findOne({ _id: user._id }).populate('role').exec((err, uRole) => {
+              if (uRole) {
+                role = uRole.role.roleName;
+              }
+              Media.findOne({ _id: logo }).populate('logo').exec((err, l) => {
+                if(l) {
                   const { path } = l;
                   const { storage } = request.server.app.services;
       
@@ -56,17 +59,25 @@ const login = {
                     reply({
                       token,
                       companyName: company,
-                      logo: url || null,
+                      logo: url,
                       approve: approve,
                       role: role,
                       personalVerify: user.personalVerify,
                     });
                   });
-                });
+                }
+                else {
+                  reply({
+                    token,
+                    companyName: company,
+                    logo: null,
+                    approve: approve,
+                    role: role,
+                    personalVerify: user.personalVerify,
+                  });
+                }
               });
-             
-              
-            }
+            });
           }
         });
       }

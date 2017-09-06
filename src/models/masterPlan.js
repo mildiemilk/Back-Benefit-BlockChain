@@ -9,7 +9,6 @@ const masterPlanSchema = new mongoose.Schema ({
   planName: { type: String, required: true },
   company:  { type: Schema.Types.ObjectId, ref: "Company", required: true },
   employeeOfPlan: { type: Number, required: true },
-  updateBy: { type: String, required: true },
   ipdType: { type: String, default: null },
   ipdLumsumPerYear: { type: Number, default: null },
   ipdLumsumPerTime: { type: Number, default: null },

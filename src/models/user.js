@@ -9,7 +9,6 @@ const UserSchema = new mongoose.Schema ({
   userId: { type: Number, default: 0, unique: true },
   email: { type: String, required: true, index: { unique: true } },
   password: { type: String, required: true  },
-  isSuperAdmin: { type: Boolean, default: false },
   role: { type: Schema.Types.ObjectId, ref: "Role", default: null },
   emailConfirmedAt: { type:Date, default: null } ,
   company: { type: Schema.Types.ObjectId, ref: "Company", default: null },

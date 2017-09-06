@@ -1,5 +1,5 @@
 import Joi from 'joi';
-import { MasterPlan } from '../models';
+import { MasterPlan, Role } from '../models';
 
 const createPlan = {
   tags: ['api'],
@@ -15,15 +15,17 @@ const createPlan = {
     const { planName, employeeOfPlan } = request.payload;
     const { user } = request.auth.credentials;
     const company = user.company;
-    const updateBy = user.role;
-    if(user.role === 'HR' || user.role === 'BROKER' ){
-      let masterPlan = new MasterPlan({ planName, company, employeeOfPlan, updateBy });
-      masterPlan.save().then(() => {
-        reply(masterPlan);
-      });
-    }else{
-      reply({ message:'หน้านี้สำหรับ HR หรือ Broker เท่านั้น'});
-    }
+    Role.findOne({ _id: user.role }).then((thisRole) => {
+      const role =  thisRole.roleName;
+      if (role === 'HR') {
+        let masterPlan = new MasterPlan({ planName, company, employeeOfPlan });
+        masterPlan.save().then((result) => {
+          reply(result);
+        });
+      } else {
+        reply({ message:'หน้านี้สำหรับ HR เท่านั้น'});
+      }
+    });
   },
 };
 
@@ -91,73 +93,71 @@ const editPlan = {
       lifePerYear, lifeTimeOfSalary, lifeNotExceed } = request.payload;
     const { planId, typeEdit } = request.params;
     const { user } = request.auth.credentials;
-    const updateBy = user.role;
 
-    if(user.role == 'HR' || user.role === 'BROKER'){
-      switch(typeEdit) {
-        case 'profilePlan' : MasterPlan.findOneAndUpdate({ planId: planId }, { $set:
-        {
-          planName: planName,
-          employeeOfPlan: employeeOfPlan,
-          updateBy: updateBy
-        }}, () => reply({message: 'edit Profile Plan complete!'})); break;
-        case 'ipd' : MasterPlan.findOneAndUpdate({ planId: planId }, { $set:
-        {
-          ipdType: ipdType,
-          ipdLumsumPerYear: ipdLumsumPerYear,
-          ipdLumsumPerTime: ipdLumsumPerTime,
-          ipdLumsumTimeNotExceedPerYear: ipdLumsumTimeNotExceedPerYear,
-          rbLumsumRoomPerNight: rbLumsumRoomPerNight,
-          rbLumsumNigthNotExceedPerYear: rbLumsumNigthNotExceedPerYear,
-          rbLumsumPayNotExceedPerNight: rbLumsumPayNotExceedPerNight,
-          rbLumsumPayNotExceedPerYear: rbLumsumPayNotExceedPerYear,
-          rbSchedulePatient: rbSchedulePatient,
-          rbScheduleIntensiveCarePatient: rbScheduleIntensiveCarePatient,
-          rbScheduleDoctor: rbScheduleDoctor,
-          rbScheduleSurgerySchedule: rbScheduleSurgerySchedule,
-          rbScheduleSurgeryNonSchedule: rbScheduleSurgeryNonSchedule,
-          rbScheduleService: rbScheduleService,
-          rbScheduleSmallSurgery: rbScheduleSmallSurgery,
-          rbScheduleAdviser: rbScheduleAdviser,
-          rbScheduleAmbulance: rbScheduleAmbulance,
-          rbScheduleAccident: rbScheduleAccident,
-          rbScheduleTreatment: rbScheduleTreatment,
-          rbScheduleTransplant: rbScheduleTransplant,
-          ipdCoPay: ipdCoPay,
-          ipdCoPayQuota: ipdCoPayQuota,
-          ipdCoPayDeductable: ipdCoPayDeductable,
-          ipdCoPayMixPercentage: ipdCoPayMixPercentage,
-          ipdCoPayMixNotExceed: ipdCoPayMixNotExceed,
-          ipdCoPayMixYear: ipdCoPayMixYear,
-          updateBy: updateBy
-        }}, () => reply({message: 'edit IPD complete!'})); break;
-        case 'opd' : MasterPlan.findOneAndUpdate({ planId: planId }, { $set:
-        {
-          opdPerYear: opdPerYear,
-          opdPerTime: opdPerTime,
-          opdTimeNotExceedPerYear: opdTimeNotExceedPerYear,
-          opdCoPay: opdCoPay,
-          opdCoPayQuota: opdCoPayQuota,
-          opdCoPayDeductable: opdCoPayDeductable,
-          opdCoPayMixPercentage: opdCoPayMixPercentage,
-          opdCoPayMixNotExceed: opdCoPayMixNotExceed,
-          opdCoPayMixYear: opdCoPayMixYear,
-          updateBy: updateBy
-        }}, () => reply({message: 'edit OPD complete!'})); break;
-        case 'dental' :  MasterPlan.findOneAndUpdate({ planId: planId }, { $set: { dentalPerYear: dentalPerYear, updateBy: updateBy}},() => {
-          reply({message: 'edit Dental complete!'});
-        }); break;
-        case 'life' : MasterPlan.findOneAndUpdate({ planId: planId }, { $set:
-        {
-          lifePerYear: lifePerYear,
-          lifeTimeOfSalary: lifeTimeOfSalary,
-          lifeNotExceed: lifeNotExceed,
-          updateBy: updateBy
-        }}, () => reply({message: 'edit Life complete!'})); break;
+    Role.findOne({ _id: user.role }).then((thisRole) => {
+      const role =  thisRole.roleName;
+      if(role == 'HR' || role === 'BROKER'){
+        switch(typeEdit) {
+          case 'profilePlan' : MasterPlan.findOneAndUpdate({ planId: planId }, { $set:
+          {
+            planName: planName,
+            employeeOfPlan: employeeOfPlan,
+          }}, () => reply({message: 'edit Profile Plan complete!'})); break;
+          case 'ipd' : MasterPlan.findOneAndUpdate({ planId: planId }, { $set:
+          {
+            ipdType: ipdType,
+            ipdLumsumPerYear: ipdLumsumPerYear,
+            ipdLumsumPerTime: ipdLumsumPerTime,
+            ipdLumsumTimeNotExceedPerYear: ipdLumsumTimeNotExceedPerYear,
+            rbLumsumRoomPerNight: rbLumsumRoomPerNight,
+            rbLumsumNigthNotExceedPerYear: rbLumsumNigthNotExceedPerYear,
+            rbLumsumPayNotExceedPerNight: rbLumsumPayNotExceedPerNight,
+            rbLumsumPayNotExceedPerYear: rbLumsumPayNotExceedPerYear,
+            rbSchedulePatient: rbSchedulePatient,
+            rbScheduleIntensiveCarePatient: rbScheduleIntensiveCarePatient,
+            rbScheduleDoctor: rbScheduleDoctor,
+            rbScheduleSurgerySchedule: rbScheduleSurgerySchedule,
+            rbScheduleSurgeryNonSchedule: rbScheduleSurgeryNonSchedule,
+            rbScheduleService: rbScheduleService,
+            rbScheduleSmallSurgery: rbScheduleSmallSurgery,
+            rbScheduleAdviser: rbScheduleAdviser,
+            rbScheduleAmbulance: rbScheduleAmbulance,
+            rbScheduleAccident: rbScheduleAccident,
+            rbScheduleTreatment: rbScheduleTreatment,
+            rbScheduleTransplant: rbScheduleTransplant,
+            ipdCoPay: ipdCoPay,
+            ipdCoPayQuota: ipdCoPayQuota,
+            ipdCoPayDeductable: ipdCoPayDeductable,
+            ipdCoPayMixPercentage: ipdCoPayMixPercentage,
+            ipdCoPayMixNotExceed: ipdCoPayMixNotExceed,
+            ipdCoPayMixYear: ipdCoPayMixYear,
+          }}, () => reply({message: 'edit IPD complete!'})); break;
+          case 'opd' : MasterPlan.findOneAndUpdate({ planId: planId }, { $set:
+          {
+            opdPerYear: opdPerYear,
+            opdPerTime: opdPerTime,
+            opdTimeNotExceedPerYear: opdTimeNotExceedPerYear,
+            opdCoPay: opdCoPay,
+            opdCoPayQuota: opdCoPayQuota,
+            opdCoPayDeductable: opdCoPayDeductable,
+            opdCoPayMixPercentage: opdCoPayMixPercentage,
+            opdCoPayMixNotExceed: opdCoPayMixNotExceed,
+            opdCoPayMixYear: opdCoPayMixYear,
+          }}, () => reply({message: 'edit OPD complete!'})); break;
+          case 'dental' :  MasterPlan.findOneAndUpdate({ planId: planId }, { $set: { dentalPerYear: dentalPerYear }},() => {
+            reply({message: 'edit Dental complete!'});
+          }); break;
+          case 'life' : MasterPlan.findOneAndUpdate({ planId: planId }, { $set:
+          {
+            lifePerYear: lifePerYear,
+            lifeTimeOfSalary: lifeTimeOfSalary,
+            lifeNotExceed: lifeNotExceed,
+          }}, () => reply({message: 'edit Life complete!'})); break;
+        }
+      }else{
+        reply({ message:'หน้านี้สำหรับ HR หรือ Broker เท่านั้น'});
       }
-    }else{
-      reply({ message:'หน้านี้สำหรับ HR หรือ Broker เท่านั้น'});
-    }
+    });
   },
 };
 
@@ -193,14 +193,12 @@ const copyPlan = {
 
   handler: (request, reply) => {
     const { planId } = request.params;
-    const { user } = request.auth.credentials;
-    const updateBy = user.role;
     MasterPlan.findOne({ planId })
       .then((masterPlan) => {
         const planName = masterPlan.planName + ' (Copy)';
         const company = masterPlan.company;
         const employeeOfPlan = masterPlan.employeeOfPlan;
-        let newPlan = new MasterPlan({ planName, company, employeeOfPlan, updateBy });
+        let newPlan = new MasterPlan({ planName, company, employeeOfPlan });
         newPlan.save().then(() => {
           MasterPlan.findOneAndUpdate({ planId: newPlan.planId }, { $set:
           {
@@ -242,7 +240,6 @@ const copyPlan = {
             lifeTimeOfSalary: masterPlan.lifeTimeOfSalary,
             lifeNotExceed: masterPlan.lifeNotExceed,
             dentalPerYear: masterPlan.dentalPerYear,
-            updateBy: updateBy,
           }}, () => reply({message: 'copy plan complete'}));
         });
       });

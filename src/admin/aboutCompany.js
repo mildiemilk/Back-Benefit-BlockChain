@@ -2,7 +2,7 @@ import Joi from 'joi';
 import Boom from 'boom';
 import exceltojson from 'xlsx-to-json-lc';
 import fs from 'fs';
-import { Company, User, Media } from '../models';
+import { Company, User, Media, Role } from '../models';
 
 const registerCompany = {
   auth: { strategy: 'jwt', scope: 'admin',},
@@ -15,32 +15,34 @@ const registerCompany = {
       hrDetail: Joi.string().required(),
       numberOfEmployees: Joi.string().required(),
       tel: Joi.string().required(),
-      companyBroker: Joi.string().required(),
-      companyInsurer: Joi.string().required(),
+      startInsurance: Joi.date().required(),
+      expiredInsurance: Joi.date().required(),
     },
   },
   handler: (request, reply) => {
-    const { companyName, location, typeOfBusiness, hrDetail, numberOfEmployees, tel, companyBroker, companyInsurer } = request.payload;
+    const { companyName, location, typeOfBusiness, hrDetail, numberOfEmployees, tel, startInsurance, expiredInsurance} = request.payload;
     const { user } = request.auth.credentials;
     let hr = user._id;
-    if( user.role === 'HR' ) {
-      Company.findOne({ companyName })
-        .then((company) => {
-          if (company) {
-            reply(Boom.badData('Company already existed'));
-          } else {
-            company = new Company({ companyName, location, typeOfBusiness, hrDetail, numberOfEmployees, tel, companyBroker, companyInsurer, hr });
-            company.save().then(() => {
-              User.findOneAndUpdate({ _id: hr }, { $set: { company: company._id }}, () => {
-                console.log('create company complete!');
+    Role.findOne({ _id: user.role }).then((thisRole) => {
+      const role = thisRole.roleName;
+      if( role === 'HR' ) {
+        Company.findOne({ companyName })
+          .then((company) => {
+            if (company) {
+              reply(Boom.badData('Company already existed'));
+            } else {
+              company = new Company({ companyName, location, typeOfBusiness, hrDetail, numberOfEmployees, tel, createdBy: hr, startInsurance, expiredInsurance });
+              company.save().then(() => {
+                User.findOneAndUpdate({ _id: hr }, { $set: { company: company._id }}, () => {
+                  console.log('create company complete!');
+                });
+                reply({profile: company,
+                  message: 'setting profile success'});
               });
-              reply({profile: company,
-                message: 'setting profile success'});
-            });
-          }
-        });
-    } else reply(Boom.badData('This page for HR only'));
-
+            }
+          });
+      } else reply(Boom.badData('This page for HR only'));  
+    });
   },
 };
 
@@ -394,7 +396,7 @@ const setGroupBenefit = {
 
 export default function(app) {
   app.route([
-    { method: 'POST', path: '/registerCompany', config: registerCompany },
+    { method: 'POST', path: '/register-company', config: registerCompany },
     { method: 'PUT', path: '/set-logo', config: setLogo },
     { method: 'PUT', path: '/upload-employee', config: uploadEmployee },
     { method: 'GET', path: '/get-template', config: getTemplate },

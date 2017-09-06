@@ -10,7 +10,7 @@ const BiddingRelationSchema = new mongoose.Schema ({
   insurers: [{ insurerId: { type: Schema.Types.ObjectId, ref: "Company" },
     status: { type: String, enum: ['waiting', 'join', 'reject'] }}],
   timeout: { type : Date, default: null },
-  minPrice: { type: Number },
+  minPrice: { type: Number, default: null},
 });
 
 

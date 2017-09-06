@@ -10,10 +10,13 @@ const approve = {
   },
   handler: (request, reply) => {
     const { email } = request.payload;
-    User.findOneAndUpdate({ email: email }, { $set: { approveFile: true }},() => {
-      const { mailer } = request.server.app.services;
-      mailer.sendMailApproveAccount(email);
-      reply({ message:'Account Approved'});
+    User.findOne({ email: email }).populate('company').exec((err, user) => {
+      user.company.approve = true;
+      user.company.save().then(() => {
+        const { mailer } = request.server.app.services;
+        mailer.sendMailApproveAccount(email);
+        reply({ message:'Account Approved'});
+      });
     });
   },
 };
