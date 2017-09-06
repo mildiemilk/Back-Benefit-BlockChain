@@ -246,9 +246,13 @@ const uploadClaimData = {
   },
 
   handler: (request, reply) => {
-    const { file } = request.payload;
+    let { file } = request.payload;
     const { storage } = request.server.app.services;
     const { user } = request.auth.credentials;
+
+    if (!Array.isArray(file)) {
+      file = [file];
+    }
     
     const files = file.map((element) => {
       let info = null;
