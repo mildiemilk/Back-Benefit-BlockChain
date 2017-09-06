@@ -17,6 +17,7 @@ const CompanySchema = new mongoose.Schema ({
   logo: { type: Schema.Types.ObjectId, ref: "Media" },
   completeStep: { type: Array, default: [false,false,false,false] },
   fileEmployee: { type: Schema.Types.ObjectId, ref: "Media" },
+  claimData: { type: Array },
   employeeList: { type: Schema.Types.ObjectId, ref: "Media" },
   approve: { type: Boolean, default: false },
   startInsurance: { type: Date, required: true },

@@ -161,6 +161,43 @@ const joinBidding = {
   }
 };
 
+const biddingDetail = {
+  tags: ['api'],
+  auth: 'jwt',
+  validate: {
+    params: {
+      companyId: Joi.string().required(),
+    }
+  },
+  handler: (request, reply) => {
+    const { companyId } = request.params;
+    const { user } = request.auth.credentials;
+    Bidding.findOne({ company: companyId, insurer: user._id }).populate('company').exec((err, bidding) => {
+      if (bidding) {
+        reply({
+          quotationId: bidding.quotationId,
+          countBidding: bidding.countBidding,
+          updatedAt: bidding.updatedAt,
+          plan: bidding.plan,
+          totalPrice: bidding.totalPrice,
+          claimData: bidding.company.claimData,
+          memberList: null,
+        });
+      } else {
+        reply({
+          quotationId: null,
+          countBidding: 0,
+          updatedAt: null,
+          plan: null,
+          totalPrice: null,
+          claimData: null,
+          memberList: null,
+        });
+      }
+    });
+  }
+};
+
 export default function(app) {
   app.route([
     { method: 'POST', path: '/bidding', config: bidding },
@@ -168,5 +205,6 @@ export default function(app) {
     { method: 'GET', path: '/getbidding', config: getBidding },
     { method: 'POST', path: '/choosefinalinsurer', config: chooseFinalInsurer },
     { method: 'PUT', path: '/insurer/join-bidding', config: joinBidding },
+    { method: 'GET', path: '/insurer/bidding-detail/{companyId}', config: biddingDetail },
   ]);
 }
