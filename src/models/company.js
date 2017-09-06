@@ -10,7 +10,7 @@ const CompanySchema = new mongoose.Schema ({
   location: { type: String, required: true},
   typeOfBusiness: { type: String, required: true, enum: ['Type 1', 'Type 2', 'Type 3']}, 
   hrDetail: {type: String, required: true},
-  numberOfEmployees: { type: String, required: true, enum: ['1-50', '51-100', '101-150']},
+  numberOfEmployees: { type: Number, required: true },
   tel: { type: String, required: true },
   insurer: { type: Array },
   createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },

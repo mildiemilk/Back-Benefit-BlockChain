@@ -153,14 +153,18 @@ const getCompanyList = {
       if(role === 'Insurer'){
         BiddingRelation.find({ 'insurers.insurerId': user._id }).populate('company').exec((err, results) => {
           const data = results.map((result) => {
+            const myDate = result.company.expiredInsurance;
+            myDate.setDate(myDate.getDate() + 1);
             return Object.assign({},{
+              companyId: result.company.companyId,
               company: result.company.companyName,
               numberOfEmployees: result.company.numberOfEmployees,
               expiredOldInsurance: result.company.expiredInsurance,
-              startNewInsurance: result.company.expiredInsurance + 1,
+              startNewInsurance: myDate,
               status: result.insurers.find((insurer) => insurer.insurerId.toString() === user._id.toString()).status,
               candidateInsurer: result.insurers.length,
               minPrice: result.minPrice,
+              timeout: result.timeout,
             });
           });
           reply(data);
