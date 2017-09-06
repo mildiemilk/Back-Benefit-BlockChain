@@ -139,11 +139,34 @@ const chooseFinalInsurer = {
   },
 };
 
+const joinBidding = {
+  tags: ['api'],
+  auth: 'jwt',
+  validate: {
+    params: {
+      companyId: Joi.string().required(),
+    }
+  },
+  handler: (request, reply) => {
+    const { companyId } = request.params;
+    const { user } = request.auth.credentials;
+    BiddingRelation.findOne({ 'insurers.insurerId': user._id, company: companyId }).then((result) => {
+      const index = result.insurers.findIndex((insurer) => insurer.insurerId.toString() === user._id.toString());
+      result.insurers[index].status = 'join';
+      result.markModified('insurers');
+      result.save().then((result) => {
+        reply(result);
+      });
+    });
+  }
+};
+
 export default function(app) {
   app.route([
     { method: 'POST', path: '/bidding', config: bidding },
     { method: 'PUT', path: '/canclebidding', config: cancleBidding },
     { method: 'GET', path: '/getbidding', config: getBidding },
     { method: 'POST', path: '/choosefinalinsurer', config: chooseFinalInsurer },
+    { method: 'GET', path: '/insurer/join-bidding/{companyId}', config: joinBidding }, 
   ]);
 }

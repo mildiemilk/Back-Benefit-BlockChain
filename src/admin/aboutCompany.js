@@ -13,7 +13,7 @@ const registerCompany = {
       location: Joi.string().required(),
       typeOfBusiness: Joi.string().required(),
       hrDetail: Joi.string().required(),
-      numberOfEmployees: Joi.string().required(),
+      numberOfEmployees: Joi.number().required(),
       tel: Joi.string().required(),
       startInsurance: Joi.date().required(),
       expiredInsurance: Joi.date().required(),
@@ -407,5 +407,6 @@ export default function(app) {
     { method: 'GET', path: '/get-complete-step', config: getCompleteStep },
     { method: 'GET', path: '/get-group-benefit', config: getGroupBenefit },
     { method: 'PUT', path: '/set-group-benefit/{groupNumber}', config: setGroupBenefit },
+
   ]);
 }
