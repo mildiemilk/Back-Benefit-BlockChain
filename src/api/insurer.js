@@ -1,6 +1,6 @@
 import Joi from 'joi';
 import Boom from 'boom';
-import { Insurer, BiddingRelation, Role } from '../models';
+import { Insurer, BiddingRelation, Role, Media } from '../models';
 
 const createInsurer = {
   tags: ['api'],
@@ -155,19 +155,31 @@ const getCompanyList = {
           const data = results.map((result) => {
             const myDate = result.company.expiredInsurance;
             myDate.setDate(myDate.getDate() + 1);
-            return Object.assign({},{
-              companyId: result.company.companyId,
-              company: result.company.companyName,
-              numberOfEmployees: result.company.numberOfEmployees,
-              expiredOldInsurance: result.company.expiredInsurance,
-              startNewInsurance: myDate,
-              status: result.insurers.find((insurer) => insurer.insurerId.toString() === user._id.toString()).status,
-              candidateInsurer: result.insurers.length,
-              minPrice: result.minPrice,
-              timeout: result.timeout,
+
+            return new Promise((resolve) => {
+              Media.findOne({ _id: result.company.logo }).then((logo) => {
+                let object;
+                const { storage } = request.server.app.services;
+
+                storage.getUrl(logo.path, (url) => {
+                  object = Object.assign({},{
+                    companyId: result.company.companyId,
+                    company: result.company.companyName,
+                    logo: url,
+                    numberOfEmployees: result.company.numberOfEmployees,
+                    expiredOldInsurance: result.company.expiredInsurance,
+                    startNewInsurance: myDate,
+                    status: result.insurers.find((insurer) => insurer.insurerId.toString() === user._id.toString()).status,
+                    candidateInsurer: result.insurers.length,
+                    minPrice: result.minPrice,
+                    timeout: result.timeout,
+                  });
+                  resolve(object);
+                });
+              });
             });
           });
-          reply(data);
+          Promise.all(data).then((result) => reply(result));
         });
       } else reply(Boom.badData('This page for Insurer only'));
     });
