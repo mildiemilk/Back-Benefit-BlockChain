@@ -151,7 +151,7 @@ const getCompanyList = {
     Role.findOne({ _id: user.role }).then((thisRole) => {
       const role =  thisRole.roleName;
       if(role === 'Insurer'){
-        BiddingRelation.find({ 'insurers.insurerId': user._id }, null, {sort: {createdAt: -1}}).populate('company').exec((err, results) => {
+        BiddingRelation.find({ 'insurers.insurerId': user._id, confirmed: true }, null, {sort: {createdAt: -1}}).populate('company').exec((err, results) => {
           const data = results.map((result) => {
             const myDate = result.company.expiredInsurance;
             myDate.setDate(myDate.getDate() + 1);

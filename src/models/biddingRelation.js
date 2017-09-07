@@ -11,6 +11,7 @@ const BiddingRelationSchema = new mongoose.Schema ({
     status: { type: String, enum: ['waiting', 'join', 'reject'] }}],
   timeout: { type : Date, default: null },
   minPrice: { type: Number, default: null},
+  confirmed: { type: Boolean, default: false },
 });
 
 

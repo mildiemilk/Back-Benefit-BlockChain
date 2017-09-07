@@ -2,7 +2,7 @@ import Joi from 'joi';
 import Boom from 'boom';
 import exceltojson from 'xlsx-to-json-lc';
 import fs from 'fs';
-import { Company, User, Media, Role } from '../models';
+import { Company, User, Media, Role, BiddingRelation } from '../models';
 
 const registerCompany = {
   auth: { strategy: 'jwt', scope: 'admin',},
@@ -330,24 +330,31 @@ const setCompleteStep = {
   handler: (request, reply) => {
     const { step, passwordToConfirm } = request.payload;
     const { user } = request.auth.credentials;
-    if(user.role == 'HR'){
-      if (!user.comparePassword(passwordToConfirm)) {
-        reply(Boom.badData('Invalid password'));
-      } else {
-        console.log('step', step);
-        console.log('user', user);
-        User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
-          if (err) console.log(err);
-          u.company.completeStep[step] = true;
-          u.company.markModified('completeStep');
-          u.company.save().then((company)=>{
-            reply(company.completeStep);
+    Role.findOne({ _id: user.role }).then((thisRole) => {
+      const role =  thisRole.roleName;
+      if(role == 'HR'){
+        if (!user.comparePassword(passwordToConfirm)) {
+          reply(Boom.badData('Invalid password'));
+        } else {
+          User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+            if (err) reply(err);
+            u.company.completeStep[step] = true;
+            u.company.markModified('completeStep');
+            u.company.save().then((company)=>{
+              if (step === 1) {
+                BiddingRelation.findOne({ company: user.company }).then((bidding) => {
+                  bidding.confirmed = true;
+                  bidding.save();
+                });
+              }
+              reply(company.completeStep);
+            });
           });
-        });
+        }
+      }else{
+        reply(Boom.badData('This page for HR only'));
       }
-    }else{
-      reply(Boom.badData('This page for HR only'));
-    }
+    });
   },
 };
 const getCompleteStep = {
