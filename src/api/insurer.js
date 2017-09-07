@@ -163,7 +163,7 @@ const getCompanyList = {
 
                 storage.getUrl(logo.path, (url) => {
                   object = Object.assign({},{
-                    companyId: result.company.companyId,
+                    companyId: result.company._id,
                     company: result.company.companyName,
                     logo: url,
                     numberOfEmployees: result.company.numberOfEmployees,

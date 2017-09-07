@@ -11,7 +11,7 @@ const BiddingSchema = new mongoose.Schema ({
   countBidding : { type: Number, default: 0, required: true },
   plan: { type: Object, required: true },
   totalPrice: { type: Number, required: true },
-  quotationId: { type: String },
+  quotationId: { type: String, required: true},
 });
 
 BiddingSchema.plugin(timestamps);

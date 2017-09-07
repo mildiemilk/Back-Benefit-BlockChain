@@ -1,6 +1,6 @@
 import Joi from 'joi';
 import Boom from 'boom';
-import { Insurer, Bidding, BiddingRelation, User } from '../models';
+import { Bidding, BiddingRelation, User } from '../models';
 
 const bidding = {
   tags: ['api'],
@@ -8,88 +8,37 @@ const bidding = {
 
   validate: {
     payload: {
-      detail: Joi.array().items(Joi.object()),
-      hrId: Joi.string().required(),
+      totalPrice: Joi.number().required(),
+      plan: Joi.object().required(),
+      quotationId: Joi.string().required(),
     },
+    params: {
+      companyId: Joi.string().required(),
+    }
   },
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
-    const insurerUser = user._id;
-    const { detail, hrId } = request.payload;
-    if(user.role == 'Insurer'){
-      Insurer.findOne({insurerUser})
-        .then((insurer) => {
-          BiddingRelation.findOne({hr:user._id})
-            .then((biddingrelation) =>{
-              const index = biddingrelation.insurers.findIndex((element) => {
-                return element.insurerName === insurer.insurerName;
-              });
-              biddingrelation.status[index] = 'join';
-              biddingrelation.markModified('status');
-              biddingrelation.save().then((err)=>{
-                console.log(err);
-              });
-            });
-          Bidding.findOne({insurerName:insurer.insurerName, status:'valid'})
-            .then((nowBidding) => {
-              if(nowBidding){
-                nowBidding.status = 'invalid';
-                nowBidding.save();
-                const status = 'valid';
-                const insurerName = insurer.insurerName;
-                const hr = hrId;
-                const timeOfBidding = nowBidding.timeOfBidding + 1;
-                const bidding = new Bidding({ insurerName, detail, timeOfBidding, status, hr });
-                bidding.save().then((err) => {
-                  if (!err)
-                    reply(bidding);
-                  else reply(err);
-                });
-              }else{
-                const status = 'valid';
-                const insurerName = insurer.insurerName;
-                const timeOfBidding = 1;
-                const hr = hrId;
-                const bidding = new Bidding({ insurerName, detail, timeOfBidding, status, hr });
-                bidding.save().then((err) => {
-                  if (!err)
-                    reply(bidding);
-                  else reply(err);
-                });
-              }
-            });
+    const { companyId } = request.params;
+    const { totalPrice, plan, quotationId } = request.payload;
+    Bidding.findOne({ insurer: user._id, company: companyId }).then(bidding => {
+      if (bidding) {
+        bidding.countBidding = bidding.countBidding + 1;
+        bidding.totalPrice = totalPrice;
+        bidding.plan = plan;
+        bidding.quotationId = quotationId;
+      } else {
+        bidding = new Bidding({ company: companyId, insurer: user._id, totalPrice, plan, quotationId, countBidding: 1 });
+      }
+      bidding.save().then((bidding) => {
+        reply({
+          biddingId: bidding.biddingId,
+          countBidding: bidding.countBidding,
+          updatedAt: bidding.updatedAt,
+          plan: bidding.plan,
+          totalPrice: bidding.totalPrice,
         });
-    }else{
-      reply(Boom.badData('This page for Insurer only'));
-    }
-  },
-};
-
-const cancleBidding = {
-  tags: ['api'],
-  auth: 'jwt',
-
-  handler: (request, reply) => {
-    const { user } = request.auth.credentials;
-    const insurerUser = user._id;
-    if(user.role == 'Insurer' || user.role == 'HR'){
-      Insurer.findOne({insurerUser})
-        .then((insurer) => {
-          BiddingRelation.findOne({hr:user._id})
-            .then((biddingrelation) =>{
-              const index = biddingrelation.insurers.findIndex((element) => {
-                return element.insurerName === insurer.insurerName;
-              });
-              biddingrelation.status[index] = 'cancel';
-              biddingrelation.markModified('status');
-              biddingrelation.save().then((err)=>{
-                reply(err);
-              });
-            });
-        });
-    }else{
-      reply(Boom.badData('This page for Insurer only'));
-    }
+      });
+    });
   },
 };
 
@@ -179,7 +128,7 @@ const biddingDetail = {
     Bidding.findOne({ company: companyId, insurer: user._id }).populate('company').exec((err, bidding) => {
       if (bidding) {
         reply({
-          quotationId: bidding.quotationId,
+          biddingId: bidding.biddingId,
           countBidding: bidding.countBidding,
           updatedAt: bidding.updatedAt,
           plan: bidding.plan,
@@ -189,7 +138,7 @@ const biddingDetail = {
         });
       } else {
         reply({
-          quotationId: null,
+          biddingId: null,
           countBidding: 0,
           updatedAt: null,
           plan: null,
@@ -204,8 +153,7 @@ const biddingDetail = {
 
 export default function(app) {
   app.route([
-    { method: 'POST', path: '/bidding', config: bidding },
-    { method: 'PUT', path: '/canclebidding', config: cancleBidding },
+    { method: 'POST', path: '/insurer/bidding/{companyId}', config: bidding },
     { method: 'GET', path: '/getbidding', config: getBidding },
     { method: 'POST', path: '/choosefinalinsurer', config: chooseFinalInsurer },
     { method: 'PUT', path: '/insurer/{status}', config: statusBidding },
