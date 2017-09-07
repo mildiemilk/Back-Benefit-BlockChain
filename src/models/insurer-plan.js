@@ -61,4 +61,4 @@ InsurerPlanSchema.plugin(autoIncrement.plugin,{
   startAt: 1,
   incrementBy: 1
 });
-export default mongoose.model('InsurerPlanSchema', InsurerPlanSchema);
+export default mongoose.model('InsurerPlan', InsurerPlanSchema);

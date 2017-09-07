@@ -1,5 +1,5 @@
 import Joi from 'joi';
-import { MasterPlan, Role } from '../models';
+import { MasterPlan, Role, InsurerPlan } from '../models';
 
 const createPlan = {
   tags: ['api'],
@@ -80,6 +80,7 @@ const editPlan = {
     params: {
       planId: Joi.number().integer().required(),
       typeEdit: Joi.string().required(),
+      editBy: Joi.string().required(),
     },
   },
   handler: (request, reply) => {
@@ -91,19 +92,25 @@ const editPlan = {
       ipdCoPayDeductable, ipdCoPayMixPercentage, ipdCoPayMixNotExceed, ipdCoPayMixYear, opdPerYear, opdPerTime, opdTimeNotExceedPerYear,
       opdCoPay, opdCoPayQuota, opdCoPayDeductable, opdCoPayMixPercentage, opdCoPayMixNotExceed, opdCoPayMixYear, dentalPerYear,
       lifePerYear, lifeTimeOfSalary, lifeNotExceed } = request.payload;
-    const { planId, typeEdit } = request.params;
+    const { planId, typeEdit, editBy } = request.params;
     const { user } = request.auth.credentials;
+    let planType;
+
+    switch(editBy) {
+      case 'company' : planType = MasterPlan; break;
+      case 'insurer' : planType = InsurerPlan; break;
+    }
 
     Role.findOne({ _id: user.role }).then((thisRole) => {
       const role =  thisRole.roleName;
-      if(role == 'HR' || role === 'BROKER'){
+      if(role == 'HR' || role === 'Insurer'){
         switch(typeEdit) {
-          case 'profilePlan' : MasterPlan.findOneAndUpdate({ planId: planId }, { $set:
+          case 'profilePlan' : planType.findOneAndUpdate({ planId: planId }, { $set:
           {
             planName: planName,
             employeeOfPlan: employeeOfPlan,
           }}, () => reply({message: 'edit Profile Plan complete!'})); break;
-          case 'ipd' : MasterPlan.findOneAndUpdate({ planId: planId }, { $set:
+          case 'ipd' : planType.findOneAndUpdate({ planId: planId }, { $set:
           {
             ipdType: ipdType,
             ipdLumsumPerYear: ipdLumsumPerYear,
@@ -132,7 +139,7 @@ const editPlan = {
             ipdCoPayMixNotExceed: ipdCoPayMixNotExceed,
             ipdCoPayMixYear: ipdCoPayMixYear,
           }}, () => reply({message: 'edit IPD complete!'})); break;
-          case 'opd' : MasterPlan.findOneAndUpdate({ planId: planId }, { $set:
+          case 'opd' : planType.findOneAndUpdate({ planId: planId }, { $set:
           {
             opdPerYear: opdPerYear,
             opdPerTime: opdPerTime,
@@ -144,10 +151,10 @@ const editPlan = {
             opdCoPayMixNotExceed: opdCoPayMixNotExceed,
             opdCoPayMixYear: opdCoPayMixYear,
           }}, () => reply({message: 'edit OPD complete!'})); break;
-          case 'dental' :  MasterPlan.findOneAndUpdate({ planId: planId }, { $set: { dentalPerYear: dentalPerYear }},() => {
+          case 'dental' :  planType.findOneAndUpdate({ planId: planId }, { $set: { dentalPerYear: dentalPerYear }},() => {
             reply({message: 'edit Dental complete!'});
           }); break;
-          case 'life' : MasterPlan.findOneAndUpdate({ planId: planId }, { $set:
+          case 'life' : planType.findOneAndUpdate({ planId: planId }, { $set:
           {
             lifePerYear: lifePerYear,
             lifeTimeOfSalary: lifeTimeOfSalary,
@@ -259,10 +266,79 @@ const getAllPlan = {
   },
 };
 
+const extendedPlan = {
+  tags: ['api'],
+  auth: 'jwt',
+
+  validate: {
+    params: {
+      planId: Joi.number().integer().required(),
+    },
+  },
+
+  handler: (request, reply) => {
+    const { planId } = request.params;
+    const { user } = request.auth.credentials;
+    MasterPlan.findOne({ planId })
+      .then((masterPlan) => {
+        const planName = masterPlan.planName;
+        const company = masterPlan.company;
+        const employeeOfPlan = masterPlan.employeeOfPlan;
+        const extendedFrom = masterPlan._id;
+        const createdBy = user._id;
+        let newPlan = new  InsurerPlan({ planName, company, employeeOfPlan, extendedFrom, createdBy });
+        newPlan.save().then(() => {
+          InsurerPlan.findOneAndUpdate({ planId: newPlan.planId }, { $set:
+          {
+            ipdLumsumPerYear: masterPlan.ipdLumsumPerYear,
+            ipdLumsumPerTime: masterPlan.ipdLumsumPerTime,
+            ipdLumsumTimeNotExceedPerYear: masterPlan.ipdLumsumTimeNotExceedPerYear,
+            rbLumsumRoomPerNight: masterPlan.rbLumsumRoomPerNight,
+            rbLumsumNigthNotExceedPerYear: masterPlan.rbLumsumPayNotExceedPerYear,
+            rbLumsumPayNotExceedPerNight: masterPlan.rbLumsumPayNotExceedPerNight,
+            rbLumsumPayNotExceedPerYear: masterPlan.rbLumsumPayNotExceedPerYear,
+            rbSchedulePatient: masterPlan.rbSchedulePatient,
+            rbScheduleIntensiveCarePatient: masterPlan.rbScheduleIntensiveCarePatient,
+            rbScheduleDoctor: masterPlan.rbScheduleDoctor,
+            rbScheduleSurgerySchedule: masterPlan.rbScheduleSurgerySchedule,
+            rbScheduleSurgeryNonSchedule: masterPlan.rbScheduleSurgeryNonSchedule,
+            rbScheduleService: masterPlan.rbScheduleService,
+            rbScheduleSmallSurgery: masterPlan.rbScheduleSmallSurgery,
+            rbScheduleAdviser: masterPlan.rbScheduleAdviser,
+            rbScheduleAmbulance: masterPlan.rbScheduleAmbulance,
+            rbScheduleAccident: masterPlan.rbScheduleAccident,
+            rbScheduleTreatment: masterPlan.rbScheduleTreatment,
+            rbScheduleTransplant: masterPlan.rbScheduleTransplant,
+            ipdCoPay: masterPlan.ipdCoPay,
+            ipdCoPayQuota: masterPlan.ipdCoPayQuota,
+            ipdCoPayDeductable: masterPlan.ipdCoPayDeductable,
+            ipdCoPayMixPercentage: masterPlan.ipdCoPayMixPercentage,
+            ipdCoPayMixNotExceed: masterPlan.ipdCoPayMixNotExceed,
+            ipdCoPayMixYear: masterPlan.ipdCoPayMixYear,
+            opdPerYear: masterPlan.opdPerYear,
+            opdPerTime: masterPlan.opdPerTime,
+            opdTimeNotExceedPerYear: masterPlan.opdTimeNotExceedPerYear,
+            opdCoPay: masterPlan.opdCoPay,
+            opdCoPayQuota: masterPlan.opdCoPayQuota,
+            opdCoPayDeductable: masterPlan.opdCoPayDeductable,
+            opdCoPayMixPercentage: masterPlan.opdCoPayMixPercentage,
+            opdCoPayMixNotExceed: masterPlan.opdCoPayMixNotExceed,
+            opdCoPayMixYear: masterPlan.opdCoPayMixYear,
+            lifePerYear: masterPlan.lifePerYear,
+            lifeTimeOfSalary: masterPlan.lifeTimeOfSalary,
+            lifeNotExceed: masterPlan.lifeNotExceed,
+            dentalPerYear: masterPlan.dentalPerYear,
+          }}, () => reply({message: 'create extended plan completed!'}));
+        });
+      });
+  },
+};
+
 export default function(app) {
   app.route([
     { method: 'POST', path: '/createPlan', config: createPlan },
-    { method: 'PUT', path: '/editPlan/{planId}/{typeEdit}', config: editPlan },
+    { method: 'POST', path: '/insurer/extendedPlan/{planId}', config: extendedPlan },
+    { method: 'PUT', path: '/{editBy}/editPlan/{planId}/{typeEdit}', config: editPlan },
     { method: 'DELETE', path: '/deletePlan/{planId}', config: deletePlan },
     { method: 'POST', path: '/copyPlan/{planId}', config: copyPlan },
     { method: 'GET', path: '/getAllPlan', config: getAllPlan },
