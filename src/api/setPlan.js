@@ -168,7 +168,6 @@ const editPlan = {
   },
 };
 
-
 const deletePlan = {
   tags: ['api'],
   auth: 'jwt',
