@@ -139,20 +139,24 @@ const chooseFinalInsurer = {
   },
 };
 
-const joinBidding = {
+const statusBidding = {
   tags: ['api'],
   auth: 'jwt',
   validate: {
     payload: {
       companyId: Joi.string().required(),
+    },
+    params: {
+      status: Joi.string().valid('join', 'reject').required(),
     }
   },
   handler: (request, reply) => {
     const { companyId } = request.payload;
+    const { status } = request.params;
     const { user } = request.auth.credentials;
     BiddingRelation.findOne({ 'insurers.insurerId': user._id, company: companyId }).then((result) => {
       const index = result.insurers.findIndex((insurer) => insurer.insurerId.toString() === user._id.toString());
-      result.insurers[index].status = 'join';
+      result.insurers[index].status = status;
       result.markModified('insurers');
       result.save().then((result) => {
         reply(result);
@@ -204,7 +208,7 @@ export default function(app) {
     { method: 'PUT', path: '/canclebidding', config: cancleBidding },
     { method: 'GET', path: '/getbidding', config: getBidding },
     { method: 'POST', path: '/choosefinalinsurer', config: chooseFinalInsurer },
-    { method: 'PUT', path: '/insurer/join-bidding', config: joinBidding },
+    { method: 'PUT', path: '/insurer/{status}', config: statusBidding },
     { method: 'GET', path: '/insurer/bidding-detail/{companyId}', config: biddingDetail },
   ]);
 }

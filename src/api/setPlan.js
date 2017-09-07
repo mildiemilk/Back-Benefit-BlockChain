@@ -80,7 +80,7 @@ const editPlan = {
     params: {
       planId: Joi.number().integer().required(),
       typeEdit: Joi.string().required(),
-      editBy: Joi.string().required(),
+      editBy: Joi.string().valid('company', 'insurer').required(),
     },
   },
   handler: (request, reply) => {
