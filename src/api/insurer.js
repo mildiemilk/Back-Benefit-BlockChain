@@ -1,35 +1,6 @@
 import Joi from 'joi';
 import Boom from 'boom';
-import { Insurer, BiddingRelation, Role, Media } from '../models';
-
-const createInsurer = {
-  tags: ['api'],
-  auth: 'jwt',
-
-  validate: {
-    payload: {
-      insurerName: Joi.string().required(),
-      location: Joi.string().required(),
-      insurerCode: Joi.number().integer().required(),
-    },
-  },
-  handler: (request, reply) => {
-    const { insurerName, location, insurerCode } = request.payload;
-    const { user } = request.auth.credentials;
-    const insurerUser = user._id;
-    if(user.role === 'HR'){
-      const insurer = new Insurer({ insurerName, location, insurerCode, insurerUser });
-      insurer.save().then((err) => {
-        if (!err)
-          reply(insurer);
-        else reply(err);
-      });
-    }else{
-      reply(Boom.badData('This page for Insurer only'));
-    }
-  },
-};
-
+import { BiddingRelation, Role, Media, InsuranceCompany } from '../models';
 
 const getAllInsurer = {
   tags: ['api'],
@@ -37,13 +8,16 @@ const getAllInsurer = {
 
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
-    if(user.role == 'HR'){
-      Insurer.find({}).then((insurers) => {
-        reply(insurers);
-      });
-    }else{
-      reply(Boom.badData('This page for HR only'));
-    }
+    Role.findOne({ _id: user.role }).then((thisRole) => {
+      const role =  thisRole.roleName;
+      if(role == 'HR'){
+        InsuranceCompany.find({}).then((insurers) => {
+          reply(insurers);
+        });
+      }else{
+        reply(Boom.badData('This page for HR only'));
+      }
+    });
   },
 };
 
@@ -58,8 +32,8 @@ const chooseInsurer = {
   handler: (request, reply) => {
     const { insurers } = request.payload;
     const { user } = request.auth.credentials;
-    const company = user.company;
-    const insurerBidding = insurers.map((insurer) => Object.assign({}, { insurerId: insurer, status: 'waiting' }));
+    const company = user.company.detail;
+    const insurerBidding = insurers.map((insurer) => Object.assign({}, { insurerCompany: insurer, status: 'waiting' }));
     Role.findOne({ _id: user.role }).then((thisRole) => {
       const role =  thisRole.roleName;
       if(role == 'HR'){
@@ -115,14 +89,17 @@ const getSelectInsurer = {
 
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
-    if(user.role == 'HR'){
-      BiddingRelation.findOne({ hr: user._id })
-      .then((biddingrelation) => {
-        reply(biddingrelation.insurers);
-      });
-    }else{
-      reply(Boom.badData('This page for HR only'));
-    }
+    Role.findOne({ _id: user.role }).then((thisRole) => {
+      const role =  thisRole.roleName;
+      if(role == 'HR'){
+        BiddingRelation.findOne({ company: user.company.detail })
+        .then((biddingrelation) => {
+          reply(biddingrelation.insurers);
+        });
+      }else{
+        reply(Boom.badData('This page for HR only'));
+      }
+    });
   },
 };
 
@@ -132,14 +109,17 @@ const getTimeout = {
 
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
-    if(user.role == 'HR'){
-      BiddingRelation.findOne({ hr: user._id })
-      .then((biddingrelation) => {
-        reply(biddingrelation.timeout);
-      });
-    }else{    
-      reply(Boom.badData('This page for HR only'));
-    }
+    Role.findOne({ _id: user.role }).then((thisRole) => {
+      const role =  thisRole.roleName;
+      if(role == 'HR'){
+        BiddingRelation.findOne({ hr: user._id })
+        .then((biddingrelation) => {
+          reply(biddingrelation.timeout);
+        });
+      }else{    
+        reply(Boom.badData('This page for HR only'));
+      }
+    });
   },
 };
 
@@ -151,25 +131,25 @@ const getCompanyList = {
     Role.findOne({ _id: user.role }).then((thisRole) => {
       const role =  thisRole.roleName;
       if(role === 'Insurer'){
-        BiddingRelation.find({ 'insurers.insurerId': user._id, confirmed: true }, null, {sort: {createdAt: -1}}).populate('company').exec((err, results) => {
+        BiddingRelation.find({ 'insurers.insurerCompany': user._id, confirmed: true }, null, {sort: {createdAt: -1}}).populate('company.detail').exec((err, results) => {
           const data = results.map((result) => {
-            const myDate = result.company.expiredInsurance;
+            const myDate = result.company.detail.expiredInsurance;
             myDate.setDate(myDate.getDate() + 1);
 
             return new Promise((resolve) => {
-              Media.findOne({ _id: result.company.logo }).then((logo) => {
+              Media.findOne({ _id: result.company.detail.logo }).then((logo) => {
                 let object;
                 const { storage } = request.server.app.services;
 
                 storage.getUrl(logo.path, (url) => {
                   object = Object.assign({},{
-                    companyId: result.company._id,
-                    company: result.company.companyName,
+                    companyId: result.company.detail._id,
+                    company: result.company.detail.companyName,
                     logo: url,
-                    numberOfEmployees: result.company.numberOfEmployees,
-                    expiredOldInsurance: result.company.expiredInsurance,
+                    numberOfEmployees: result.company.detail.numberOfEmployees,
+                    expiredOldInsurance: result.company.detail.expiredInsurance,
                     startNewInsurance: myDate,
-                    status: result.insurers.find((insurer) => insurer.insurerId.toString() === user._id.toString()).status,
+                    status: result.insurers.find((insurer) => insurer.insurerCompany.toString() === user._id.toString()).status,
                     candidateInsurer: result.insurers.length,
                     minPrice: result.minPrice,
                     timeout: result.timeout,
@@ -189,12 +169,11 @@ const getCompanyList = {
 
 export default function(app) {
   app.route([
-    { method: 'POST', path: '/createInsurer', config: createInsurer },
-    { method: 'GET', path: '/getAllInsurer', config: getAllInsurer },
-    { method: 'PUT', path: '/chooseInsurer', config: chooseInsurer },
-    { method: 'PUT', path: '/setTimeout', config: setTimeout },
-    { method: 'GET', path: '/getTimeout', config: getTimeout },
-    { method: 'GET', path: '/getSelectInsurer', config: getSelectInsurer },
+    { method: 'GET', path: '/company/get-all-insurer', config: getAllInsurer },
+    { method: 'PUT', path: '/company/choose-insurer', config: chooseInsurer },
+    { method: 'PUT', path: '/company/set-timeout', config: setTimeout },
+    { method: 'GET', path: '/company/get-timeout', config: getTimeout },
+    { method: 'GET', path: '/company/get-select-insurer', config: getSelectInsurer },
     { method: 'GET', path: '/insurer/company-list', config: getCompanyList },
   ]);
 }

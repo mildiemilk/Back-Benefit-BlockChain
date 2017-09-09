@@ -2,12 +2,13 @@ import Register from './register';
 import Auth from './auth';
 import FileHandler from './file';
 import Remove from './remove';
-import SetPlan from './setPlan';
+import SetPlan from './set-plan';
 import Insurer from './insurer';
 import Bidding from './bidding';
 import BenefitPlan from './benefit-plan';
 import UploadFile from './upload-file';
-import UserDetail from './userDetail';
+import UserDetail from './user-detail';
+import EmployeeCompany from './employee-company';
 
 export const register = (server, options, next) => {
   Register(server);
@@ -20,6 +21,7 @@ export const register = (server, options, next) => {
   BenefitPlan(server);
   UploadFile(server);
   UserDetail(server);
+  EmployeeCompany(server);
   next();
 };
 export const test = (server, options, next) => {

@@ -16,7 +16,7 @@ const benefitPlan = {
     const { plan } = request.payload;
     //const insurerUser = user._id;
     if(user.role == 'HR'){
-      BenefitPlan.findOne({ company: user.company }).then((benefitplan) => {
+      BenefitPlan.findOne({ company: user.company.detail }).then((benefitplan) => {
         if(benefitplan){
           benefitplan.plan = plan;
           benefitplan.save().then((err) => {
@@ -26,7 +26,7 @@ const benefitPlan = {
           });
         } else {
           User.findOne({_id:user._id}).then((user)=>{
-            const company = user.company;
+            const company = user.company.detail;
             const benefitplan = new BenefitPlan({ plan, company });
             benefitplan.save().then((err) => {
               if (!err)
@@ -69,7 +69,7 @@ const editBenefitPlan = {
     const health = { HealthList, selectedOptionHealth1, selectedOptionHealth2, selectedOptionHealth3 };
     const expense = { ExpenseList, selectedOptionExpense1, selectedOptionExpense2, selectedOptionExpense3 };
     if(user.role == 'HR'){
-      BenefitPlan.findOne({company:user.company})
+      BenefitPlan.findOne({company:user.company.detail})
         .then((benefitplan)=>{
           benefitplan.health = health;
           benefitplan.isHealth = isHealth;
@@ -100,13 +100,13 @@ const settingBenefitPlan = {
     const { user } = request.auth.credentials;
     const { benefitPlans } = request.payload;
     if(user.role == 'HR'){
-      User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+      User.findOne({ _id: user._id }).populate('company.detail').exec((err, u) => {
         const benefits = { 
           benefitPlans: benefitPlans,
           timeout: null,
         };
-        u.company.benefitPlans = benefits;
-        u.company.save();
+        u.company.detail.benefitPlans = benefits;
+        u.company.detail.save();
         reply(u.company.benefitPlans);
       });
     }else{
@@ -122,7 +122,7 @@ const getOptionPlan = {
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
     if(user.role == 'HR'){
-      BenefitPlan.findOne({company:user.company})
+      BenefitPlan.findOne({company:user.company.detail})
       .then((benefitplan)=>{
         reply(benefitplan);
       });
@@ -139,8 +139,8 @@ const getBenefitPlan = {
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
     if(user.role == 'HR'){
-      User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
-        reply(u.company.benefitPlans);
+      User.findOne({ _id: user._id }).populate('company.detail').exec((err, u) => {
+        reply(u.company.detail.benefitPlans);
       });
     }else{
       reply(Boom.badData('This page for HR only'));
@@ -160,14 +160,14 @@ const setTimeout = {
     const { timeout } = request.payload;
     const { user } = request.auth.credentials;
     if(user.role == 'HR'){
-      User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+      User.findOne({ _id: user._id }).populate('company.detail').exec((err, u) => {
         const benefitPlans = { 
-          benefitPlans: u.company.benefitPlans.benefitPlans,
+          benefitPlans: u.company.detail.benefitPlans.benefitPlans,
           timeout: timeout,
         };
-        u.company.benefitPlans = benefitPlans;
-        u.company.save();
-        reply(u.company.benefitPlans);
+        u.company.detail.benefitPlans = benefitPlans;
+        u.company.detail.save();
+        reply(u.company.detail.benefitPlans);
       });
     }else{
       reply(Boom.badData('This page for HR only'));

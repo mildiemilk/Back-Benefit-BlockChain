@@ -1,9 +1,10 @@
 import UserModel from './user';
-import CompanyModel from './company';
+import EmployeeCompanyModel from './employee-company';
+import InsuranceCompanyModel from './insurance-company';
 import SimpleRequirementModel from './simpleRequirement';
-import MasterPlanModel from './masterPlan';
+import MasterPlanModel from './master-plan';
 import BiddingModel from './bidding';
-import BiddingRelationModel from './biddingRelation';
+import BiddingRelationModel from './bidding-relation';
 import BenefitPlanModel from './benefit-plan';
 import MediaModel from './media';
 import RoleModel from './role';
@@ -12,7 +13,8 @@ import EmployeePlanModel from './employee-plan';
 import TemplatePlanModel from './template-plan';
 
 export const User = UserModel;
-export const Company = CompanyModel;
+export const EmployeeCompany = EmployeeCompanyModel;
+export const InsuranceCompany = InsuranceCompanyModel;
 export const SimpleRequirement = SimpleRequirementModel;
 export const MasterPlan = MasterPlanModel;
 export const Bidding = BiddingModel;
@@ -26,7 +28,8 @@ export const TemplatePlan = TemplatePlanModel;
 
 export default {
   User,
-  Company,
+  EmployeeCompany,
+  InsuranceCompany,
   SimpleRequirement,
   MasterPlan,
   Bidding,

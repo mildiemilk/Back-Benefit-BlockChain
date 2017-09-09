@@ -11,7 +11,10 @@ const UserSchema = new mongoose.Schema ({
   password: { type: String, required: true  },
   role: { type: Schema.Types.ObjectId, ref: "Role", default: null },
   emailConfirmedAt: { type:Date, default: null } ,
-  company: { type: Schema.Types.ObjectId, ref: "Company", default: null },
+  company: {
+    kind: { type: String },
+    detail: { type: Schema.Types.ObjectId, refPath: "company.kind", default: null },
+  },
   removedAt: { type: Date, default: null },
   phone: { type: String },
   personalEmail: { type: String },

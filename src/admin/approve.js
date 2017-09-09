@@ -10,9 +10,9 @@ const approve = {
   },
   handler: (request, reply) => {
     const { email } = request.payload;
-    User.findOne({ email: email }).populate('company').exec((err, user) => {
-      user.company.approve = true;
-      user.company.save().then(() => {
+    User.findOne({ email: email }).populate('company.detail').exec((err, user) => {
+      user.company.detail.approve = true;
+      user.company.detail.save().then(() => {
         const { mailer } = request.server.app.services;
         mailer.sendMailApproveAccount(email);
         reply({ message:'Account Approved'});

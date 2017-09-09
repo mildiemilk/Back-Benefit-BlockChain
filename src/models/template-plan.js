@@ -6,7 +6,7 @@ const Schema = mongoose.Schema;
 
 const TemplatePlanSchema = new mongoose.Schema ({
   templatePlanId: { type: Number, default: 0, unique: true },
-  company: { type: Schema.Types.ObjectId, ref: "Company", required: true },
+  company: { type: Schema.Types.ObjectId, ref: "EmployeeCompany", required: true },
   plan: { type: Object, required: true },
   health: { type: Object },
   isHealth: { type: Boolean },

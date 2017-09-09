@@ -6,8 +6,8 @@ const Schema = mongoose.Schema;
 
 const BiddingSchema = new mongoose.Schema ({
   biddingId: { type: Number, default: 0, unique: true },
-  company: { type: Schema.Types.ObjectId, ref: "Company", required: true },
-  insurer: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  company: { type: Schema.Types.ObjectId, ref: "EmployeeCompany", required: true },
+  insurer: { type: Schema.Types.ObjectId, ref: "InsuranceCompany", required: true },
   countBidding : { type: Number, default: 0, required: true },
   plan: { type: Object, required: true },
   totalPrice: { type: Number, required: true },

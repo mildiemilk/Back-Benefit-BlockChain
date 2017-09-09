@@ -7,7 +7,7 @@ const Schema = mongoose.Schema;
 const LogUserClaimSchema = new mongoose.Schema ({
   logUserClaimId: {type: Number, default: 0, unique: true},
   user: { type: Schema.Types.ObjectId, ref: "User", required: true },
-  company: { type: Schema.Types.ObjectId, ref: "Company", required: true },
+  company: { type: Schema.Types.ObjectId, ref: "EmployeeCompany", required: true },
   detail: { type: Object, required: true}, 
   status: { type: String, required: true }, //TODO: what type? enum?
   claimNumber: { type: Number, required: true },

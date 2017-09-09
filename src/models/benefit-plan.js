@@ -6,7 +6,7 @@ const Schema = mongoose.Schema;
 
 const BenefitPlanSchema = new mongoose.Schema ({
   benefitPlanId: { type: Number, default: 0, unique: true },
-  company: { type: Schema.Types.ObjectId, ref: "Company", required: true },
+  company: { type: Schema.Types.ObjectId, ref: "EmployeeCompany", required: true },
   benefitPlanName: { type: String, required: true },
   benefitPlan: { type: Object, required: true },
   effectiveDate: { type: Date },

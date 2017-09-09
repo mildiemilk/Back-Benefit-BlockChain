@@ -6,7 +6,7 @@ const Schema = mongoose.Schema;
 
 const EmployeeGroupSchema = new mongoose.Schema ({
   employeeGroupId: { type: Number, default: 0, unique: true },
-  company: { type: Schema.Types.ObjectId, ref: "Company", required: true },
+  company: { type: Schema.Types.ObjectId, ref: "EmployeeCompany", required: true },
   groupName: { type: String, required: true },
   type: { type: String, required: true , enum: ['fixed', 'flex'] },  
   benefitPlan: [{ type: Schema.Types.ObjectId, ref: "BenefitPlan", required: true }],

@@ -7,7 +7,7 @@ const Schema = mongoose.Schema;
 const EmployeePlanSchema = new mongoose.Schema ({
   employeePlanId: {type: Number, default: 0, unique: true},
   user: { type: Schema.Types.ObjectId, ref: "User", required: true },
-  company: { type: Schema.Types.ObjectId, ref: "Company", required: true },
+  company: { type: Schema.Types.ObjectId, ref: "EmployeeCompany", required: true },
   benefitPlan: {}, //TODO: should be benefitPlan_id
   selectGroup: { type: String, required: true },
 });

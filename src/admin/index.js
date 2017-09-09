@@ -1,12 +1,8 @@
-import AboutCompany from './aboutCompany';
-import EditCompany from './editCompany';
 import Approve from './approve';
 import FillSimpleRequirement from './fillSimpleRequirement';
-import ManageRole from './manageRole';
+import ManageRole from './manage-role';
 
 export const register = (server, options, next) => {
-  AboutCompany(server);
-  EditCompany(server);
   Approve(server);
   FillSimpleRequirement(server);
   ManageRole(server);

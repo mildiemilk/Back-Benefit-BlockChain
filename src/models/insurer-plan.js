@@ -7,7 +7,7 @@ const Schema = mongoose.Schema;
 const InsurerPlanSchema = new mongoose.Schema ({
   planId: { type: Number, default: 0, unique: true },
   planName: { type: String, required: true },
-  company:  { type: Schema.Types.ObjectId, ref: "Company", required: true },
+  company:  { type: Schema.Types.ObjectId, ref: "EmployeeCompany", required: true },
   employeeOfPlan: { type: Number, required: true },
   createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
   extendedFrom: { type: Schema.Types.ObjectId, ref: "MasterPlan", default: null},

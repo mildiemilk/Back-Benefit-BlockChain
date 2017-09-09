@@ -2,11 +2,11 @@ import Joi from 'joi';
 import Boom from 'boom';
 import exceltojson from 'xlsx-to-json-lc';
 import fs from 'fs';
-import { Company, User, Media, Role, BiddingRelation } from '../models';
+import { EmployeeCompany, User, Media, Role, BiddingRelation } from '../models';
 
 const registerCompany = {
-  auth: { strategy: 'jwt', scope: 'admin',},
-  tags: ['admin', 'api'],
+  tags: ['api'],
+  auth: 'jwt',
   validate: {
     payload: {
       companyName: Joi.string().required(),
@@ -26,14 +26,14 @@ const registerCompany = {
     Role.findOne({ _id: user.role }).then((thisRole) => {
       const role = thisRole.roleName;
       if( role === 'HR' ) {
-        Company.findOne({ companyName })
+        EmployeeCompany.findOne({ companyName })
           .then((company) => {
             if (company) {
-              reply(Boom.badData('Company already existed'));
+              reply(Boom.badData('EmployeeCompany already existed'));
             } else {
-              company = new Company({ companyName, location, typeOfBusiness, hrDetail, numberOfEmployees, tel, createdBy: hr, startInsurance, expiredInsurance });
+              company = new EmployeeCompany({ companyName, location, typeOfBusiness, hrDetail, numberOfEmployees, tel, createdBy: hr, startInsurance, expiredInsurance });
               company.save().then(() => {
-                User.findOneAndUpdate({ _id: hr }, { $set: { company: company._id }}, () => {
+                User.findOneAndUpdate({ _id: hr }, { $set: { company: {kind: 'EmployeeCompany', detail: company._id} }}, () => {
                   console.log('create company complete!');
                 });
                 reply({profile: company,
@@ -47,8 +47,8 @@ const registerCompany = {
 };
 
 const setLogo = {
-  auth: { strategy: 'jwt', scope: 'admin',},
-  tags: ['admin', 'api'],
+  tags: ['api'],
+  auth: 'jwt',
   payload: {
     output: 'stream',
     parse: true,
@@ -67,11 +67,11 @@ const setLogo = {
       if (!err) {
         media.userId = user.id;
         media.save();
-        User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+        User.findOne({ _id: user._id }).populate('company.detail').exec((err, u) => {
           storage.getUrl(media.path, (url) => {
             if (!err) {
-              u.company.logo = media._id;
-              u.company.save();
+              u.company.detail.logo = media._id;
+              u.company.detail.save();
               reply({logo: url});
             }
           });
@@ -82,8 +82,8 @@ const setLogo = {
 };
 
 const uploadEmployee = {
-  auth: { strategy: 'jwt', scope: 'admin',},
-  tags: ['admin', 'api'],
+  tags: ['api'],
+  auth: 'jwt',
   payload: {
     output: 'stream',
     parse: true,
@@ -122,7 +122,7 @@ const uploadEmployee = {
                   email: employee.email,
                   password: 'Donut555',
                   role: 'Employee',
-                  company: user.company,
+                  company: user.company.detail,
                   detail: {
                     employee_code: employee.employee_code,
                     prefix: employee.prefix,
@@ -152,7 +152,7 @@ const uploadEmployee = {
             });
             Promise.all(addEmployee).then(() => {
               const aggregatorOpts = [
-                { $match: { "company": user.company, "role": "Employee" } },
+                { $match: { "company": user.company.detail, "role": "Employee" } },
                 {
                   $group: {
                     _id: "$detail.benefit_group",
@@ -179,9 +179,9 @@ const uploadEmployee = {
                   default: '',
                   numberOfGroup: element.count,
                 }));
-                User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
-                  u.company.groupBenefit = groupBenefit;
-                  u.company.save();
+                User.findOne({ _id: user._id }).populate('company.detail').exec((err, u) => {
+                  u.company.detail.groupBenefit = groupBenefit;
+                  u.company.detail.save();
                 });
               });
             });
@@ -194,11 +194,11 @@ const uploadEmployee = {
         if (!err) {
           media.userId = user.id;
           media.save();
-          User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+          User.findOne({ _id: user._id }).populate('company.detail').exec((err, u) => {
             storage.getUrl(media.path, (url) => {
               if (!err) {
-                u.company.fileEmployee = media._id;
-                u.company.save();
+                u.company.detail.fileEmployee = media._id;
+                u.company.detail.save();
                 fs.unlink(path, (err) => {
                   if (err) throw err;
                   reply({fileEmployee: url});
@@ -213,8 +213,8 @@ const uploadEmployee = {
 };
 
 const getTemplate = {
-  auth: { strategy: 'jwt', scope: 'admin',},
-  tags: ['admin', 'api'],
+  tags: ['api'],
+  auth: 'jwt',
   handler: (request, reply) => {
     const { storage } = request.server.app.services;
     const path = '860/864/8d92ac9fbfec93f6b7e1f10e5cb149e7.xlsx';
@@ -237,8 +237,8 @@ const getTemplate = {
 };
 
 const uploadClaimData = {
-  auth: { strategy: 'jwt', scope: 'admin',},
-  tags: ['admin', 'api'],
+  tags: ['api'],
+  auth: 'jwt',
   payload: {
     output: 'stream',
     parse: true,
@@ -272,9 +272,9 @@ const uploadClaimData = {
     });
 
     Promise.all(files).then((result) => {
-      User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
-        u.company.claimData = result;
-        u.company.save().then((result) => {
+      User.findOne({ _id: user._id }).populate('company.detail').exec((err, u) => {
+        u.company.detail.claimData = result;
+        u.company.detail.save().then((result) => {
           reply(result);
         });  
       });
@@ -289,8 +289,8 @@ const getClaimData = {
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
     if(user.role == 'HR'){
-      User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
-        const files = u.company.claimData.map(element => {
+      User.findOne({ _id: user._id }).populate('company.detail').exec((err, u) => {
+        const files = u.company.detail.claimData.map(element => {
           return new Promise((resolve) => {
             Media.findOne({ _id: element })
             .then((media) => {
@@ -308,12 +308,12 @@ const getClaimData = {
   },
 };
 const getEmployee = {
-  auth: { strategy: 'jwt', scope: 'admin',},
-  tags: ['admin', 'api'],
+  tags: ['api'],
+  auth: 'jwt',
 
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
-    User.find({ company: user.company, role: 'Employee' }, (err, employees) => {
+    User.find({ company: user.company.detail, role: 'Employee' }, (err, employees) => {
       reply(employees);
     });
   }
@@ -336,18 +336,18 @@ const setCompleteStep = {
         if (!user.comparePassword(passwordToConfirm)) {
           reply(Boom.badData('Invalid password'));
         } else {
-          User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
+          User.findOne({ _id: user._id }).populate('company.detail').exec((err, u) => {
             if (err) reply(err);
-            u.company.completeStep[step] = true;
-            u.company.markModified('completeStep');
-            u.company.save().then((company)=>{
+            u.company.detail.completeStep[step] = true;
+            u.company.detail.markModified('completeStep');
+            u.company.detail.save().then((company)=>{
               if (step === 1) {
-                BiddingRelation.findOne({ company: user.company }).then((bidding) => {
+                BiddingRelation.findOne({ company: user.company.detail }).then((bidding) => {
                   bidding.confirmed = true;
                   bidding.save();
                 });
               }
-              reply(company.completeStep);
+              reply(company.detail.completeStep);
             });
           });
         }
@@ -362,27 +362,27 @@ const getCompleteStep = {
   auth: 'jwt',
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
-    User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
-      reply(u.company.completeStep);
+    User.findOne({ _id: user._id }).populate('company.detail').exec((err, u) => {
+      reply(u.company.detail.completeStep);
     });
   },
 };
 
 const getGroupBenefit = {
-  auth: { strategy: 'jwt', scope: 'admin',},
-  tags: ['admin', 'api'],
+  tags: ['api'],
+  auth: 'jwt',
 
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
-    User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
-      reply(u.company.groupBenefit);  
+    User.findOne({ _id: user._id }).populate('company.detail').exec((err, u) => {
+      reply(u.company.detail.groupBenefit);  
     });
   }
 };
 
 const setGroupBenefit = {
-  auth: { strategy: 'jwt', scope: 'admin',},
-  tags: ['admin', 'api'],
+  tags: ['api'],
+  auth: 'jwt',
   validate: {
     payload: {
       detail: Joi.object().required(),
@@ -395,10 +395,10 @@ const setGroupBenefit = {
     const { user } = request.auth.credentials;
     const { groupNumber } = request.params;
     const { detail } = request.payload;
-    User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
-      u.company.groupBenefit[groupNumber] = detail;
-      u.company.markModified('groupBenefit');
-      u.company.save().then((result)=>{
+    User.findOne({ _id: user._id }).populate('company.detail').exec((err, u) => {
+      u.company.detail.groupBenefit[groupNumber] = detail;
+      u.company.detail.markModified('groupBenefit');
+      u.company.detail.save().then((result)=>{
         reply(result.groupBenefit);
       });
     });
@@ -407,17 +407,17 @@ const setGroupBenefit = {
 
 export default function(app) {
   app.route([
-    { method: 'POST', path: '/register-company', config: registerCompany },
-    { method: 'PUT', path: '/set-logo', config: setLogo },
-    { method: 'PUT', path: '/upload-employee', config: uploadEmployee },
-    { method: 'GET', path: '/get-template', config: getTemplate },
-    { method: 'PUT', path: '/upload-claimdata', config: uploadClaimData },
-    { method: 'GET', path: '/get-employee', config: getEmployee },
-    { method: 'GET', path: '/get-claim-data', config: getClaimData },
-    { method: 'PUT', path: '/set-complete-step', config: setCompleteStep },
-    { method: 'GET', path: '/get-complete-step', config: getCompleteStep },
-    { method: 'GET', path: '/get-group-benefit', config: getGroupBenefit },
-    { method: 'PUT', path: '/set-group-benefit/{groupNumber}', config: setGroupBenefit },
+    { method: 'POST', path: '/company/register-company', config: registerCompany },
+    { method: 'PUT', path: '/company/set-logo', config: setLogo },
+    { method: 'PUT', path: '/company/upload-employee', config: uploadEmployee },
+    { method: 'GET', path: '/company/get-template', config: getTemplate },
+    { method: 'PUT', path: '/company/upload-claimdata', config: uploadClaimData },
+    { method: 'GET', path: '/company/get-employee', config: getEmployee },
+    { method: 'GET', path: '/company/get-claim-data', config: getClaimData },
+    { method: 'PUT', path: '/company/set-complete-step', config: setCompleteStep },
+    { method: 'GET', path: '/company/get-complete-step', config: getCompleteStep },
+    { method: 'GET', path: '/company/get-group-benefit', config: getGroupBenefit },
+    { method: 'PUT', path: '/company/set-group-benefit/{groupNumber}', config: setGroupBenefit },
 
   ]);
 }

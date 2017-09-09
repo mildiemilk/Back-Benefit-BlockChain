@@ -18,7 +18,7 @@ const login = {
     .then((user) => {
       if (!user || user.emailConfirmedAt === null) {
         if (!user){
-          reply(Boom.unauthorized('อีเมลหรือพาวเวิร์ดไม่ถูกต้อง'));
+          reply(Boom.unauthorized('อีเมลหรือพาวเวิร์ดไม่ถูกต้อง'));  
         } else {
           reply(Boom.unauthorized('กรุณายืนยันอีเมลของคุณด้วยค่ะ'));
         }
@@ -26,14 +26,16 @@ const login = {
         let company = null;
         let approve = null;
         let logo = null;
-        User.findOne({ _id: user._id }).populate('company').exec((err, uCompany) => {
-          if (uCompany.company) {
-            company = uCompany.company.companyName;
-            approve = uCompany.company.approve;
-            logo = uCompany.company.logo;
-            if (uCompany.company.deleted) {
+        User.findOne({ _id: user._id }).populate('company.detail role').exec((err, uCompany) => {
+          console.log(uCompany);
+          const role = uCompany.role.roleName;
+          if (uCompany.company.detail) {
+            company = uCompany.company.detail.companyName;
+            approve = uCompany.company.detail.approve;
+            logo = uCompany.company.detail.logo;
+            if (uCompany.company.detail.deleted) {
               reply(Boom.unauthorized('สัญญาของคุณหมดอายุ กรุณาติดต่อเจ้าหน้าที่'));
-            } else if (!uCompany.company.approve) {
+            } else if (!uCompany.company.detail.approve && role !== 'Insurer') {
               reply(Boom.unauthorized('บริษัทของคุณยังไม่ได้อนุมัติ กรุณาติดต่อเจ้าหน้าที่'));
             } 
           }
@@ -46,37 +48,32 @@ const login = {
             const token = auth.createAuthToken(user);
             let role = null;
             
-            User.findOne({ _id: user._id }).populate('role').exec((err, uRole) => {
-              if (uRole) {
-                role = uRole.role.roleName;
-              }
-              Media.findOne({ _id: logo }).populate('logo').exec((err, l) => {
-                if(l) {
-                  const { path } = l;
-                  const { storage } = request.server.app.services;
-      
-                  storage.getUrl(path, (url) => {
-                    reply({
-                      token,
-                      companyName: company,
-                      logo: url,
-                      approve: approve,
-                      role: role,
-                      personalVerify: user.personalVerify,
-                    });
-                  });
-                }
-                else {
+            Media.findOne({ _id: logo }).populate('logo').exec((err, l) => {
+              if(l) {
+                const { path } = l;
+                const { storage } = request.server.app.services;
+    
+                storage.getUrl(path, (url) => {
                   reply({
                     token,
                     companyName: company,
-                    logo: null,
+                    logo: url,
                     approve: approve,
                     role: role,
                     personalVerify: user.personalVerify,
                   });
-                }
-              });
+                });
+              }
+              else {
+                reply({
+                  token,
+                  companyName: company,
+                  logo: null,
+                  approve: approve,
+                  role: role,
+                  personalVerify: user.personalVerify,
+                });
+              }
             });
           }
         });

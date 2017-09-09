@@ -4,7 +4,7 @@ import autoIncrement from 'mongoose-auto-increment';
 import mongooseDelete from 'mongoose-delete';
 const Schema = mongoose.Schema;
 
-const CompanySchema = new mongoose.Schema ({
+const EmployeeCompanySchema = new mongoose.Schema ({
   companyId: {type: Number, default: 0, unique: true},
   companyName: { type: String, required: true },
   location: { type: String, required: true},
@@ -12,7 +12,8 @@ const CompanySchema = new mongoose.Schema ({
   hrDetail: {type: String, required: true},
   numberOfEmployees: { type: Number, required: true },
   tel: { type: String, required: true },
-  insurer: { type: Array },
+  insurers: [{ insurerCompany: { type: Schema.Types.ObjectId, ref: "InsuranceCompany" },
+    date: { type: Date }}],
   createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
   logo: { type: Schema.Types.ObjectId, ref: "Media" },
   completeStep: { type: Array, default: [false,false,false,false] },
@@ -25,13 +26,13 @@ const CompanySchema = new mongoose.Schema ({
 });
 
 
-CompanySchema.plugin(timestamps);
+EmployeeCompanySchema.plugin(timestamps);
 autoIncrement.initialize(mongoose.connection);
-CompanySchema.plugin(mongooseDelete, { deletedAt : true });
-CompanySchema.plugin(autoIncrement.plugin,{
-  model: 'CompanySchema',
+EmployeeCompanySchema.plugin(mongooseDelete, { deletedAt : true });
+EmployeeCompanySchema.plugin(autoIncrement.plugin,{
+  model: 'EmployeeCompanySchema',
   field: 'companyId',
   startAt: 1,
   incrementBy: 1
 });
-export default mongoose.model('Company', CompanySchema);
+export default mongoose.model('EmployeeCompany', EmployeeCompanySchema);

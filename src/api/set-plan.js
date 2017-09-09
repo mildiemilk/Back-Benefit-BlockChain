@@ -14,7 +14,7 @@ const createPlan = {
   handler: (request, reply) => {
     const { planName, employeeOfPlan } = request.payload;
     const { user } = request.auth.credentials;
-    const company = user.company;
+    const company = user.company.detail;
     Role.findOne({ _id: user.role }).then((thisRole) => {
       const role =  thisRole.roleName;
       if (role === 'HR') {
@@ -175,11 +175,17 @@ const deletePlan = {
   validate: {
     params: {
       planId: Joi.number().integer().required(),
+      editBy: Joi.string().valid('company', 'insurer').required(),
     },
   },
   handler: (request, reply) => {
-    const { planId } = request.params;
-    MasterPlan.findOneAndRemove({ planId }, (err) => {
+    const { planId, editBy } = request.params;
+    let planType;
+    switch(editBy) {
+      case 'company' : planType = MasterPlan; break;
+      case 'insurer' : planType = InsurerPlan; break;
+    }
+    planType.findOneAndRemove({ planId }, (err) => {
       if (!err)
         reply({message:'deleted complete!'});
     });
@@ -258,7 +264,7 @@ const getAllPlan = {
 
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
-    MasterPlan.find({ company: user.company }).sort({planId: 1}).exec(function(err, plans) {
+    MasterPlan.find({ company: user.company.detail }).sort({planId: 1}).exec(function(err, plans) {
       if (err) throw err;
       reply(plans);
     });
@@ -335,11 +341,11 @@ const extendedPlan = {
 
 export default function(app) {
   app.route([
-    { method: 'POST', path: '/createPlan', config: createPlan },
-    { method: 'POST', path: '/insurer/extendedPlan/{planId}', config: extendedPlan },
-    { method: 'PUT', path: '/{editBy}/editPlan/{planId}/{typeEdit}', config: editPlan },
-    { method: 'DELETE', path: '/deletePlan/{planId}', config: deletePlan },
-    { method: 'POST', path: '/copyPlan/{planId}', config: copyPlan },
-    { method: 'GET', path: '/getAllPlan', config: getAllPlan },
+    { method: 'POST', path: '/company/create-plan', config: createPlan },
+    { method: 'POST', path: '/insurer/extended-plan/{planId}', config: extendedPlan },
+    { method: 'PUT', path: '/{editBy}/edit-plan/{planId}/{typeEdit}', config: editPlan },
+    { method: 'DELETE', path: '/{editBy}/delete-plan/{planId}', config: deletePlan },
+    { method: 'POST', path: '/company/copy-plan/{planId}', config: copyPlan },
+    { method: 'GET', path: '/company/get-all-plan', config: getAllPlan },
   ]);
 }

@@ -1,6 +1,6 @@
 import Joi from 'joi';
 import Boom from 'boom';
-import { Bidding, BiddingRelation, User, MasterPlan, InsurerPlan } from '../models';
+import { Bidding, BiddingRelation, User, MasterPlan, InsurerPlan, Role } from '../models';
 
 const bidding = {
   tags: ['api'],
@@ -20,14 +20,15 @@ const bidding = {
     const { user } = request.auth.credentials;
     const { companyId } = request.params;
     const { totalPrice, plan, quotationId } = request.payload;
-    Bidding.findOne({ insurer: user._id, company: companyId }).then(bidding => {
+    const insurer = user.company.detail;
+    Bidding.findOne({ insurer, company: companyId }).then(bidding => {
       if (bidding) {
         bidding.countBidding = bidding.countBidding + 1;
         bidding.totalPrice = totalPrice;
         bidding.plan = plan;
         bidding.quotationId = quotationId;
       } else {
-        bidding = new Bidding({ company: companyId, insurer: user._id, totalPrice, plan, quotationId, countBidding: 1 });
+        bidding = new Bidding({ company: companyId, insurer, totalPrice, plan, quotationId, countBidding: 1 });
       }
       bidding.save().then((bidding) => {
         reply({
@@ -47,8 +48,35 @@ const getBidding = {
   auth: 'jwt',
 
   handler: (request, reply) => {
-    Bidding.find({}).then((bidding) => {
-      reply(bidding);
+    const { user } = request.auth.credentials;
+    const company = user.company.detail;
+    BiddingRelation.findOne({ company }).populate('insurers.insurerCompany', 'logo companyName').exec((err, biddings) => {
+      const detail = biddings.insurers.map((insurer) => {
+        return new Promise((resolve) => {
+          Bidding.findOne({ company, insurer: insurer.insurerCompany }, 'biddingId updatedAt totalPrice countBidding', (err, result) => {
+            if(result) {
+              resolve({
+                ...insurer._doc,
+                biddingId: result.biddingId,
+                updatedAt: result.updatedAt,
+                totalPrice: result.totalPrice,
+                countBidding: result.countBidding,
+              });
+            } else {
+              resolve({
+                ...insurer._doc,
+                biddingId: null,
+                updatedAt: null,
+                totalPrice: null,
+                countBidding: null,
+              });
+            }
+          });
+        });
+      });
+      Promise.all(detail).then((result) => {
+        reply(result);
+      });
     });
   },
 };
@@ -60,31 +88,35 @@ const chooseFinalInsurer = {
   validate: {
     payload: {
       passwordToConfirm: Joi.string().required(),
-      insurerName: Joi.string().required(),
+      insurerCompany: Joi.string().required(),
       step: Joi.number().required(),
     },
   },
   handler: (request, reply) => {
-    const { passwordToConfirm, insurerName, step } = request.payload;
+    const { passwordToConfirm, insurerCompany, step } = request.payload;
     const { user } = request.auth.credentials;
     console.log(user);
-    if(user.role == 'HR'){
-      if (!user.comparePassword(passwordToConfirm)) {
-        reply(Boom.badData('Invalid password'));
-      } else {
-        User.findOne({ _id: user._id }).populate('company').exec((err, u) => {
-          if (err) console.log(err);
-          u.company.companyInsurer = insurerName;
-          u.company.completeStep[step] = true;
-          u.company.markModified('completeStep');
-          u.company.save().then((company)=>{
-            reply({completeStep: company.completeStep, message:'เลือก broker เรียบร้อยแล้ว'});
+    Role.findOne({ _id: user.role }).then((thisRole) => {
+      const role =  thisRole.roleName;
+      if(role == 'HR'){
+        if (!user.comparePassword(passwordToConfirm)) {
+          reply(Boom.badData('Invalid password'));
+        } else {
+          User.findOne({ _id: user._id }).populate('company.detail').exec((err, u) => {
+            console.log(u)
+            if (err) console.log(err);
+            u.company.detail.insurers.push({ insurerCompany, date: Date.now() });
+            u.company.detail.completeStep[step] = true;
+            u.company.detail.markModified('completeStep');
+            u.company.detail.save().then((company)=>{
+              reply({completeStep: company.completeStep, message:'เลือก insurer เรียบร้อยแล้ว'});
+            });
           });
-        });
+        }
+      }else{
+        reply(Boom.badData('This page for HR only'));
       }
-    }else{
-      reply(Boom.badData('This page for HR only'));
-    }
+    });
   },
 };
 
@@ -103,8 +135,8 @@ const statusBidding = {
     const { companyId } = request.payload;
     const { status } = request.params;
     const { user } = request.auth.credentials;
-    BiddingRelation.findOne({ 'insurers.insurerId': user._id, company: companyId }).then((result) => {
-      const index = result.insurers.findIndex((insurer) => insurer.insurerId.toString() === user._id.toString());
+    BiddingRelation.findOne({ 'insurers.insurerCompany': user._id, company: companyId }).then((result) => {
+      const index = result.insurers.findIndex((insurer) => insurer.insurerCompany.toString() === user.company.detail.toString());
       result.insurers[index].status = status;
       result.markModified('insurers');
       result.save().then((result) => {
@@ -114,7 +146,7 @@ const statusBidding = {
   }
 };
 
-const biddingDetail = {
+const biddingDetailForInsurer = {
   tags: ['api'],
   auth: 'jwt',
   validate: {
@@ -128,7 +160,7 @@ const biddingDetail = {
     Bidding.findOne({ company: companyId, insurer: user._id }).populate('company').exec((err, bidding) => {
       if (bidding) {
         let getMaster = [];
-        let getInsurer = [];        
+        let getInsurer = [];
         let master;
         let insurer;
         if (bidding.plan.master !== undefined) {
@@ -169,7 +201,7 @@ const biddingDetail = {
               updatedAt: bidding.updatedAt,
               plan: {master, insurer},
               totalPrice: bidding.totalPrice,
-              claimData: bidding.company.claimData,
+              claimData: bidding.company.detail.claimData,
               memberList: null,
             });
           });
@@ -192,7 +224,69 @@ const biddingDetail = {
             memberList: null,
           });
         });
-        
+      }
+    });
+  }
+};
+
+const biddingDetailForCompany = {
+  tags: ['api'],
+  auth: 'jwt',
+  validate: {
+    params: {
+      companyId: Joi.string().required(),
+    }
+  },
+  handler: (request, reply) => {
+    const { companyId } = request.params;
+    const { user } = request.auth.credentials;
+    Bidding.findOne({ company: user.company.detail, insurer: companyId }).then((bidding) => {
+      if (bidding) {
+        let getMaster = [];
+        let getInsurer = [];
+        let master;
+        let insurer;
+        if (bidding.plan.master !== undefined) {
+          getMaster = bidding.plan.master.map((plan) => {
+            return new Promise((resolve) => {
+              MasterPlan.findOne({ _id: plan.planId }).then((result) => {
+                resolve (
+                  Object.assign({}, {
+                    plan: result,
+                    price: plan.price,
+                  })
+                );
+              });
+            });
+          });
+        }
+        Promise.all(getMaster).then((result) => {
+          master = result;
+          if (bidding.plan.insurer !== undefined) {
+            getInsurer = bidding.plan.insurer.map((plan) => {
+              return new Promise((resolve) => {
+                InsurerPlan.findOne({ _id: plan.planId }).then((result) => {
+                  resolve (
+                    Object.assign({}, {
+                      plan: result,
+                      price: plan.price,
+                    })
+                  );
+                });
+              });
+            });
+          }
+          Promise.all(getInsurer).then((result) => {
+            insurer = result;
+            reply({
+              plan: {master, insurer},
+            });
+          });
+        });
+      } else {
+        reply({
+          plan: {master: [], insurer: []},
+        });
       }
     });
   }
@@ -201,9 +295,10 @@ const biddingDetail = {
 export default function(app) {
   app.route([
     { method: 'POST', path: '/insurer/bidding/{companyId}', config: bidding },
-    { method: 'GET', path: '/getbidding', config: getBidding },
-    { method: 'POST', path: '/choosefinalinsurer', config: chooseFinalInsurer },
+    { method: 'GET', path: '/company/get-bidding', config: getBidding },
+    { method: 'PUT', path: '/company/choose-final-insurer', config: chooseFinalInsurer },
     { method: 'PUT', path: '/insurer/{status}', config: statusBidding },
-    { method: 'GET', path: '/insurer/bidding-detail/{companyId}', config: biddingDetail },
+    { method: 'GET', path: '/insurer/bidding-detail/{companyId}', config: biddingDetailForInsurer },
+    { method: 'GET', path: '/company/bidding-detail/{companyId}', config: biddingDetailForCompany },
   ]);
 }
