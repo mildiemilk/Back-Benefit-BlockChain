@@ -27,7 +27,6 @@ const login = {
         let approve = null;
         let logo = null;
         User.findOne({ _id: user._id }).populate('company.detail role').exec((err, uCompany) => {
-          console.log(uCompany);
           const role = uCompany.role.roleName;
           if (uCompany.company.detail) {
             company = uCompany.company.detail.companyName;

@@ -1,56 +1,105 @@
 import Joi from 'joi';
 import Boom from 'boom';
-import { User, BenefitPlan } from '../models';
+import { User, Bidding, MasterPlan, InsurerPlan, Role, TemplatePlan } from '../models';
 
-const benefitPlan = {
+const getInsurancePlan = {
+  tags: ['api'],
+  auth: 'jwt',
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    User.findOne({_id: user._id }).populate('company.detail').then((result) => {
+      const insurers = result.company.detail.insurers;
+      const insurer = insurers[insurers.length-1].insurerCompany;
+      Bidding.findOne({ company: user.company.detail, insurer }).then((bidding) => {
+        if (bidding) {
+          let getMaster = [];
+          let getInsurer = [];
+          let master;
+          let insurer;
+          if (bidding.plan.master !== undefined) {
+            getMaster = bidding.plan.master.map((plan) => {
+              return new Promise((resolve) => {
+                MasterPlan.findOne({ _id: plan.planId }).then((result) => {
+                  resolve (
+                    Object.assign({}, {
+                      plan: result,
+                      price: plan.price,
+                    })
+                  );
+                });
+              });
+            });
+          }
+          Promise.all(getMaster).then((result) => {
+            master = result;
+            if (bidding.plan.insurer !== undefined) {
+              getInsurer = bidding.plan.insurer.map((plan) => {
+                return new Promise((resolve) => {
+                  InsurerPlan.findOne({ _id: plan.planId }).then((result) => {
+                    resolve (
+                      Object.assign({}, {
+                        plan: result,
+                        price: plan.price,
+                      })
+                    );
+                  });
+                });
+              });
+            }
+            Promise.all(getInsurer).then((result) => {
+              insurer = result;
+              reply({
+                plan: {master, insurer},
+              });
+            });
+          });
+        } else {
+          reply({
+            plan: {master: [], insurer: []},
+          });
+        }
+      });
+    });
+  }
+};
+
+const setTemplatePlan = {
   tags: ['api'],
   auth: 'jwt',
   validate: {
     payload: {
-      plan: Joi.array().items(Joi.object().required()),
+      plan: Joi.object().required(),
     },
   },
 
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
     const { plan } = request.payload;
-    //const insurerUser = user._id;
-    if(user.role == 'HR'){
-      BenefitPlan.findOne({ company: user.company.detail }).then((benefitplan) => {
-        if(benefitplan){
-          benefitplan.plan = plan;
-          benefitplan.save().then((err) => {
-            if (!err)
-              reply(benefitplan);
-            else reply(err);
+    Role.findOne({ _id: user.role }).then((thisRole) => {
+      const role =  thisRole.roleName;
+      if(role == 'HR'){
+        TemplatePlan.findOne({ company: user.company.detail }, null, {sort: {createdAt: -1}}, (err, result) => {
+          result.plan = plan;
+          result.save().then((result) => {
+            reply(result);
           });
-        } else {
-          User.findOne({_id:user._id}).then((user)=>{
-            const company = user.company.detail;
-            const benefitplan = new BenefitPlan({ plan, company });
-            benefitplan.save().then((err) => {
-              if (!err)
-                reply(benefitplan);
-              else reply(err);
-            });
-          });
-        }
-      });
-    }else{
-      reply(Boom.badData('This page for HR only'));
-    }
+        });
+      }else{
+        reply(Boom.badData('This page for HR only'));
+      }
+    });
   },
 };
 
-const editBenefitPlan = {
+const setTemplateBenefit = {
   tags: ['api'],
   auth: 'jwt',
   validate: {
     payload: {
-      isExpense: Joi.boolean().required(),
-      isHealth: Joi.boolean().required(),
-      HealthList: Joi.array(),
-      ExpenseList: Joi.array(),
+      healthList: Joi.array().required(),
+      isHealth: Joi.bool().required(),
+      expenseList: Joi.array().required(),
+      isExpense: Joi.bool().required(),
       selectedOptionHealth1: Joi.string().required(),
       selectedOptionHealth2: Joi.string().required(),
       selectedOptionHealth3: Joi.string().required(),
@@ -62,73 +111,52 @@ const editBenefitPlan = {
 
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
-    const { isExpense, isHealth, HealthList, ExpenseList, selectedOptionHealth1,
-    selectedOptionHealth2, selectedOptionHealth3, selectedOptionExpense1,
-    selectedOptionExpense2, selectedOptionExpense3 } = request.payload;
-    //const insurerUser = user._id;
-    const health = { HealthList, selectedOptionHealth1, selectedOptionHealth2, selectedOptionHealth3 };
-    const expense = { ExpenseList, selectedOptionExpense1, selectedOptionExpense2, selectedOptionExpense3 };
-    if(user.role == 'HR'){
-      BenefitPlan.findOne({company:user.company.detail})
-        .then((benefitplan)=>{
-          benefitplan.health = health;
-          benefitplan.isHealth = isHealth;
-          benefitplan.expense = expense;
-          benefitplan.isExpense = isExpense;
-          benefitplan.save().then((err) => {
-            if (!err)
-              reply(benefitplan);
-            else reply(err);
+    const { healthList, isHealth, expenseList, isExpense, selectedOptionHealth1,
+      selectedOptionHealth2, selectedOptionHealth3, selectedOptionExpense1,
+      selectedOptionExpense2, selectedOptionExpense3} = request.payload;
+    const health = { healthList, selectedOptionHealth1, selectedOptionHealth2, selectedOptionHealth3 };
+    const expense = { expenseList, selectedOptionExpense1, selectedOptionExpense2, selectedOptionExpense3 };
+    Role.findOne({ _id: user.role }).then((thisRole) => {
+      const role =  thisRole.roleName;
+      if(role == 'HR'){
+        TemplatePlan.findOne({ company: user.company.detail }, null, {sort: {createdAt: -1}}, (err, result) => {
+          result.health = health;
+          result.isHealth = isHealth;
+          result.expense = expense;
+          result.isExpense = isExpense;
+          result.save().then((result) => {
+            reply(result);
           });
         });
-    }else{
-      reply(Boom.badData('This page for HR only'));
-    }
+      }else{
+        reply(Boom.badData('This page for HR only'));
+      }
+    });
   },
 };
 
-const settingBenefitPlan = {
-  tags: ['api'],
-  auth: 'jwt',
-  validate: {
-    payload: {
-      benefitPlans: Joi.array().items(Joi.object()),
-    },
-  },
-
-  handler: (request, reply) => {
-    const { user } = request.auth.credentials;
-    const { benefitPlans } = request.payload;
-    if(user.role == 'HR'){
-      User.findOne({ _id: user._id }).populate('company.detail').exec((err, u) => {
-        const benefits = { 
-          benefitPlans: benefitPlans,
-          timeout: null,
-        };
-        u.company.detail.benefitPlans = benefits;
-        u.company.detail.save();
-        reply(u.company.benefitPlans);
-      });
-    }else{
-      reply(Boom.badData('This page for HR only'));
-    }
-  },
-};
-
-const getOptionPlan = {
+const getTemplatePlan = {
   tags: ['api'],
   auth: 'jwt',
 
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
-    if(user.role == 'HR'){
-      BenefitPlan.findOne({company:user.company.detail})
-      .then((benefitplan)=>{
-        reply(benefitplan);
-      });
-    }else{
-      reply(Boom.badData('This page for HR only'));
-    }
+    Role.findOne({ _id: user.role }).then((thisRole) => {
+      const role =  thisRole.roleName;
+      if(role == 'HR'){
+        TemplatePlan.findOne({ company: user.company.detail }, null, {sort: {createdAt: -1}}, (err, result) => {
+          reply({ 
+            plan: result.plan,
+            isExpense: result.isExpense,
+            expense: result.expense,
+            isHealth: result.isHealth,
+            health: result.health,
+          });
+        });
+      }else{
+        reply(Boom.badData('This page for HR only'));
+      }
+    });
   },
 };
 
@@ -177,10 +205,10 @@ const setTimeout = {
 
 export default function(app) {
   app.route([
-    { method: 'POST', path: '/benefit-plan', config: benefitPlan },
-    { method: 'POST', path: '/edit-benefit-plan', config: editBenefitPlan },
-    { method: 'POST', path: '/set-benefit-plan', config: settingBenefitPlan },
-    { method: 'GET', path: '/get-option-plan', config: getOptionPlan },
+    { method: 'GET', path: '/company/get-insurance-plan', config: getInsurancePlan },
+    { method: 'PUT', path: '/company/set-template-plan', config: setTemplatePlan },
+    { method: 'PUT', path: '/company/set-template-benefit', config: setTemplateBenefit },
+    { method: 'GET', path: '/company/get-template-plan', config: getTemplatePlan },
     { method: 'GET', path: '/get-benefit-plan', config: getBenefitPlan },
     { method: 'POST', path: '/set-benefit-timeout', config: setTimeout },
   ]);

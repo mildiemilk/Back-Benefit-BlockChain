@@ -1,6 +1,6 @@
 import Joi from 'joi';
 import Boom from 'boom';
-import { Bidding, BiddingRelation, User, MasterPlan, InsurerPlan, Role } from '../models';
+import { Bidding, BiddingRelation, User, MasterPlan, InsurerPlan, Role, TemplatePlan } from '../models';
 
 const bidding = {
   tags: ['api'],
@@ -95,7 +95,6 @@ const chooseFinalInsurer = {
   handler: (request, reply) => {
     const { passwordToConfirm, insurerCompany, step } = request.payload;
     const { user } = request.auth.credentials;
-    console.log(user);
     Role.findOne({ _id: user.role }).then((thisRole) => {
       const role =  thisRole.roleName;
       if(role == 'HR'){
@@ -108,7 +107,10 @@ const chooseFinalInsurer = {
             u.company.detail.completeStep[step] = true;
             u.company.detail.markModified('completeStep');
             u.company.detail.save().then((company)=>{
-              reply({completeStep: company.completeStep, message:'เลือก insurer เรียบร้อยแล้ว'});
+              const templatePlan = new TemplatePlan({ company: company._id });
+              templatePlan.save().then(() => {
+                reply({completeStep: company.completeStep, message:'เลือก insurer เรียบร้อยแล้ว'});
+              });
             });
           });
         }

@@ -170,8 +170,8 @@ export default function(app) {
   app.route([
     { method: 'GET', path: '/company/get-all-insurer', config: getAllInsurer },
     { method: 'PUT', path: '/company/choose-insurer', config: chooseInsurer },
-    { method: 'PUT', path: '/company/set-timeout', config: setTimeout },
-    { method: 'GET', path: '/company/get-timeout', config: getTimeout },
+    { method: 'PUT', path: '/company/set-insurer-timeout', config: setTimeout },
+    { method: 'GET', path: '/company/get-insurer-timeout', config: getTimeout },
     { method: 'GET', path: '/company/get-select-insurer', config: getSelectInsurer },
     { method: 'GET', path: '/insurer/company-list', config: getCompanyList },
   ]);
