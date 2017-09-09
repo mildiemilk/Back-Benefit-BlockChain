@@ -15,7 +15,10 @@ const EmployeeCompanySchema = new mongoose.Schema ({
   insurers: [{ insurerCompany: { type: Schema.Types.ObjectId, ref: "InsuranceCompany" },
     date: { type: Date }}],
   createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
-  logo: { type: Schema.Types.ObjectId, ref: "Media" },
+  logo: { 
+    logoId: { type: Schema.Types.ObjectId, ref: "Media" },
+    link: { type: String }
+  },
   completeStep: { type: Array, default: [false,false,false,false] },
   fileEmployee: { type: Schema.Types.ObjectId, ref: "Media" },
   claimData: { type: Array },

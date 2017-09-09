@@ -70,7 +70,7 @@ const setLogo = {
         User.findOne({ _id: user._id }).populate('company.detail').exec((err, u) => {
           storage.getUrl(media.path, (url) => {
             if (!err) {
-              u.company.detail.logo = media._id;
+              u.company.detail.logo = { logoId: media._id, link: url };
               u.company.detail.save();
               reply({logo: url});
             }
@@ -341,13 +341,13 @@ const setCompleteStep = {
             u.company.detail.completeStep[step] = true;
             u.company.detail.markModified('completeStep');
             u.company.detail.save().then((company)=>{
-              if (step === 1) {
+              if (step === 0) {
                 BiddingRelation.findOne({ company: user.company.detail }).then((bidding) => {
                   bidding.confirmed = true;
                   bidding.save();
                 });
               }
-              reply(company.detail.completeStep);
+              reply(company.completeStep);
             });
           });
         }

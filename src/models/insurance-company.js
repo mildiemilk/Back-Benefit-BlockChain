@@ -15,7 +15,10 @@ const InsuranceCompanySchema = new mongoose.Schema ({
   email: { type: String },
   contactPerson: { type: String },
   customers: [{ company: { type: Schema.Types.ObjectId, ref: "EmployeeCompany" } }],
-  logo: { type: Schema.Types.ObjectId, ref: "Media" },
+  logo: { 
+    logoId: { type: Schema.Types.ObjectId, ref: "Media" },
+    link: { type: String }
+  },
 });
 
 

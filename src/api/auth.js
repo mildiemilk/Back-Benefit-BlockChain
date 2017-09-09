@@ -1,6 +1,6 @@
 import Joi from 'joi';
 import Boom from 'boom';
-import { User, Media } from '../models';
+import { User } from '../models';
 
 const passwordPattern = /^(?=.*\d)(?=.*[A-Z]).{8,20}/;
 
@@ -46,34 +46,14 @@ const login = {
           } else {
             const { auth } = request.server.app.services;
             const token = auth.createAuthToken(user);
-            let role = null;
-            
-            Media.findOne({ _id: logo }).populate('logo').exec((err, l) => {
-              if(l) {
-                const { path } = l;
-                const { storage } = request.server.app.services;
-    
-                storage.getUrl(path, (url) => {
-                  reply({
-                    token,
-                    companyName: company,
-                    logo: url,
-                    approve: approve,
-                    role: role,
-                    personalVerify: user.personalVerify,
-                  });
-                });
-              }
-              else {
-                reply({
-                  token,
-                  companyName: company,
-                  logo: null,
-                  approve: approve,
-                  role: role,
-                  personalVerify: user.personalVerify,
-                });
-              }
+          
+            reply({
+              token,
+              companyName: company,
+              logo: logo.link,
+              approve: approve,
+              role: role,
+              personalVerify: user.personalVerify,
             });
           }
         });

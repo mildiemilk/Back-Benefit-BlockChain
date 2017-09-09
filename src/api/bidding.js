@@ -50,7 +50,7 @@ const getBidding = {
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
     const company = user.company.detail;
-    BiddingRelation.findOne({ company }).populate('insurers.insurerCompany', 'logo companyName').exec((err, biddings) => {
+    BiddingRelation.findOne({ company }).populate('insurers.insurerCompany', 'logo.link companyName').exec((err, biddings) => {
       const detail = biddings.insurers.map((insurer) => {
         return new Promise((resolve) => {
           Bidding.findOne({ company, insurer: insurer.insurerCompany }, 'biddingId updatedAt totalPrice countBidding', (err, result) => {
@@ -68,7 +68,7 @@ const getBidding = {
                 biddingId: null,
                 updatedAt: null,
                 totalPrice: null,
-                countBidding: null,
+                countBidding: 0,
               });
             }
           });
@@ -103,7 +103,6 @@ const chooseFinalInsurer = {
           reply(Boom.badData('Invalid password'));
         } else {
           User.findOne({ _id: user._id }).populate('company.detail').exec((err, u) => {
-            console.log(u)
             if (err) console.log(err);
             u.company.detail.insurers.push({ insurerCompany, date: Date.now() });
             u.company.detail.completeStep[step] = true;
@@ -135,7 +134,7 @@ const statusBidding = {
     const { companyId } = request.payload;
     const { status } = request.params;
     const { user } = request.auth.credentials;
-    BiddingRelation.findOne({ 'insurers.insurerCompany': user._id, company: companyId }).then((result) => {
+    BiddingRelation.findOne({ 'insurers.insurerCompany': user.company.detail, company: companyId }).then((result) => {
       const index = result.insurers.findIndex((insurer) => insurer.insurerCompany.toString() === user.company.detail.toString());
       result.insurers[index].status = status;
       result.markModified('insurers');
@@ -157,7 +156,7 @@ const biddingDetailForInsurer = {
   handler: (request, reply) => {
     const { companyId } = request.params;
     const { user } = request.auth.credentials;
-    Bidding.findOne({ company: companyId, insurer: user._id }).populate('company').exec((err, bidding) => {
+    Bidding.findOne({ company: companyId, insurer: user.company.detail }).populate('company').exec((err, bidding) => {
       if (bidding) {
         let getMaster = [];
         let getInsurer = [];
@@ -201,7 +200,7 @@ const biddingDetailForInsurer = {
               updatedAt: bidding.updatedAt,
               plan: {master, insurer},
               totalPrice: bidding.totalPrice,
-              claimData: bidding.company.detail.claimData,
+              claimData: bidding.company.claimData,
               memberList: null,
             });
           });

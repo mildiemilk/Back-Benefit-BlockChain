@@ -1,6 +1,6 @@
 import Joi from 'joi';
 import Boom from 'boom';
-import { BiddingRelation, Role, Media, InsuranceCompany } from '../models';
+import { BiddingRelation, Role, Bidding, InsuranceCompany } from '../models';
 
 const getAllInsurer = {
   tags: ['api'],
@@ -131,31 +131,30 @@ const getCompanyList = {
     Role.findOne({ _id: user.role }).then((thisRole) => {
       const role =  thisRole.roleName;
       if(role === 'Insurer'){
-        BiddingRelation.find({ 'insurers.insurerCompany': user._id, confirmed: true }, null, {sort: {createdAt: -1}}).populate('company.detail').exec((err, results) => {
+        BiddingRelation.find({ 'insurers.insurerCompany': user.company.detail, confirmed: true }, null, {sort: {createdAt: -1}}).populate('company').exec((err, results) => {
           const data = results.map((result) => {
-            const myDate = result.company.detail.expiredInsurance;
+            const myDate = result.company.expiredInsurance;
             myDate.setDate(myDate.getDate() + 1);
 
             return new Promise((resolve) => {
-              Media.findOne({ _id: result.company.detail.logo }).then((logo) => {
-                let object;
-                const { storage } = request.server.app.services;
-
-                storage.getUrl(logo.path, (url) => {
-                  object = Object.assign({},{
-                    companyId: result.company.detail._id,
-                    company: result.company.detail.companyName,
-                    logo: url,
-                    numberOfEmployees: result.company.detail.numberOfEmployees,
-                    expiredOldInsurance: result.company.detail.expiredInsurance,
-                    startNewInsurance: myDate,
-                    status: result.insurers.find((insurer) => insurer.insurerCompany.toString() === user._id.toString()).status,
-                    candidateInsurer: result.insurers.length,
-                    minPrice: result.minPrice,
-                    timeout: result.timeout,
-                  });
-                  resolve(object);
-                });
+              Bidding.findOne({ company: result.company, insurer: user.company.detail }, 'countBidding',(err, bidding) => {
+                let countBidding = 0;
+                if(bidding) {
+                  countBidding = bidding.countBidding;
+                }
+                resolve(Object.assign({},{
+                  companyId: result.company._id,
+                  company: result.company.companyName,
+                  logo: result.company.logo.link,
+                  countBidding,
+                  numberOfEmployees: result.company.numberOfEmployees,
+                  expiredOldInsurance: result.company.expiredInsurance,
+                  startNewInsurance: myDate,
+                  status: result.insurers.find((insurer) => insurer.insurerCompany.toString() === user.company.detail.toString()).status,
+                  candidateInsurer: result.insurers.length,
+                  minPrice: result.minPrice,
+                  timeout: result.timeout,
+                }));
               });
             });
           });
