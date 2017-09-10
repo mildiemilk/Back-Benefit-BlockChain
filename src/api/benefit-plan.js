@@ -1,6 +1,6 @@
 import Joi from 'joi';
 import Boom from 'boom';
-import { User, Bidding, MasterPlan, InsurerPlan, Role, TemplatePlan } from '../models';
+import { User, Bidding, MasterPlan, InsurerPlan, Role, TemplatePlan, BenefitPlan } from '../models';
 
 const getInsurancePlan = {
   tags: ['api'],
@@ -160,19 +160,75 @@ const getTemplatePlan = {
   },
 };
 
+const setBenefitPlan = {
+  tags: ['api'],
+  auth: 'jwt',
+  validate: {
+    payload: {
+      benefitPlanId: Joi.string().allow(null).required(),
+      planName: Joi.string().required(),
+      benefitPlan: Joi.object().required(),
+    },
+  },
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    const { planName, benefitPlan, benefitPlanId } = request.payload;
+    Role.findOne({ _id: user.role }).then((thisRole) => {
+      const role = thisRole.roleName;
+      if(role == 'HR'){
+        User.findOne({ _id: user._id }).populate('company.detail').exec((err, result) => {
+          let effectiveDate = new Date(result.company.detail.expiredInsurance);
+          let expiredDate = new Date(result.company.detail.expiredInsurance);
+          const company = result.company.detail._id;
+          effectiveDate.setDate(effectiveDate.getDate() + 1);
+          expiredDate.setFullYear(effectiveDate.getFullYear() + 1);
+          if(benefitPlanId){
+            BenefitPlan.findOne({ _id: benefitPlanId }).then((result) => {
+              result.company = company;
+              result.benefitPlanName = planName;
+              result.benefitPlan = benefitPlan;
+              result.effectiveDate = effectiveDate;
+              result.expiredDate = expiredDate;
+              result.save().then(() => {
+                reply({ message: 'edit benefit plan success' });
+              });
+            });
+          } else {
+            const newBenefitPlan = new BenefitPlan({ company, benefitPlanName: planName, benefitPlan, effectiveDate, expiredDate });
+            newBenefitPlan.save().then(() => {
+              reply({ message: 'set new benefit plan success' });
+            });
+          }
+        });
+         
+      }else{
+        reply(Boom.badData('This page for HR only'));
+      }
+    });
+  },
+};
+
 const getBenefitPlan = {
   tags: ['api'],
   auth: 'jwt',
 
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
-    if(user.role == 'HR'){
-      User.findOne({ _id: user._id }).populate('company.detail').exec((err, u) => {
-        reply(u.company.detail.benefitPlans);
-      });
-    }else{
-      reply(Boom.badData('This page for HR only'));
-    }
+    Role.findOne({ _id: user.role }).then((thisRole) => {
+      const role = thisRole.roleName;
+      if(role == 'HR'){
+        User.findOne({ _id: user._id }).populate('company.detail').exec((err, result) => {
+          let effectiveDate = new Date(result.company.detail.expiredInsurance);
+          const company = result.company.detail._id;
+          effectiveDate.setDate(effectiveDate.getDate() + 1);
+          BenefitPlan.find({ company, effectiveDate }, null, {sort: {createdAt: -1}}, (err, result) => {
+            reply(result);
+          });
+        });
+      }else{
+        reply(Boom.badData('This page for HR only'));
+      }
+    });
   },
 };
 
@@ -209,7 +265,8 @@ export default function(app) {
     { method: 'PUT', path: '/company/set-template-plan', config: setTemplatePlan },
     { method: 'PUT', path: '/company/set-template-benefit', config: setTemplateBenefit },
     { method: 'GET', path: '/company/get-template-plan', config: getTemplatePlan },
-    { method: 'GET', path: '/get-benefit-plan', config: getBenefitPlan },
+    { method: 'POST', path: '/company/set-benefit-plan', config: setBenefitPlan },
+    { method: 'GET', path: '/company/get-benefit-plan', config: getBenefitPlan },
     { method: 'POST', path: '/set-benefit-timeout', config: setTimeout },
   ]);
 }
