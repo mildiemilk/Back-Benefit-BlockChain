@@ -2,7 +2,7 @@ import Joi from 'joi';
 import Boom from 'boom';
 import exceltojson from 'xlsx-to-json-lc';
 import fs from 'fs';
-import { EmployeeCompany, User, Media, Role, BiddingRelation } from '../models';
+import { EmployeeCompany, User, Media, Role, BiddingRelation, EmployeeGroup } from '../models';
 
 const registerCompany = {
   tags: ['api'],
@@ -116,72 +116,78 @@ const uploadEmployee = {
           if(err) {
             console.error(err);
           } else {
-            const addEmployee = result.map((employee) => {
-              return new Promise((resolve) => {
-                const detail = {
-                  email: employee.email,
-                  password: 'Donut555',
-                  role: 'Employee',
-                  company: user.company.detail,
-                  detail: {
-                    employee_code: employee.employee_code,
-                    prefix: employee.prefix,
-                    name: employee.name,
-                    lastname: employee.lastname,
-                    citizen_id: employee.citizen_id,
-                    phone_number: employee.phone_number,
-                    type_of_employee: employee.type_of_employee,
-                    title: employee.title,
-                    department: employee.department,
-                    level: employee.level,
-                    start_date: employee.start_date,
-                    benefit_group: employee.benefit_group,
-                    date_of_birth: employee.date_of_birth,
-                    account_number: employee.account_number,
-                    bank_name: employee.bank_name,
-                    marriage_status: employee.marriage_status,
-                  }
-                };
-                const newEmployee = new User(detail);
-                newEmployee.save().then((emp) => {
-                  const { mailer } = request.server.app.services;
-                  mailer.sendMailToEmployee(detail.email, detail.password);
-                  resolve(emp);
+            let role;
+            Role.findOne({ roleName: 'Employee' }).then((roleId) => {
+              role = roleId._id;
+              const addEmployee = result.map((employee) => {
+                //---------------random password---------------------------------
+                // const num = Math.round(Math.random()*26);
+                // const alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                // const password = Math.random().toString(36).slice(-8) + alpha[num];
+                //---------------------------------------------------------------
+                return new Promise((resolve) => {
+                  const detail = {
+                    email: employee.email,
+                    password: 'Donut555',
+                    role,
+                    company: user.company,
+                    detail: {
+                      employee_code: employee.employee_code,
+                      prefix: employee.prefix,
+                      name: employee.name,
+                      lastname: employee.lastname,
+                      citizen_id: employee.citizen_id,
+                      phone_number: employee.phone_number,
+                      type_of_employee: employee.type_of_employee,
+                      title: employee.title,
+                      department: employee.department,
+                      level: employee.level,
+                      start_date: employee.start_date,
+                      benefit_group: employee.benefit_group,
+                      date_of_birth: employee.date_of_birth,
+                      account_number: employee.account_number,
+                      bank_name: employee.bank_name,
+                      marriage_status: employee.marriage_status,
+                    }
+                  };
+                  const newEmployee = new User(detail);
+                  newEmployee.save().then((emp) => {
+                    // const { mailer } = request.server.app.services;
+                    // mailer.sendMailToEmployee(detail.email, detail.password);
+                    resolve(emp);
+                  });
                 });
               });
-            });
-            Promise.all(addEmployee).then(() => {
-              const aggregatorOpts = [
-                { $match: { "company": user.company.detail, "role": "Employee" } },
-                {
-                  $group: {
-                    _id: "$detail.benefit_group",
-                    count: { $sum: 1 }
+              Promise.all(addEmployee).then(() => {
+                const aggregatorOpts = [
+                  { $match: { "company.detail": user.company.detail, "role": role } },
+                  {
+                    $group: {
+                      _id: "$detail.benefit_group",
+                      count: { $sum: 1 }
+                    }
                   }
-                }
-              ];
-              User.aggregate(aggregatorOpts).exec((err, groups) => {
-                groups.sort((a, b) => {
-                  var nameA = a._id.toUpperCase(); // ignore upper and lowercase
-                  var nameB = b._id.toUpperCase(); // ignore upper and lowercase
-                  if (nameA < nameB) {
-                    return -1;
-                  }
-                  if (nameA > nameB) {
-                    return 1;
-                  }
-                  // names must be equal
-                  return 0;
-                });
-                const groupBenefit = groups.map((element) => Object.assign({},{
-                  name: element._id, type: '',
-                  plan: [],
-                  default: '',
-                  numberOfGroup: element.count,
-                }));
-                User.findOne({ _id: user._id }).populate('company.detail').exec((err, u) => {
-                  u.company.detail.groupBenefit = groupBenefit;
-                  u.company.detail.save();
+                ];
+                User.aggregate(aggregatorOpts).exec((err, groups) => {
+                  groups.sort((a, b) => {
+                    var nameA = a._id.toUpperCase(); // ignore upper and lowercase
+                    var nameB = b._id.toUpperCase(); // ignore upper and lowercase
+                    if (nameA < nameB) {
+                      return -1;
+                    }
+                    if (nameA > nameB) {
+                      return 1;
+                    }
+                    // names must be equal
+                    return 0;
+                  });
+                  groups.map((element) => {
+                    const company = user.company.detail;
+                    const groupName = element._id;
+                    const amount = element.count;
+                    const newGroup = new EmployeeGroup({ company, groupName, amount });
+                    newGroup.save();
+                  });
                 });
               });
             });
@@ -409,7 +415,7 @@ export default function(app) {
   app.route([
     { method: 'POST', path: '/company/register-company', config: registerCompany },
     { method: 'PUT', path: '/company/set-logo', config: setLogo },
-    { method: 'PUT', path: '/company/upload-employee', config: uploadEmployee },
+    { method: 'POST', path: '/company/upload-employee', config: uploadEmployee },
     { method: 'GET', path: '/company/get-template', config: getTemplate },
     { method: 'PUT', path: '/company/upload-claimdata', config: uploadClaimData },
     { method: 'GET', path: '/company/get-employee', config: getEmployee },

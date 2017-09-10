@@ -11,6 +11,7 @@ import RoleModel from './role';
 import InsurerPlanModel from './insurer-plan';
 import EmployeePlanModel from './employee-plan';
 import TemplatePlanModel from './template-plan';
+import EmployeeGroupModel from './employee-group';
 
 export const User = UserModel;
 export const EmployeeCompany = EmployeeCompanyModel;
@@ -25,6 +26,7 @@ export const Role = RoleModel;
 export const InsurerPlan = InsurerPlanModel;
 export const EmployeePlan = EmployeePlanModel;
 export const TemplatePlan = TemplatePlanModel;
+export const EmployeeGroup = EmployeeGroupModel;
 
 export default {
   User,
@@ -40,4 +42,5 @@ export default {
   InsurerPlan,
   EmployeePlan,
   TemplatePlan,
+  EmployeeGroup,
 };

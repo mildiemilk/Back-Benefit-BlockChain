@@ -8,9 +8,9 @@ const EmployeeGroupSchema = new mongoose.Schema ({
   employeeGroupId: { type: Number, default: 0, unique: true },
   company: { type: Schema.Types.ObjectId, ref: "EmployeeCompany", required: true },
   groupName: { type: String, required: true },
-  type: { type: String, required: true , enum: ['fixed', 'flex'] },  
-  benefitPlan: [{ type: Schema.Types.ObjectId, ref: "BenefitPlan", required: true }],
-  defaultPlan: { type: Schema.Types.ObjectId, ref: "BenefitPlan", required: true },
+  type: { type: String, enum: ['fixed', 'flex', null], default: null },
+  benefitPlan: [{ type: Schema.Types.ObjectId, ref: "BenefitPlan", default: null }],
+  defaultPlan: { type: Schema.Types.ObjectId, ref: "BenefitPlan", default: null },
   amount: { type: Number, required: true },
 });
 
@@ -23,4 +23,4 @@ EmployeeGroupSchema.plugin(autoIncrement.plugin,{
   startAt: 1,
   incrementBy: 1
 });
-export default mongoose.model('employeeGroup', EmployeeGroupSchema);
+export default mongoose.model('EmployeeGroup', EmployeeGroupSchema);
