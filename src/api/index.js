@@ -9,6 +9,7 @@ import BenefitPlan from './benefit-plan';
 import UploadFile from './upload-file';
 import UserDetail from './user-detail';
 import EmployeeCompany from './employee-company';
+import EmployeeBenefit from './employee-benefit';
 
 export const register = (server, options, next) => {
   Register(server);
@@ -22,6 +23,7 @@ export const register = (server, options, next) => {
   UploadFile(server);
   UserDetail(server);
   EmployeeCompany(server);
+  EmployeeBenefit(server);
   next();
 };
 export const test = (server, options, next) => {
