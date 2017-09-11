@@ -7,7 +7,10 @@ const getAllBenefit = {
   auth: 'jwt',
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
-    EmployeeGroup.findOne({ company: user.company.detail, groupName: user.detail.benefit_group }).populate({path:'benefitPlan', model: BenefitPlan}).exec((err, group) => {
+    EmployeeGroup
+    .findOne({ company: user.company.detail, groupName: user.detail.benefit_group })
+    .populate('benefitPlan')
+    .exec((err, group) => {
       reply(group.benefitPlan);
     });
   },

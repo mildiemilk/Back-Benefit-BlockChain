@@ -23,4 +23,4 @@ BenefitPlanSchema.plugin(autoIncrement.plugin,{
   startAt: 1,
   incrementBy: 1
 });
-export default mongoose.model('benefitPlan', BenefitPlanSchema);
+export default mongoose.model('BenefitPlan', BenefitPlanSchema);
