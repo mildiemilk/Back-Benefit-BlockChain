@@ -23,4 +23,4 @@ TemplatePlanSchema.plugin(autoIncrement.plugin,{
   startAt: 1,
   incrementBy: 1
 });
-export default mongoose.model('templatePlan', TemplatePlanSchema);
+export default mongoose.model('TemplatePlan', TemplatePlanSchema);

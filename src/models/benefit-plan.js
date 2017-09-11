@@ -8,7 +8,17 @@ const BenefitPlanSchema = new mongoose.Schema ({
   benefitPlanId: { type: Number, default: 0, unique: true },
   company: { type: Schema.Types.ObjectId, ref: "EmployeeCompany", required: true },
   benefitPlanName: { type: String, required: true },
-  benefitPlan: { type: Object, required: true },
+  benefitPlan: { 
+    plan: {
+      planId: { type: Schema.Types.ObjectId, refPath: "benefitPlan.plan.type" },
+      type: { type: String }
+    },
+    isExpense: { type: Boolean },
+    expense: { type: Number },
+    isHealth: { type: Boolean },
+    health: { type: Number },
+    detailPlan: { type: Schema.Types.ObjectId, ref: "TemplatePlan" }
+  },
   effectiveDate: { type: Date },
   expiredDate: { type: Date },
   timeout: { type: Date, default: null},
