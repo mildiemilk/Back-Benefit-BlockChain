@@ -221,7 +221,7 @@ const getBenefitPlan = {
           let effectiveDate = new Date(result.company.detail.expiredInsurance);
           const company = result.company.detail._id;
           effectiveDate.setDate(effectiveDate.getDate() + 1);
-          BenefitPlan.find({ company, effectiveDate }, null, {sort: {createdAt: -1}}, (err, result) => {
+          BenefitPlan.find({ company, effectiveDate }, null, {sort: {createdAt: 1}}, (err, result) => {
             reply(result);
           });
         });
@@ -243,19 +243,31 @@ const setTimeout = {
   handler: (request, reply) => {
     const { timeout } = request.payload;
     const { user } = request.auth.credentials;
-    if(user.role == 'HR'){
-      User.findOne({ _id: user._id }).populate('company.detail').exec((err, u) => {
-        const benefitPlans = { 
-          benefitPlans: u.company.detail.benefitPlans.benefitPlans,
-          timeout: timeout,
-        };
-        u.company.detail.benefitPlans = benefitPlans;
-        u.company.detail.save();
-        reply(u.company.detail.benefitPlans);
-      });
-    }else{
-      reply(Boom.badData('This page for HR only'));
-    }
+    Role.findOne({ _id: user.role }).then((thisRole) => {
+      const role = thisRole.roleName;
+      if(role == 'HR'){
+        User.findOne({ _id: user._id }).populate('company.detail').exec((err, result) => {
+          let effectiveDate = new Date(result.company.detail.expiredInsurance);
+          const company = result.company.detail._id;
+          effectiveDate.setDate(effectiveDate.getDate() + 1);
+          BenefitPlan.find({ company, effectiveDate }, null, {sort: {createdAt: 1}}, (err, results) => {
+            const setTimeout = results.map((result) => {
+              return new Promise((resolve) => {
+                result.timeout = timeout;
+                result.save().then((result) => {
+                  resolve(result);
+                });
+              });
+            });
+            Promise.all(setTimeout).then(() => {
+              reply({ message: 'set timeout completed' });
+            });
+          });
+        });
+      }else{
+        reply(Boom.badData('This page for HR only'));
+      }
+    });
   },
 };
 
@@ -267,6 +279,6 @@ export default function(app) {
     { method: 'GET', path: '/company/get-template-plan', config: getTemplatePlan },
     { method: 'POST', path: '/company/set-benefit-plan', config: setBenefitPlan },
     { method: 'GET', path: '/company/get-benefit-plan', config: getBenefitPlan },
-    { method: 'POST', path: '/set-benefit-timeout', config: setTimeout },
+    { method: 'PUT', path: '/company/set-benefit-timeout', config: setTimeout },
   ]);
 }

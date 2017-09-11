@@ -11,6 +11,7 @@ const BenefitPlanSchema = new mongoose.Schema ({
   benefitPlan: { type: Object, required: true },
   effectiveDate: { type: Date },
   expiredDate: { type: Date },
+  timeout: { type: Date, default: null},
 });
 
 BenefitPlanSchema.plugin(timestamps);

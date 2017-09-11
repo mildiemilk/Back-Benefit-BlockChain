@@ -15,7 +15,6 @@ const UserSchema = new mongoose.Schema ({
     kind: { type: String },
     detail: { type: Schema.Types.ObjectId, refPath: "company.kind", default: null },
   },
-  removedAt: { type: Date, default: null },
   phone: { type: String },
   personalEmail: { type: String },
   personalVerify: {type: Boolean},
