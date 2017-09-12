@@ -84,6 +84,43 @@ const getProfile = {
   },
 };
 
+const setProfile = {
+  tags: ['api'],
+  auth: 'jwt',
+  payload: {
+    output: 'stream',
+    parse: true,
+    allow: 'multipart/form-data'
+  },
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    let { detail, file } = request.payload;
+    detail = JSON.parse(detail);
+    if (file === undefined) {
+      user.detail = detail;
+      user.save().then((user) => {
+        reply({ email: user.email, detail: user.detail });
+      });
+    } else {
+      const { storage } = request.server.app.services;
+      storage.upload({ file }, { isPublic: true }, (err, media) => {
+        if (!err) {
+          media.userId = user.id;
+          media.save();
+          storage.getUrl(media.path, (url) => {
+            detail.mediaProfile = media._id;
+            detail.profilePic = url;
+            user.detail = detail;
+            user.save().then((user) => {
+              reply({ email: user.email, detail: user.detail });
+            });
+          });
+        }
+      });
+    }
+  },
+};
+
 export default function(app) {
   app.route([
     { method: 'GET', path: '/employee/get-all-benefit', config: getAllBenefit },
@@ -91,5 +128,6 @@ export default function(app) {
     { method: 'GET', path: '/employee/get-claim-history', config: getClaimHistory},
     { method: 'PUT', path: '/employee/select-benefit', config: selectPlan },
     { method: 'GET', path: '/employee/get-profile', config: getProfile },
+    { method: 'PUT', path: '/employee/set-profile', config: setProfile },
   ]);
 }

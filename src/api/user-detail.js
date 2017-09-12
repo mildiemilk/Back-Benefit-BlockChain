@@ -13,14 +13,15 @@ const updatePersonalDetails = {
     const { personalEmail, phone } = request.payload;
     const { user } = request.auth.credentials;
     if (user) {
-      user.personalEmail = personalEmail;
-      user.phone = phone;
-      user.personalVerify = true;
+      user.detail.personalEmail = personalEmail;
+      user.detail.phone_number = phone;
+      user.detail.personalVerify = true;
+      user.markModified('detail');
       user.save(function(err) {
         if (err) {
           reply({ error: err });
         } else {
-          reply(user);
+          reply({ message: "success" });
         }
       });
     }
@@ -30,6 +31,6 @@ const updatePersonalDetails = {
 
 export default function(server) {
   server.route([
-    { method: 'PUT', path: '/user/updatePersonalDetails', config: updatePersonalDetails },
+    { method: 'PUT', path: '/employee/updatePersonalDetails', config: updatePersonalDetails },
   ]);
 }
