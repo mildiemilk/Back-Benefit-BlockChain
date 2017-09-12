@@ -12,6 +12,7 @@ import InsurerPlanModel from './insurer-plan';
 import EmployeePlanModel from './employee-plan';
 import TemplatePlanModel from './template-plan';
 import EmployeeGroupModel from './employee-group';
+import LogUserClaimModel from './log-user-claim';
 
 export const User = UserModel;
 export const EmployeeCompany = EmployeeCompanyModel;
@@ -27,6 +28,7 @@ export const InsurerPlan = InsurerPlanModel;
 export const EmployeePlan = EmployeePlanModel;
 export const TemplatePlan = TemplatePlanModel;
 export const EmployeeGroup = EmployeeGroupModel;
+export const LogUserClaim = LogUserClaimModel;
 
 export default {
   User,
@@ -43,4 +45,5 @@ export default {
   EmployeePlan,
   TemplatePlan,
   EmployeeGroup,
+  LogUserClaim,
 };

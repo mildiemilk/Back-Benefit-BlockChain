@@ -1,6 +1,6 @@
 import Joi from 'joi';
 import Boom from 'boom';
-import { EmployeeGroup, BenefitPlan, EmployeePlan } from '../models';
+import { EmployeeGroup, BenefitPlan, EmployeePlan, LogUserClaim  } from '../models';
 
 const getAllBenefit = {
   tags: ['api'],
@@ -48,9 +48,85 @@ const selectPlan = {
   },
 };
 
+const claimHealth = {
+  tags: ['api'],
+  auth: 'jwt',
+  validate: {
+    params: {
+      type: Joi.string().valid('health','general','insurance').required(),
+    },
+  },
+  payload: {
+    output: 'stream',
+    parse: true,
+    allow: 'multipart/form-data'
+  },
+  handler: (request, reply) => {
+    let { detail, files } = request.payload;
+    const { user } = request.auth.credentials;
+    const { type } = request.params;
+    let claimNumber = null;
+
+    const { storage } = request.server.app.services;
+    const isPublic = true;
+    storage.upload({ file: files }, { isPublic }, (err, media) => {
+      if (!err) {
+        media.userId = user.id;
+        media.save();
+        storage.getUrl(media.path, (url) => {
+          detail = JSON.parse(detail);
+          detail.mediaImg = media;
+          detail.urlImg = url;
+          console.log(detail);
+          if (err) throw err;
+          if (type !== 'insurance') {
+            LogUserClaim
+            .find({ company: user.company.detail, type: 'insurance' })
+            .exec((err, result) => {
+              claimNumber = result.length + 1;
+              const createClaim = new LogUserClaim({
+                user: user._id,
+                company: user.company.detail,
+                detail,
+                status: 'pending',
+                claimNumber,
+                type,
+              });
+              createClaim.save()
+              .then(data => console.log("data=> ", data))
+              .catch( err => console.log("hello error: ", err));
+              console.log("err=> ", err);
+              console.log("resault=> ", result);
+              console.log("createClaim: ", createClaim);
+            });
+          } else {
+            LogUserClaim
+            .find({ company: user.company.detail, type: 'insurance' })
+            .exec((err, result) => {
+              claimNumber = result.length + 1;
+              const createClaim = new LogUserClaim({
+                user: user._id,
+                company: user.company.detail,
+                detail,
+                status: 'pending',
+                claimNumber,
+                policyNumber: null,
+                type,
+              });
+              createClaim.save();
+            });
+          }
+        });
+      }
+    });
+  },
+};
+
 export default function(app) {
   app.route([
     { method: 'GET', path: '/employee/get-all-benefit', config: getAllBenefit },
     { method: 'PUT', path: '/employee/select-benefit', config: selectPlan },
+    { method: 'POST', path: '/employee/claim/{type}', config:claimHealth },
+    // { method: 'POST', path: '/employee/claim/health', config:claimHealth },
   ]);
 }

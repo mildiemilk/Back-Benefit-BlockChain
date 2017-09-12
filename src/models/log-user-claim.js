@@ -9,9 +9,10 @@ const LogUserClaimSchema = new mongoose.Schema ({
   user: { type: Schema.Types.ObjectId, ref: "User", required: true },
   company: { type: Schema.Types.ObjectId, ref: "EmployeeCompany", required: true },
   detail: { type: Object, required: true}, 
-  status: { type: String, required: true }, //TODO: what type? enum?
+  status: { type: String, required: true, enum:['pending','approve','reject'] },
   claimNumber: { type: Number, required: true },
-  insuranceNumber: { type: Number },
+  policyNumber: { type: Number },
+  type: { type: String, required: true, enum: ['health','general','insurance'] }
 });
 
 
