@@ -158,32 +158,17 @@ const biddingDetailForInsurer = {
   handler: (request, reply) => {
     const { companyId } = request.params;
     const { user } = request.auth.credentials;
-    Bidding.findOne({ company: companyId, insurer: user.company.detail }).populate('company').exec((err, bidding) => {
-      if (bidding) {
-        let getMaster = [];
-        let getInsurer = [];
-        let master;
-        let insurer;
-        if (bidding.plan.master !== undefined) {
-          getMaster = bidding.plan.master.map((plan) => {
-            return new Promise((resolve) => {
-              MasterPlan.findOne({ _id: plan.planId }).then((result) => {
-                resolve (
-                  Object.assign({}, {
-                    plan: result,
-                    price: plan.price,
-                  })
-                );
-              });
-            });
-          });
-        }
-        Promise.all(getMaster).then((result) => {
-          master = result;
-          if (bidding.plan.insurer !== undefined) {
-            getInsurer = bidding.plan.insurer.map((plan) => {
+    BiddingRelation.findOne({ 'insurers.insurerCompany': user.company.detail, company: companyId }).populate('company').exec((err, result) => {
+      const myDate = result.company.expiredInsurance;
+      myDate.setDate(myDate.getDate() + 1);
+      Bidding.findOne({ company: companyId, insurer: user.company.detail }, (err, bidding) => {
+        if (bidding) {
+          let getMaster = [];
+          let getInsurer = [];
+          if (bidding.plan.master !== undefined) {
+            getMaster = bidding.plan.master.map((plan) => {
               return new Promise((resolve) => {
-                InsurerPlan.findOne({ _id: plan.planId }).then((result) => {
+                MasterPlan.findOne({ _id: plan.planId }).then((result) => {
                   resolve (
                     Object.assign({}, {
                       plan: result,
@@ -194,38 +179,73 @@ const biddingDetailForInsurer = {
               });
             });
           }
-          Promise.all(getInsurer).then((result) => {
-            insurer = result;
+          Promise.all(getMaster).then((master) => {
+            if (bidding.plan.insurer !== undefined) {
+              getInsurer = bidding.plan.insurer.map((plan) => {
+                return new Promise((resolve) => {
+                  InsurerPlan.findOne({ _id: plan.planId }).then((result) => {
+                    resolve (
+                      Object.assign({}, {
+                        plan: result,
+                        price: plan.price,
+                      })
+                    );
+                  });
+                });
+              });
+            }
+            Promise.all(getInsurer).then((insurer) => {
+              reply({
+                companyId: result.company._id,
+                company: result.company.companyName,
+                logo: result.company.logo.link,
+                numberOfEmployees: result.company.numberOfEmployees,
+                expiredOldInsurance: result.company.expiredInsurance,
+                startNewInsurance: myDate,
+                status: result.insurers.find((insurer) => insurer.insurerCompany.toString() === user.company.detail.toString()).status,
+                candidateInsurer: result.insurers.length,
+                minPrice: result.minPrice,
+                timeout: result.timeout,
+                biddingId: bidding.biddingId,
+                countBidding: bidding.countBidding,
+                updatedAt: bidding.updatedAt,
+                plan: {master, insurer},
+                totalPrice: bidding.totalPrice,
+                claimData: result.company.claimData,
+                memberList: null,
+              });
+            });
+          });
+        } else {
+          MasterPlan.find({ company: companyId }).sort({planId: 1}).exec(function(err, plans) {
+            const plan = plans.map((plan) => {
+              return Object.assign({}, {
+                planDetail: plan,
+                price: null,
+              });
+            });
             reply({
-              biddingId: bidding.biddingId,
-              countBidding: bidding.countBidding,
-              updatedAt: bidding.updatedAt,
-              plan: {master, insurer},
-              totalPrice: bidding.totalPrice,
-              claimData: bidding.company.claimData,
+              companyId: result.company._id,
+              company: result.company.companyName,
+              logo: result.company.logo.link,
+              numberOfEmployees: result.company.numberOfEmployees,
+              expiredOldInsurance: result.company.expiredInsurance,
+              startNewInsurance: myDate,
+              status: result.insurers.find((insurer) => insurer.insurerCompany.toString() === user.company.detail.toString()).status,
+              candidateInsurer: result.insurers.length,
+              minPrice: result.minPrice,
+              timeout: result.timeout,
+              biddingId: null,
+              countBidding: 0,
+              updatedAt: null,
+              plan: {master: plan, insurer: []},
+              totalPrice: null,
+              claimData: null,
               memberList: null,
             });
           });
-        });
-      } else {
-        MasterPlan.find({ company: companyId }).sort({planId: 1}).exec(function(err, plans) {
-          const plan = plans.map((plan) => {
-            return Object.assign({}, {
-              planDetail: plan,
-              price: null,
-            });
-          });
-          reply({
-            biddingId: null,
-            countBidding: 0,
-            updatedAt: null,
-            plan: {master: plan, insurer: []},
-            totalPrice: null,
-            claimData: null,
-            memberList: null,
-          });
-        });
-      }
+        }
+      });
     });
   }
 };
