@@ -75,11 +75,21 @@ const selectPlan = {
   },
 };
 
+const getProfile = {
+  tags: ['api'],
+  auth: 'jwt',
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    reply({ email: user.email, detail: user.detail });
+  },
+};
+
 export default function(app) {
   app.route([
     { method: 'GET', path: '/employee/get-all-benefit', config: getAllBenefit },
     { method: 'GET', path: '/employee/get-claim-status', config: getClaimStatus},
     { method: 'GET', path: '/employee/get-claim-history', config: getClaimHistory},
     { method: 'PUT', path: '/employee/select-benefit', config: selectPlan },
+    { method: 'GET', path: '/employee/get-profile', config: getProfile },
   ]);
 }
