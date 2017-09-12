@@ -2,7 +2,7 @@ import Joi from 'joi';
 import Boom from 'boom';
 import exceltojson from 'xlsx-to-json-lc';
 import fs from 'fs';
-import { EmployeeCompany, User, Media, Role, BiddingRelation, EmployeeGroup } from '../models';
+import { EmployeeCompany, User, Media, Role, BiddingRelation, EmployeeGroup, EmployeePlan } from '../models';
 
 const registerCompany = {
   tags: ['api'],
@@ -391,14 +391,21 @@ const setCompleteStep = {
                 });
               } else if (step === 2) {
                 Role.findOne({ roleName: 'Employee' }).then((roleId) => {
+                  let effectiveDate = new Date(company.expiredInsurance);
+                  let expiredDate = new Date(company.expiredInsurance);
+                  effectiveDate.setDate(effectiveDate.getDate() + 1);
+                  expiredDate.setFullYear(effectiveDate.getFullYear() + 1);
+                  company.startInsurance = effectiveDate;
+                  company.expiredInsurance = expiredDate;
+                  company.save();
+
                   const role = roleId._id;
-                  User.find({ company: user.company, role, deleted: false }, (err, employees) => {
+                  User.find({ 'company.detail': company, role, deleted: false }, (err, employees) => {
                     const setBenefitPlan = employees.map((employee) => {
                       return new Promise((resolve) => {
-                        EmployeeGroup.findOne({ groupName: employee.detail.benefit_group }, (err, group) => {
-                          employee.detail.benefit_plan = group.defaultPlan;
-                          employee.markModified('detail');
-                          employee.save().then(() => {
+                        EmployeeGroup.findOne({ company, groupName: employee.detail.benefit_group }).populate('defaultPlan').exec((err, group) => {
+                          const employeePlan = new EmployeePlan({ user: employee, company, benefitPlan: group.defaultPlan, selectGroup: group.groupName });
+                          employeePlan.save().then(() => {
                             resolve(true);
                           });
                         });

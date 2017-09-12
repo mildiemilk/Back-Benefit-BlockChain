@@ -8,8 +8,9 @@ const EmployeePlanSchema = new mongoose.Schema ({
   employeePlanId: {type: Number, default: 0, unique: true},
   user: { type: Schema.Types.ObjectId, ref: "User", required: true },
   company: { type: Schema.Types.ObjectId, ref: "EmployeeCompany", required: true },
-  benefitPlan: {}, //TODO: should be benefitPlan_id
+  benefitPlan: {  type: Schema.Types.ObjectId, ref: "BenefitPlan", required: true },
   selectGroup: { type: String, required: true },
+  approve: { type: Boolean, default: false },
 });
 
 
