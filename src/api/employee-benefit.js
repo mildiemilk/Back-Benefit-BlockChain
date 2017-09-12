@@ -75,9 +75,8 @@ const claimHealth = {
         media.save();
         storage.getUrl(media.path, (url) => {
           detail = JSON.parse(detail);
-          detail.mediaImg = media;
+          detail.mediaImg = media._id;
           detail.urlImg = url;
-          console.log(detail);
           if (err) throw err;
           if (type !== 'insurance') {
             LogUserClaim
@@ -92,12 +91,7 @@ const claimHealth = {
                 claimNumber,
                 type,
               });
-              createClaim.save()
-              .then(data => console.log("data=> ", data))
-              .catch( err => console.log("hello error: ", err));
-              console.log("err=> ", err);
-              console.log("resault=> ", result);
-              console.log("createClaim: ", createClaim);
+              createClaim.save();
             });
           } else {
             LogUserClaim
@@ -127,6 +121,5 @@ export default function(app) {
     { method: 'GET', path: '/employee/get-all-benefit', config: getAllBenefit },
     { method: 'PUT', path: '/employee/select-benefit', config: selectPlan },
     { method: 'POST', path: '/employee/claim/{type}', config:claimHealth },
-    // { method: 'POST', path: '/employee/claim/health', config:claimHealth },
   ]);
 }
