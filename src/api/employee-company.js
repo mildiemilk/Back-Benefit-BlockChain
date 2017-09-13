@@ -134,6 +134,7 @@ const uploadEmployee = {
                     detail: {
                       employee_code: employee.employee_code,
                       profilePic: null,
+                      personalVerify: false,
                       prefix: employee.prefix,
                       name: employee.name,
                       lastname: employee.lastname,
