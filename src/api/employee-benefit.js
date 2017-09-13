@@ -91,8 +91,9 @@ const claim = {
                 claimNumber,
                 type,
               });
-              createClaim.save();
-              reply("success");
+              createClaim.save().then(() => {
+                reply({ message: 'send claim success' });
+              });
             });
           } else {
             LogUserClaim
@@ -108,8 +109,9 @@ const claim = {
                 policyNumber: null,
                 type,
               });
-              createClaim.save();
-              reply("success");
+              createClaim.save().then(() => {
+                reply({ message: 'send claim success' });
+              });
             });
           }
         });
@@ -183,6 +185,34 @@ const currentPlan = {
   },
 };
 
+const claimOption = {
+  tags: ['api'],
+  auth: 'jwt',
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    const fullname = user.detail.prefix + user.detail.name + ' ' + user.detail.lastname;
+    user.detail.familyDetail.unshift(fullname);
+    EmployeePlan
+    .find({ user: user._id }, 'benefitPlan -_id', (err, plans) => {
+      plans = plans.map(plan => plan.benefitPlan);
+      const today = new Date();
+      BenefitPlan.findOne({ _id: { $in: plans }, effectiveDate: { $lte: today }, expiredDate: { $gte: today }})
+      .populate('benefitPlan.detailPlan')
+      .exec((err, result) => {
+        if(!result) {
+          reply(Boom.badData('benefit plan not found'));
+        } else {
+          reply({
+            claimUser: user.detail.familyDetail,
+            healthList: result.benefitPlan.detailPlan.health.healthList,
+            expenseList: result.benefitPlan.detailPlan.expense.expenseList,
+          });
+        }
+      });
+    });
+  },
+};
+
 export default function(app) {
   app.route([
     { method: 'GET', path: '/employee/get-all-benefit', config: getAllBenefit },
@@ -191,5 +221,6 @@ export default function(app) {
     { method: 'PUT', path: '/employee/set-profile', config: setProfile },
     { method: 'POST', path: '/employee/claim/{type}', config:claim },
     { method: 'GET', path: '/employee/current-plan', config: currentPlan },
+    { method: 'GET', path: '/employee/claim-option', config: claimOption },
   ]);
 }
