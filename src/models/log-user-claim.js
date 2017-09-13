@@ -12,7 +12,8 @@ const LogUserClaimSchema = new mongoose.Schema ({
   status: { type: String, required: true, enum:['pending','approve','reject'] },
   claimNumber: { type: Number, required: true },
   policyNumber: { type: Number },
-  type: { type: String, required: true, enum: ['health','general','insurance'] }
+  type: { type: String, required: true, enum: ['health','general','insurance'] },
+  reason: { type: String }
 });
 
 
