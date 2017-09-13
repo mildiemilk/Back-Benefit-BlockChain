@@ -1,6 +1,6 @@
 import Joi from 'joi';
 import Boom from 'boom';
-import { User } from '../models';
+import { User, EmployeePlan } from '../models';
 
 const passwordPattern = /^(?=.*\d)(?=.*[A-Z]).{8,20}/;
 
@@ -45,14 +45,22 @@ const login = {
           } else {
             const { auth } = request.server.app.services;
             const token = auth.createAuthToken(user);
-          
-            reply({
-              token,
-              companyName: company,
-              logo: logo.link,
-              approve: approve,
-              role: role,
-              personalVerify: user.personalVerify,
+            EmployeePlan
+            .find({ company: user.company.detail, user: user._id })
+            .exec((err, result) => {
+              if (err) {
+                reply(err);
+              } else {
+                reply({
+                  token,
+                  companyName: company,
+                  logo: logo.link,
+                  approve: approve,
+                  role: role,
+                  personalVerify: user.detail.personalVerify,
+                  newUser: result.length === 1,
+                });
+              }
             });
           }
         });
@@ -85,7 +93,6 @@ const changepassword = {
     if (user) {
       if(password !== confirmPassword)
       {
-        console.log('password !== confirmPassword');
         if(user.comparePassword(password))
         {
           user.password = confirmPassword;
@@ -97,7 +104,6 @@ const changepassword = {
           reply('Password is incorrect.');
         }
       } else {
-        console.log('password === confirmPassword');
         user.password = password;
         user.save(function(err) {
           if (err) throw err;

@@ -44,11 +44,11 @@ const selectPlan = {
           reply('Updated select plan and change status.');
         });
       }
-    }); 
+    });
   },
 };
 
-const claimHealth = {
+const claim = {
   tags: ['api'],
   auth: 'jwt',
   validate: {
@@ -92,6 +92,7 @@ const claimHealth = {
                 type,
               });
               createClaim.save();
+              reply("success");
             });
           } else {
             LogUserClaim
@@ -108,6 +109,7 @@ const claimHealth = {
                 type,
               });
               createClaim.save();
+              reply("success");
             });
           }
         });
@@ -162,12 +164,32 @@ const setProfile = {
   },
 };
 
+const currentPlan = {
+  tags: ['api'],
+  auth: 'jwt',
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    EmployeePlan
+    .find({ user: user._id }, 'benefitPlan -_id', (err, plans) => {
+      plans = plans.map(plan => plan.benefitPlan);
+      const today = new Date();
+      BenefitPlan.findOne({ _id: { $in: plans }, effectiveDate: { $lte: today }, expiredDate: { $gte: today }})
+      .populate('benefitPlan.detailPlan benefitPlan.plan.planId')
+      .exec((err, result) => {
+        if (err) throw err;
+        reply(result);
+      });
+    });
+  },
+};
+
 export default function(app) {
   app.route([
     { method: 'GET', path: '/employee/get-all-benefit', config: getAllBenefit },
     { method: 'PUT', path: '/employee/select-benefit', config: selectPlan },
     { method: 'GET', path: '/employee/get-profile', config: getProfile },
     { method: 'PUT', path: '/employee/set-profile', config: setProfile },
-    { method: 'POST', path: '/employee/claim/{type}', config:claimHealth },
+    { method: 'POST', path: '/employee/claim/{type}', config:claim },
+    { method: 'GET', path: '/employee/current-plan', config: currentPlan },
   ]);
 }
