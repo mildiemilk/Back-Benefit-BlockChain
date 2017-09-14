@@ -25,9 +25,11 @@ const login = {
       } else {
         let company = null;
         let approve = null;
-        let logo = null;
+        let logo = {};
+        let personalVerify = false;
         User.findOne({ _id: user._id }).populate('company.detail role').exec((err, uCompany) => {
           const role = uCompany.role.roleName;
+          logo.link = null;
           if (uCompany.company.detail) {
             company = uCompany.company.detail.companyName;
             approve = uCompany.company.detail.approve;
@@ -43,6 +45,9 @@ const login = {
           } else if (!user.comparePassword(password)) {
             reply(Boom.unauthorized('อีเมลหรือพาวเวิร์ดไม่ถูกต้อง'));
           } else {
+            if (role === 'Employee') {
+              personalVerify = user.detail.personalVerify;
+            }
             const { auth } = request.server.app.services;
             const token = auth.createAuthToken(user);
             EmployeePlan
@@ -54,10 +59,10 @@ const login = {
                 reply({
                   token,
                   companyName: company,
-                  logo: logo.link,
+                  logo: logo.link || null,
                   approve: approve,
                   role: role,
-                  personalVerify: user.detail.personalVerify,
+                  personalVerify,
                   newUser: result.length === 1,
                 });
               }
