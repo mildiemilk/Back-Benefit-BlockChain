@@ -16,7 +16,18 @@ const getAllBenefit = {
         reply(result);
       });
     });
-    
+  },
+};
+
+const confirmPlan = {
+  tags: ['api'],
+  auth: 'jwt',
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    EmployeePlan
+    .find({ user: user._id }, null, {sort: {createdAt: -1}}, (err, plan) => {
+      reply({ confirm: plan[0].confirm });
+    });
   },
 };
 
@@ -38,7 +49,7 @@ const selectPlan = {
         reply(err);
       } else {
         result.benefitPlan = planId;
-        result.approve = true;
+        result.confirm = true;
         result.save(function(err) {
           if (err) throw err;
           reply('Updated select plan and change status.');
@@ -222,5 +233,6 @@ export default function(app) {
     { method: 'POST', path: '/employee/claim/{type}', config:claim },
     { method: 'GET', path: '/employee/current-plan', config: currentPlan },
     { method: 'GET', path: '/employee/claim-option', config: claimOption },
+    { method: 'GET', path: '/employee/confirm-plan', config: confirmPlan },
   ]);
 }

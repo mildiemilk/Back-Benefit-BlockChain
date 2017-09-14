@@ -10,7 +10,7 @@ const EmployeePlanSchema = new mongoose.Schema ({
   company: { type: Schema.Types.ObjectId, ref: "EmployeeCompany", required: true },
   benefitPlan: {  type: Schema.Types.ObjectId, ref: "BenefitPlan", required: true },
   selectGroup: { type: String, required: true },
-  approve: { type: Boolean, default: false },
+  confirm: { type: Boolean, default: false },
 });
 
 
