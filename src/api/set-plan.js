@@ -180,16 +180,24 @@ const deletePlan = {
   },
   handler: (request, reply) => {
     const { planId, editBy } = request.params;
-    let planType;
+    const { user } = request.auth.credentials;
     switch(editBy) {
-      case 'company' : planType = MasterPlan; break;
-      case 'insurer' : planType = InsurerPlan; break;
+      case 'company' : 
+        MasterPlan.findOneAndRemove({ planId, company: user.company.detail }, (err) => {
+          if (!err)
+            reply({message:'deleted complete!'});
+        }); 
+        break;
+      case 'insurer' : 
+        InsurerPlan.findOne({ planId }).populate('createdBy').exec((err, plan) => {
+          if (plan.createdBy.company.detail === user.company.detail) {
+            plan.remove().then(() => {
+              reply({message:'deleted complete!'});
+            });
+          } else reply({message:"You can't delete this plan!"});
+        }); 
+        break;
     }
-    planType.findOneAndRemove({ planId }, (err) => {
-      if (!err)
-        reply({message:'deleted complete!'});
-    });
-
   },
 };
 
