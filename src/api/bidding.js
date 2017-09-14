@@ -171,7 +171,7 @@ const biddingDetailForInsurer = {
                 MasterPlan.findOne({ _id: plan.planId }).then((result) => {
                   resolve (
                     Object.assign({}, {
-                      plan: result,
+                      planDetail: result,
                       price: plan.price,
                     })
                   );
@@ -186,7 +186,7 @@ const biddingDetailForInsurer = {
                   InsurerPlan.findOne({ _id: plan.planId }).then((result) => {
                     resolve (
                       Object.assign({}, {
-                        plan: result,
+                        planDetail: result,
                         price: plan.price,
                       })
                     );
