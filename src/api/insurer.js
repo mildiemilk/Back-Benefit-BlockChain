@@ -93,6 +93,7 @@ const getSelectInsurer = {
       const role =  thisRole.roleName;
       if(role == 'HR'){
         BiddingRelation.findOne({ company: user.company.detail })
+        .populate('insurers.insurerCompany')
         .then((biddingrelation) => {
           reply(biddingrelation.insurers);
         });
