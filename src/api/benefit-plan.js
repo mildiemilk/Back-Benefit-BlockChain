@@ -216,12 +216,11 @@ const getBenefitPlan = {
     const { user } = request.auth.credentials;
     Role.findOne({ _id: user.role }).then((thisRole) => {
       const role = thisRole.roleName;
+      const today = new Date();
       if(role == 'HR'){
         User.findOne({ _id: user._id }).populate('company.detail').exec((err, result) => {
-          let effectiveDate = new Date(result.company.detail.expiredInsurance);
           const company = result.company.detail._id;
-          effectiveDate.setDate(effectiveDate.getDate() + 1);
-          BenefitPlan.find({ company, effectiveDate }, null, {sort: {createdAt: 1}}, (err, result) => {
+          BenefitPlan.find({ company, timeout: { $gte: today }}, 'benefitPlanName benefitPlan', {sort: {createdAt: 1}}, (err, result) => {
             reply(result);
           });
         });
