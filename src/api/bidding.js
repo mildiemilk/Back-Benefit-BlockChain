@@ -26,7 +26,6 @@ const bidding = {
         bidding.countBidding = bidding.countBidding + 1;
         bidding.totalPrice = totalPrice;
         bidding.plan = plan;
-        bidding.quotationId = quotationId;
       } else {
         bidding = new Bidding({ company: companyId, insurer, totalPrice, plan, quotationId, countBidding: 1 });
       }
@@ -213,6 +212,7 @@ const biddingDetailForInsurer = {
                 totalPrice: bidding.totalPrice,
                 claimData: result.company.claimData,
                 memberList: null,
+                quotationId: bidding.quotationId,
               });
             });
           });
@@ -242,6 +242,7 @@ const biddingDetailForInsurer = {
               totalPrice: null,
               claimData: null,
               memberList: null,
+              quotationId: null,
             });
           });
         }
