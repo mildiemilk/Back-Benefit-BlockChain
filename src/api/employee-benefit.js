@@ -10,10 +10,10 @@ const getAllBenefit = {
     EmployeeGroup
     .findOne({ company: user.company.detail, groupName: user.detail.benefit_group })
     .exec((err, group) => {
-      BenefitPlan.find({ _id: { $in: [group.benefitPlan] }})
+      BenefitPlan.find({ _id: { $in: group.benefitPlan }})
       .populate('benefitPlan.plan.planId benefitPlan.detailPlan')
       .exec((err, result) => {
-        reply(result);
+        reply({ group, benefitPlan: result });
       });
     });
   },
@@ -26,7 +26,14 @@ const confirmPlan = {
     const { user } = request.auth.credentials;
     EmployeePlan
     .find({ user: user._id }, null, {sort: {createdAt: -1}}, (err, plan) => {
-      reply({ confirm: plan[0].confirm });
+      let newUser = false;
+      if (plan.length === 1) {
+        newUser = true;
+      }
+      reply({
+        confirm: plan[0].confirm,
+        newUser,
+      });
     });
   },
 };
@@ -43,14 +50,15 @@ const selectPlan = {
     const { planId } = request.payload;
     const { user } = request.auth.credentials;
     EmployeePlan
-    .findOne({ company: user.company.detail, user: user._id })
+    .find({ user: user._id }, null, {sort: {createdAt: -1}})
     .exec((err, result) => {
       if (err) {
         reply(err);
       } else {
-        result.benefitPlan = planId;
-        result.confirm = true;
-        result.save(function(err) {
+        result[0].benefitPlan = planId;
+        result[0].confirm = true;
+        result[0].save(function(err) {
+          console.log(result[0]);
           if (err) throw err;
           reply('Updated select plan and change status.');
         });
@@ -186,7 +194,8 @@ const currentPlan = {
     .find({ user: user._id }, 'benefitPlan -_id', (err, plans) => {
       plans = plans.map(plan => plan.benefitPlan);
       const today = new Date();
-      BenefitPlan.findOne({ _id: { $in: plans }, effectiveDate: { $lte: today }, expiredDate: { $gte: today }})
+      BenefitPlan
+      .findOne({ _id: { $in: plans }, effectiveDate: { $lte: today }, expiredDate: { $gte: today }})
       .populate('benefitPlan.detailPlan benefitPlan.plan.planId')
       .exec((err, result) => {
         if (err) throw err;
@@ -224,6 +233,27 @@ const claimOption = {
   },
 };
 
+const checkNewUser = {
+  tags: ['api'],
+  auth: 'jwt',
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    EmployeePlan
+    .find({ company: user.company.detail, user: user._id })
+    .exec((err, result) => {
+      if (err) {
+        reply(err);
+      } else {
+        let newUser = false;
+        if (result.length === 1) {
+          newUser = true;
+        }
+        reply({newUser});
+      }
+    });
+  },
+};
+
 export default function(app) {
   app.route([
     { method: 'GET', path: '/employee/get-all-benefit', config: getAllBenefit },
@@ -234,5 +264,6 @@ export default function(app) {
     { method: 'GET', path: '/employee/current-plan', config: currentPlan },
     { method: 'GET', path: '/employee/claim-option', config: claimOption },
     { method: 'GET', path: '/employee/confirm-plan', config: confirmPlan },
+    { method: 'GET', path: '/employee/new-user', config: checkNewUser },
   ]);
 }
