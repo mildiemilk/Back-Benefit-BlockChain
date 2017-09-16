@@ -10,6 +10,7 @@ import UploadFile from './upload-file';
 import UserDetail from './user-detail';
 import EmployeeCompany from './employee-company';
 import EmployeeBenefit from './employee-benefit';
+import Claim from './claim';
 
 export const register = (server, options, next) => {
   Register(server);
@@ -24,6 +25,7 @@ export const register = (server, options, next) => {
   UserDetail(server);
   EmployeeCompany(server);
   EmployeeBenefit(server);
+  Claim(server);
   next();
 };
 export const test = (server, options, next) => {
