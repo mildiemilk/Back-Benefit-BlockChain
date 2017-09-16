@@ -33,6 +33,7 @@ const confirmPlan = {
       reply({
         confirm: plan[0].confirm,
         newUser,
+        currentSelect: plan[0].benefitPlan,
       });
     });
   },
@@ -58,9 +59,8 @@ const selectPlan = {
         result[0].benefitPlan = planId;
         result[0].confirm = true;
         result[0].save(function(err) {
-          console.log(result[0]);
           if (err) throw err;
-          reply('Updated select plan and change status.');
+          reply({ txt: 'Updated select plan and change status.', planId });
         });
       }
     });
