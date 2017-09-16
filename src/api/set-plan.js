@@ -385,6 +385,7 @@ const getAllPlan = {
     const { user } = request.auth.credentials;
     MasterPlan.find({ company: user.company.detail }).sort({planId: 1}).exec(function(err, plans) {
       if (err) throw err;
+      console.log('plan', plans);
       reply(plans);
     });
   },

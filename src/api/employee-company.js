@@ -367,8 +367,8 @@ const setCompleteStep = {
   auth: 'jwt',
   validate: {
     payload: {
-      step: Joi.number().required(),
       passwordToConfirm: Joi.string().required(),
+      step: Joi.number().required(),
     },
   },
   handler: (request, reply) => {

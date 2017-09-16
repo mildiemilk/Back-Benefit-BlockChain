@@ -72,7 +72,7 @@ const setTimeout = {
     Role.findOne({ _id: user.role }).then((thisRole) => {
       const role =  thisRole.roleName;
       if(role == 'HR'){
-        BiddingRelation.findOneAndUpdate({ hr: user._id },{ timeout }, (err) => {
+        BiddingRelation.findOneAndUpdate({ company: user.company.detail },{ $set: { timeout }}, (err) => {
           if (err) console.log(err);
           reply(timeout);
         });
@@ -95,7 +95,8 @@ const getSelectInsurer = {
         BiddingRelation.findOne({ company: user.company.detail })
         .populate('insurers.insurerCompany')
         .then((biddingrelation) => {
-          reply(biddingrelation.insurers);
+          const insurers = biddingrelation.insurers.map(insurer => insurer.insurerCompany);
+          reply(insurers);
         });
       }else{
         reply(Boom.badData('This page for HR only'));
@@ -113,7 +114,7 @@ const getTimeout = {
     Role.findOne({ _id: user.role }).then((thisRole) => {
       const role =  thisRole.roleName;
       if(role == 'HR'){
-        BiddingRelation.findOne({ hr: user._id })
+        BiddingRelation.findOne({ company: user.company.detail })
         .then((biddingrelation) => {
           reply(biddingrelation.timeout);
         });
