@@ -254,6 +254,33 @@ const checkNewUser = {
   },
 };
 
+const getClaimStatus = {
+  tags: ['api'],
+  auth: 'jwt',
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    const today = new Date();
+    const afterSevenDay = new Date();
+    afterSevenDay.setDate(today.getDate() - 7);
+    LogUserClaim.find({ user: user._id, $and:[{createdAt:{$lte:today}},{createdAt:{$gte:afterSevenDay}}] }, '-createdAt -updatedAt -deleted').then((logClaim) => {
+      reply(logClaim);
+    });
+  },
+};
+
+const getClaimHistory = {
+  tags: ['api'],
+  auth: 'jwt',
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    const afterSevenDay = new Date();
+    afterSevenDay.setDate(afterSevenDay.getDate() - 7);
+    LogUserClaim.find({ user: user._id, createdAt:{$lt:afterSevenDay }}, '-createdAt -updatedAt -deleted').then((logClaim) => {
+      reply(logClaim);
+    });
+  },
+};
+
 export default function(app) {
   app.route([
     { method: 'GET', path: '/employee/get-all-benefit', config: getAllBenefit },
@@ -265,5 +292,7 @@ export default function(app) {
     { method: 'GET', path: '/employee/claim-option', config: claimOption },
     { method: 'GET', path: '/employee/confirm-plan', config: confirmPlan },
     { method: 'GET', path: '/employee/new-user', config: checkNewUser },
+    { method: 'GET', path: '/employee/get-claim-status', config: getClaimStatus},
+    { method: 'GET', path: '/employee/get-claim-history', config: getClaimHistory},
   ]);
 }
