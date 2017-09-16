@@ -135,6 +135,7 @@ const uploadEmployee = {
                       employee_code: employee.employee_code,
                       profilePic: null,
                       personalVerify: false,
+                      effectiveDate: null,
                       prefix: employee.prefix,
                       name: employee.name,
                       lastname: employee.lastname,
@@ -150,6 +151,7 @@ const uploadEmployee = {
                       account_number: employee.account_number,
                       bank_name: employee.bank_name,
                       marriage_status: employee.marriage_status,
+                      familyDetail: [],
                     }
                   };
                   const newEmployee = new User(detail);
@@ -365,8 +367,8 @@ const setCompleteStep = {
   auth: 'jwt',
   validate: {
     payload: {
-      step: Joi.number().required(),
       passwordToConfirm: Joi.string().required(),
+      step: Joi.number().required(),
     },
   },
   handler: (request, reply) => {
@@ -591,6 +593,36 @@ const summaryEmployeeBenefit = {
   }
 };
 
+// const summaryEmployee = {
+//   tags: ['api'],
+//   auth: 'jwt',
+
+//   handler: (request, reply) => {
+//     const { user } = request.auth.credentials;
+//     Role.findOne({ roleName: 'Employee' }).then((roleId) => {
+//       const role = roleId._id;
+//       const month = new Date().getMonth();
+//       const aggregatorOpts = [
+//         { $project: { 'detail.effectiveDate': { $ifNull: [ { $month: "$detail.effectiveDate" }, 0 ]}}},
+//         { $match: { company: user.company, role, deleted: false, 'detail.effectiveDate' : { $month: month }}},
+//         {
+//           $group: {
+//             _id: "$detail.type_of_employee",
+//             count: { $sum: 1 }
+//           }
+//         },
+//         {
+//           $sort: { _id: 1 }
+//         }
+//       ];
+//       User.aggregate(aggregatorOpts).exec((err, employees) => {
+//         reply(employees);
+//       });
+//     });
+//   }
+// };
+
+
 export default function(app) {
   app.route([
     { method: 'POST', path: '/company/register-company', config: registerCompany },
@@ -607,5 +639,6 @@ export default function(app) {
     { method: 'PUT', path: '/company/set-group-benefit/{employeeGroupId}', config: setGroupBenefit },
     { method: 'GET', path: '/company/summary-group', config: summaryGroup },
     { method: 'GET', path: '/company/summary-employee-benefit', config: summaryEmployeeBenefit },
+    // { method: 'GET', path: '/company/summary-employee', config: summaryEmployee },
   ]);
 }

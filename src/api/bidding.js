@@ -159,7 +159,7 @@ const biddingDetailForInsurer = {
     const { user } = request.auth.credentials;
     BiddingRelation.findOne({ 'insurers.insurerCompany': user.company.detail, company: companyId }).populate('company').exec((err, result) => {
       const myDate = result.company.expiredInsurance;
-      myDate.setDate(myDate.getDate() + 1);
+      myDate.setDate(myDate.getDate() - 1);
       Bidding.findOne({ company: companyId, insurer: user.company.detail }, (err, bidding) => {
         if (bidding) {
           let getMaster = [];

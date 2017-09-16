@@ -144,7 +144,10 @@ const getTemplatePlan = {
     Role.findOne({ _id: user.role }).then((thisRole) => {
       const role =  thisRole.roleName;
       if(role == 'HR'){
-        TemplatePlan.findOne({ company: user.company.detail }, null, {sort: {createdAt: -1}}, (err, result) => {
+        TemplatePlan.findOne({ company: user.company.detail }, null, {sort: {createdAt: -1}})
+        .populate('plan.master plan.insurer')
+        .exec((err, result) => {
+          console.log(result);
           reply({ 
             plan: result.plan,
             isExpense: result.isExpense,

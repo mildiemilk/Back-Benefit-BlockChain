@@ -13,7 +13,7 @@ const LogUserClaimSchema = new mongoose.Schema ({
   claimNumber: { type: Number, required: true },
   policyNumber: { type: Number },
   type: { type: String, required: true, enum: ['health','general','insurance'] },
-  reason: { type: String }
+  reason: { type: String, default: null},
 });
 
 
