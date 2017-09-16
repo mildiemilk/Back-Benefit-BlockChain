@@ -1,6 +1,7 @@
 import Joi from 'joi';
 import Boom from 'boom';
-import { LogUserClaim, User, EmployeeCompany } from '../models';
+import mongoose from 'mongoose';
+import { LogUserClaim, User, EmployeeCompany, Role } from '../models';
 
 const getClaimListCompany = {
   tags: ['api'],
@@ -11,7 +12,7 @@ const getClaimListCompany = {
       { $match: { company: user.company.detail }},
       {
         $group: {
-          _id: { type: '$type', user: '$user', detail: '$detail', status: '$status' },
+          _id: { type: '$type', user: '$user', detail: '$detail', status: '$status', claimNumber: '$claimNumber' },
           count: { $sum: 1 },
         },
       },
@@ -21,8 +22,9 @@ const getClaimListCompany = {
           user: { $push: '$_id.user' },
           status: { $push: '$_id.status' },
           detail: { $push: '$_id.detail' },
-          count: { $sum: '$count' }
-        }, 
+          amountOfClaim: { $sum: '$count' },
+          claimNumber: { $push: '$_id.claimNumber' }
+        },
       },
       {
         $sort: { _id: 1 }
@@ -53,16 +55,24 @@ const companyClaim = {
   },
   handler: (request, reply) => {
     const { claimId, status } = request.params;
+    const { user } = request.auth.credentials;
     const { reason } = request.payload;
-    LogUserClaim.findOne({ _id: claimId }).exec((err, claim) => {
-      if(err) reply(err);
-      claim.status = status;
-      if (status === 'reject') {
-        claim.reason = reason;
+    Role.findOne({ _id: user.role }).then((thisRole) => {
+      const role =  thisRole.roleName;
+      if(role == 'HR'){
+        LogUserClaim.findOne({ _id: claimId, company: user.company.detail }).exec((err, claim) => {
+          if(err) reply(err);
+          claim.status = status;
+          if (status === 'reject') {
+            claim.reason = reason;
+          }
+          claim.save().then((claim) => {
+            reply(claim);
+          });
+        });
+      }else{
+        reply(Boom.badData('This page for HR only'));
       }
-      claim.save().then((claim) => {
-        reply(claim);
-      });
     });
   },
 };
@@ -118,10 +128,92 @@ const claimAllCompany = {
   },
 };
 
+const getClaim = {
+  tags: ['api'],
+  auth: 'jwt',
+  validate: {
+    params: {
+      companyId: Joi.string().required(),
+    },
+  },
+  handler: (request, reply) => {
+    const { companyId } = request.params;
+    const aggregatorOpts = [
+      { $match: { company: mongoose.Types.ObjectId(companyId) }},
+      {
+        $group: {
+          _id: { user: '$user', detail: '$detail', status: '$status', claimNumber: '$claimNumber' },
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $group: {
+          _id: '$_id.status',
+          user: { $push: '$_id.user' },
+          detail: { $push: '$_id.detail' },
+          amountOfClaim: { $sum: '$count' },
+          claimNumber: { $push: '$_id.claimNumber' },
+        }, 
+      },
+      {
+        $sort: { _id: 1 }
+      }
+    ];
+
+    LogUserClaim.aggregate(aggregatorOpts)
+    .exec((err, claims) => {
+      if(err) reply(err);
+      console.log(companyId, claims);
+      User.populate(claims, {path: 'user', select: 'detail.name detail.lastname'}, (err, result) => {
+        if(err) reply(err);
+        reply(result);
+      });
+    });
+  },
+};
+
+const insurerClaim = {
+  tags: ['api'],
+  auth: 'jwt',
+  validate: {
+    payload: {
+      reason: Joi.string(),
+    },
+    params: {
+      status: Joi.string().valid('approve','reject').required(),
+      claimId: Joi.string().required(),
+    },
+  },
+  handler: (request, reply) => {
+    const { claimId, status } = request.params;
+    const { user } = request.auth.credentials;
+    const { reason } = request.payload;
+    Role.findOne({ _id: user.role }).then((thisRole) => {
+      const role =  thisRole.roleName;
+      if(role == 'Insurer'){
+        LogUserClaim.findOne({ _id: claimId, type: 'insurance' }).exec((err, claim) => {
+          if(err) reply(err);
+          claim.status = status;
+          if (status === 'reject') {
+            claim.reason = reason;
+          }
+          claim.save().then((claim) => {
+            reply(claim);
+          });
+        });
+      }else{
+        reply(Boom.badData('This page for Insurer only'));
+      }
+    });
+  },
+};
+
 export default function(app) {
   app.route([
     { method: 'GET', path: '/company/get-claim-list', config: getClaimListCompany },
     { method: 'PUT', path: '/company/claim/{status}/{claimId}', config: companyClaim },
     { method: 'GET', path: '/insurer/claim-all-company', config: claimAllCompany },
+    { method: 'GET', path: '/insurer/get-claim/{companyId}', config: getClaim },
+    { method: 'PUT', path: '/insurer/claim/{status}/{claimId}', config: insurerClaim },
   ]);
 }
