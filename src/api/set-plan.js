@@ -211,7 +211,6 @@ const editInsurerPlan = {
     },
     params: {
       planId: Joi.number().integer().required(),
-      typeEdit: Joi.string().required(),
     },
   },
   handler: (request, reply) => {
@@ -229,49 +228,53 @@ const editInsurerPlan = {
     Role.findOne({ _id: user.role }).then((thisRole) => {
       const role =  thisRole.roleName;
       if(role === 'Insurer'){
-        InsurerPlan.findOneAndUpdate({ planId: planId }, { $set:
-        { planName: planName,
-          employeeOfPlan: employeeOfPlan,
-          ipdType: ipdType,
-          ipdLumsumPerYear: ipdLumsumPerYear,
-          ipdLumsumPerTime: ipdLumsumPerTime,
-          ipdLumsumTimeNotExceedPerYear: ipdLumsumTimeNotExceedPerYear,
-          rbLumsumRoomPerNight: rbLumsumRoomPerNight,
-          rbLumsumNigthNotExceedPerYear: rbLumsumNigthNotExceedPerYear,
-          rbLumsumPayNotExceedPerNight: rbLumsumPayNotExceedPerNight,
-          rbLumsumPayNotExceedPerYear: rbLumsumPayNotExceedPerYear,
-          rbSchedulePatient: rbSchedulePatient,
-          rbScheduleIntensiveCarePatient: rbScheduleIntensiveCarePatient,
-          rbScheduleDoctor: rbScheduleDoctor,
-          rbScheduleSurgerySchedule: rbScheduleSurgerySchedule,
-          rbScheduleSurgeryNonSchedule: rbScheduleSurgeryNonSchedule,
-          rbScheduleService: rbScheduleService,
-          rbScheduleSmallSurgery: rbScheduleSmallSurgery,
-          rbScheduleAdviser: rbScheduleAdviser,
-          rbScheduleAmbulance: rbScheduleAmbulance,
-          rbScheduleAccident: rbScheduleAccident,
-          rbScheduleTreatment: rbScheduleTreatment,
-          rbScheduleTransplant: rbScheduleTransplant,
-          ipdCoPay: ipdCoPay,
-          ipdCoPayQuota: ipdCoPayQuota,
-          ipdCoPayDeductable: ipdCoPayDeductable,
-          ipdCoPayMixPercentage: ipdCoPayMixPercentage,
-          ipdCoPayMixNotExceed: ipdCoPayMixNotExceed,
-          ipdCoPayMixYear: ipdCoPayMixYear,
-          opdPerYear: opdPerYear,
-          opdPerTime: opdPerTime,
-          opdTimeNotExceedPerYear: opdTimeNotExceedPerYear,
-          opdCoPay: opdCoPay,
-          opdCoPayQuota: opdCoPayQuota,
-          opdCoPayDeductable: opdCoPayDeductable,
-          opdCoPayMixPercentage: opdCoPayMixPercentage,
-          opdCoPayMixNotExceed: opdCoPayMixNotExceed,
-          opdCoPayMixYear: opdCoPayMixYear,
-          dentalPerYear: dentalPerYear,
-          lifePerYear: lifePerYear,
-          lifeTimeOfSalary: lifeTimeOfSalary,
-          lifeNotExceed: lifeNotExceed,
-        }}, () => reply({message: 'edit plan complete!'})); 
+        InsurerPlan.findOne({ planId }).populate('createdBy').exec((err, plan) => {
+          if (plan.createdBy.company.detail.toString() === user.company.detail.toString()) {
+            InsurerPlan.findOneAndUpdate({ planId: planId }, { $set:
+            { planName: planName,
+              employeeOfPlan: employeeOfPlan,
+              ipdType: ipdType,
+              ipdLumsumPerYear: ipdLumsumPerYear,
+              ipdLumsumPerTime: ipdLumsumPerTime,
+              ipdLumsumTimeNotExceedPerYear: ipdLumsumTimeNotExceedPerYear,
+              rbLumsumRoomPerNight: rbLumsumRoomPerNight,
+              rbLumsumNigthNotExceedPerYear: rbLumsumNigthNotExceedPerYear,
+              rbLumsumPayNotExceedPerNight: rbLumsumPayNotExceedPerNight,
+              rbLumsumPayNotExceedPerYear: rbLumsumPayNotExceedPerYear,
+              rbSchedulePatient: rbSchedulePatient,
+              rbScheduleIntensiveCarePatient: rbScheduleIntensiveCarePatient,
+              rbScheduleDoctor: rbScheduleDoctor,
+              rbScheduleSurgerySchedule: rbScheduleSurgerySchedule,
+              rbScheduleSurgeryNonSchedule: rbScheduleSurgeryNonSchedule,
+              rbScheduleService: rbScheduleService,
+              rbScheduleSmallSurgery: rbScheduleSmallSurgery,
+              rbScheduleAdviser: rbScheduleAdviser,
+              rbScheduleAmbulance: rbScheduleAmbulance,
+              rbScheduleAccident: rbScheduleAccident,
+              rbScheduleTreatment: rbScheduleTreatment,
+              rbScheduleTransplant: rbScheduleTransplant,
+              ipdCoPay: ipdCoPay,
+              ipdCoPayQuota: ipdCoPayQuota,
+              ipdCoPayDeductable: ipdCoPayDeductable,
+              ipdCoPayMixPercentage: ipdCoPayMixPercentage,
+              ipdCoPayMixNotExceed: ipdCoPayMixNotExceed,
+              ipdCoPayMixYear: ipdCoPayMixYear,
+              opdPerYear: opdPerYear,
+              opdPerTime: opdPerTime,
+              opdTimeNotExceedPerYear: opdTimeNotExceedPerYear,
+              opdCoPay: opdCoPay,
+              opdCoPayQuota: opdCoPayQuota,
+              opdCoPayDeductable: opdCoPayDeductable,
+              opdCoPayMixPercentage: opdCoPayMixPercentage,
+              opdCoPayMixNotExceed: opdCoPayMixNotExceed,
+              opdCoPayMixYear: opdCoPayMixYear,
+              dentalPerYear: dentalPerYear,
+              lifePerYear: lifePerYear,
+              lifeTimeOfSalary: lifeTimeOfSalary,
+              lifeNotExceed: lifeNotExceed,
+            }}, () => reply({message: 'edit plan complete!'}));
+          } else reply({message:"You can't edit this plan!"});
+        });
       } else {
         reply({ message:'หน้านี้สำหรับ Insurer เท่านั้น'});
       }
@@ -301,7 +304,7 @@ const deletePlan = {
         break;
       case 'insurer' : 
         InsurerPlan.findOne({ planId }).populate('createdBy').exec((err, plan) => {
-          if (plan.createdBy.company.detail === user.company.detail) {
+          if (plan.createdBy.company.detail.toString() === user.company.detail.toString()) {
             plan.remove().then(() => {
               reply({message:'deleted complete!'});
             });
