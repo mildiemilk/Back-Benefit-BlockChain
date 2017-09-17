@@ -33,6 +33,7 @@ const confirmPlan = {
       reply({
         confirm: plan[0].confirm,
         newUser,
+        currentSelect: plan[0].benefitPlan,
       });
     });
   },
@@ -58,9 +59,8 @@ const selectPlan = {
         result[0].benefitPlan = planId;
         result[0].confirm = true;
         result[0].save(function(err) {
-          console.log(result[0]);
           if (err) throw err;
-          reply('Updated select plan and change status.');
+          reply({ txt: 'Updated select plan and change status.', planId });
         });
       }
     });
@@ -254,6 +254,33 @@ const checkNewUser = {
   },
 };
 
+const getClaimStatus = {
+  tags: ['api'],
+  auth: 'jwt',
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    const today = new Date();
+    const afterSevenDay = new Date();
+    afterSevenDay.setDate(today.getDate() - 7);
+    LogUserClaim.find({ user: user._id, $and:[{createdAt:{$lte:today}},{createdAt:{$gte:afterSevenDay}}] }, '-createdAt -updatedAt -deleted').then((logClaim) => {
+      reply(logClaim);
+    });
+  },
+};
+
+const getClaimHistory = {
+  tags: ['api'],
+  auth: 'jwt',
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    const afterSevenDay = new Date();
+    afterSevenDay.setDate(afterSevenDay.getDate() - 7);
+    LogUserClaim.find({ user: user._id, createdAt:{$lt:afterSevenDay }}, '-createdAt -updatedAt -deleted').then((logClaim) => {
+      reply(logClaim);
+    });
+  },
+};
+
 export default function(app) {
   app.route([
     { method: 'GET', path: '/employee/get-all-benefit', config: getAllBenefit },
@@ -265,5 +292,7 @@ export default function(app) {
     { method: 'GET', path: '/employee/claim-option', config: claimOption },
     { method: 'GET', path: '/employee/confirm-plan', config: confirmPlan },
     { method: 'GET', path: '/employee/new-user', config: checkNewUser },
+    { method: 'GET', path: '/employee/get-claim-status', config: getClaimStatus},
+    { method: 'GET', path: '/employee/get-claim-history', config: getClaimHistory},
   ]);
 }

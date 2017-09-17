@@ -136,7 +136,7 @@ const getCompanyList = {
         BiddingRelation.find({ 'insurers.insurerCompany': user.company.detail, confirmed: true }, null, {sort: {createdAt: -1}}).populate('company').exec((err, results) => {
           const data = results.map((result) => {
             const myDate = result.company.expiredInsurance;
-            myDate.setDate(myDate.getDate() + 1);
+            myDate.setDate(myDate.getDate() - 1);
 
             return new Promise((resolve) => {
               Bidding.findOne({ company: result.company, insurer: user.company.detail }, 'countBidding',(err, bidding) => {
