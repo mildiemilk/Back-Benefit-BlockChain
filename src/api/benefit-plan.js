@@ -223,7 +223,8 @@ const getBenefitPlan = {
       if(role == 'HR'){
         User.findOne({ _id: user._id }).populate('company.detail').exec((err, result) => {
           const company = result.company.detail._id;
-          BenefitPlan.find({ company, timeout: { $gte: today }}, 'benefitPlanName benefitPlan', {sort: {createdAt: 1}}, (err, result) => {
+          BenefitPlan.find({ company, timeout: { $gte: today }}, 'benefitPlanName benefitPlan', {sort: {createdAt: 1}})
+          .populate({ path: 'benefitPlan.plan.planId', select: 'planName' }).exec((err, result) => {
             reply(result);
           });
         });
