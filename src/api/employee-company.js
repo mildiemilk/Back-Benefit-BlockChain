@@ -467,6 +467,7 @@ const setGroupBenefit = {
     },
   },
   handler: (request, reply) => {
+    const { user } = request.auth.credentials;
     const { employeeGroupId } = request.params;
     const { type, benefitPlan, defaultPlan } = request.payload;
     EmployeeGroup.findOne({ _id: employeeGroupId }, (err, group) => {
@@ -474,7 +475,13 @@ const setGroupBenefit = {
       group.benefitPlan = benefitPlan;
       group.defaultPlan = defaultPlan;
       group.save().then(() => {
-        reply({ message: 'set group benefit completed' });
+        EmployeeGroup
+        .find(
+          { company: user.company.detail },
+          'groupName type benefitPlan defaultPlan amount',
+          (err, groups) => {
+            reply(groups);
+          });
       });
     });
   }
