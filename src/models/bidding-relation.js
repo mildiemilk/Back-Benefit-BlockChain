@@ -12,6 +12,9 @@ const BiddingRelationSchema = new mongoose.Schema ({
   timeout: { type : Date, default: null },
   minPrice: { type: Number, default: null},
   confirmed: { type: Boolean, default: false },
+  insurerWin: { type: Schema.Types.ObjectId, ref: "User", default: null },
+  insurerCompanyWin: { type: Schema.Types.ObjectId, ref: "InsuranceCompany", default: null },
+  biddingWin: { type: Schema.Types.ObjectId, ref: "Bidding",default: null },
 });
 
 

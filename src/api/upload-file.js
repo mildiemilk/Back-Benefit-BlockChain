@@ -10,7 +10,7 @@ const uploadFile = {
     allow: 'multipart/form-data'
   },
 
-  handler: (request, reply) => {
+  handler: (request, reply) => {  //TODO: deleted file on S3
     const { file } = request.payload;
     const { storage } = request.server.app.services;
     const { user } = request.auth.credentials;

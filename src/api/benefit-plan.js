@@ -1,25 +1,41 @@
 import Joi from 'joi';
 import Boom from 'boom';
-import { User, Bidding, MasterPlan, InsurerPlan, Role, TemplatePlan, BenefitPlan } from '../models';
+import { User, Bidding, MasterPlan, InsurerPlan, Role, TemplatePlan, BenefitPlan, BiddingRelation } from '../models';
 
 const getInsurancePlan = {
   tags: ['api'],
   auth: 'jwt',
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
-    User.findOne({_id: user._id }).populate('company.detail').then((result) => {
-      const insurers = result.company.detail.insurers;
-      const insurer = insurers[insurers.length-1].insurerCompany;
-      Bidding.findOne({ company: user.company.detail, insurer }).then((bidding) => {
-        if (bidding) {
-          let getMaster = [];
-          let getInsurer = [];
-          let master;
-          let insurer;
-          if (bidding.plan.master !== undefined) {
-            getMaster = bidding.plan.master.map((plan) => {
+    BiddingRelation.find({ company: user.company.detail }, null, {sort: { createdAt: -1 }})
+    .populate('biddingWin')
+    .exec((err, biddingRelation) => {
+      const bidding = biddingRelation[0].biddingWin;
+      if (bidding) {
+        let getMaster = [];
+        let getInsurer = [];
+        let master;
+        let insurer;
+        if (bidding.plan.master !== undefined) {
+          getMaster = bidding.plan.master.map((plan) => {
+            return new Promise((resolve) => {
+              MasterPlan.findOne({ _id: plan.planId }).then((result) => {
+                resolve (
+                  Object.assign({}, {
+                    plan: result,
+                    price: plan.price,
+                  })
+                );
+              });
+            });
+          });
+        }
+        Promise.all(getMaster).then((result) => {
+          master = result;
+          if (bidding.plan.insurer !== undefined) {
+            getInsurer = bidding.plan.insurer.map((plan) => {
               return new Promise((resolve) => {
-                MasterPlan.findOne({ _id: plan.planId }).then((result) => {
+                InsurerPlan.findOne({ _id: plan.planId }).then((result) => {
                   resolve (
                     Object.assign({}, {
                       plan: result,
@@ -30,35 +46,18 @@ const getInsurancePlan = {
               });
             });
           }
-          Promise.all(getMaster).then((result) => {
-            master = result;
-            if (bidding.plan.insurer !== undefined) {
-              getInsurer = bidding.plan.insurer.map((plan) => {
-                return new Promise((resolve) => {
-                  InsurerPlan.findOne({ _id: plan.planId }).then((result) => {
-                    resolve (
-                      Object.assign({}, {
-                        plan: result,
-                        price: plan.price,
-                      })
-                    );
-                  });
-                });
-              });
-            }
-            Promise.all(getInsurer).then((result) => {
-              insurer = result;
-              reply({
-                plan: {master, insurer},
-              });
+          Promise.all(getInsurer).then((result) => {
+            insurer = result;
+            reply({
+              plan: {master, insurer},
             });
           });
-        } else {
-          reply({
-            plan: {master: [], insurer: []},
-          });
-        }
-      });
+        });
+      } else {
+        reply({
+          plan: {master: [], insurer: []},
+        });
+      }
     });
   }
 };
@@ -197,10 +196,17 @@ const setBenefitPlan = {
               });
             });
           } else {
-            const newBenefitPlan = new BenefitPlan({ company, benefitPlanName: planName, benefitPlan, effectiveDate, expiredDate });
-            newBenefitPlan.save().then(() => {
-              reply({ message: 'set new benefit plan success' });
+            BiddingRelation.find({ company }, null, {sort: { createdAt: -1 }})
+            .exec((err, biddingRelation) => {
+              const insurerCompany = biddingRelation[0].insurerCompanyWin;
+              const insurer = biddingRelation[0].insurerWin;
+              const bidding = biddingRelation[0].biddingWin;
+              const newBenefitPlan = new BenefitPlan({ company, insurer, insurerCompany, bidding, benefitPlanName: planName, benefitPlan, effectiveDate, expiredDate });
+              newBenefitPlan.save().then(() => {
+                reply({ message: 'set new benefit plan success' });
+              });
             });
+            
           }
         });
          

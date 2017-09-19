@@ -1,7 +1,7 @@
 import Joi from 'joi';
 import Boom from 'boom';
 import mongoose from 'mongoose';
-import { LogUserClaim, User, EmployeeCompany, Role } from '../models';
+import { LogUserClaim, User, EmployeeCompany, Role, BenefitPlan } from '../models';
 
 const getClaimListCompany = {
   tags: ['api'],
@@ -77,56 +77,77 @@ const companyClaim = {
   },
 };
 
-const claimAllCompany = {
-  tags: ['api'],
-  auth: 'jwt',
-  handler: (request, reply) => {
-    const { user } = request.auth.credentials;
-    EmployeeCompany.find({ deleted: false }, 'insurers')
-    .exec((err, companys) => {
-      companys = companys.filter(company => {
-        const length = company.insurers.length-1;
-        console.log(company);
-        if( length > 0){
-          const lastInsurer = company.insurers[length].insurerCompany.toString();
-          return lastInsurer === user.company.detail.toString();
-        }
-        return false;
-      });
-      companys = companys.map(company => company._id);
-      const aggregatorOpts = [
-        { $match: { company: { $in: companys }, status: 'pending'}},
-        {
-          $group: {
-            _id: '$company',
-            amountOfClaim: { $sum: 1 },
-          },
-        },
-        {
-          $sort: { _id: 1 }
-        }
-      ];
-      LogUserClaim.aggregate(aggregatorOpts)
-      .exec((err, claims) => {
-        EmployeeCompany.populate(claims, { path: '_id', select: 'numberOfEmployee expiredInsurance logo.link companyName' }, (err, results) => {
-          const allClaims = results.map( result => {
-            const startNewInsurance = result._id.expiredInsurance;
-            startNewInsurance.setDate(startNewInsurance.getDate() - 1);
-            return Object.assign({}, {
-              _id: result._id._id,
-              companyName: result._id.companyName,
-              expiredOldInsurance: result._id.expiredInsurance,
-              startNewInsurance,
-              logo: result._id.logo.link,
-              amountOfClaim: result.amountOfClaim,
-            });
-          });
-          reply(allClaims);
-        });
-      });
-    });
-  },
-};
+// const claimAllCompany = {
+//   tags: ['api'],
+//   auth: 'jwt',
+//   handler: (request, reply) => {
+//     const { user } = request.auth.credentials;
+//     const aggregatorOpts = [
+//       { $match: { insurerCompany: user.company.detail }},
+//       {
+//         $group: {
+//           _id: { company: '$company', insurerCompany: '$insurerCompany' },
+//         },
+//       },
+//       {
+//         $group: {
+//           _id: '$_id.insurerCompany',
+//           companys: { $push: '$_id.company' },
+//         },
+//       },
+//       {
+//         $sort: { _id: -1 }
+//       }
+//     ];
+//     BenefitPlan.aggregate(aggregatorOpts)
+//     .exec((err, result) => {
+//       console.log('result', result);
+//     });
+//     // EmployeeCompany.find({ deleted: false }, 'insurers')
+//     // .exec((err, companys) => {
+//     //   companys = companys.filter(company => { //TODO: deleted insurers from employee company , change logic!
+//     //     const length = company.insurers.length-1;
+//     //     console.log(company);
+//     //     if( length > 0){
+//     //       const lastInsurer = company.insurers[length].insurerCompany.toString();
+//     //       return lastInsurer === user.company.detail.toString();
+//     //     }
+//     //     return false;
+//     //   });
+//     //   companys = companys.map(company => company._id);
+//     //   const aggregatorOpts = [
+//     //     { $match: { company: { $in: companys }, status: 'pending'}},
+//     //     {
+//     //       $group: {
+//     //         _id: '$company',
+//     //         amountOfClaim: { $sum: 1 },
+//     //       },
+//     //     },
+//     //     {
+//     //       $sort: { _id: 1 }
+//     //     }
+//     //   ];
+//     //   LogUserClaim.aggregate(aggregatorOpts)
+//     //   .exec((err, claims) => {
+//     //     EmployeeCompany.populate(claims, { path: '_id', select: 'numberOfEmployee expiredInsurance logo.link companyName' }, (err, results) => {
+//     //       const allClaims = results.map( result => {
+//     //         const startNewInsurance = result._id.expiredInsurance;
+//     //         startNewInsurance.setDate(startNewInsurance.getDate() - 1);
+//     //         return Object.assign({}, {
+//     //           _id: result._id._id,
+//     //           companyName: result._id.companyName,
+//     //           expiredOldInsurance: result._id.expiredInsurance,
+//     //           startNewInsurance,
+//     //           logo: result._id.logo.link,
+//     //           amountOfClaim: result.amountOfClaim,
+//     //         });
+//     //       });
+//     //       reply(allClaims);
+//     //     });
+//     //   });
+//     // });
+//   },
+// };
 
 const getClaim = {
   tags: ['api'],
@@ -212,7 +233,7 @@ export default function(app) {
   app.route([
     { method: 'GET', path: '/company/get-claim-list', config: getClaimListCompany },
     { method: 'PUT', path: '/company/claim/{status}/{claimId}', config: companyClaim },
-    { method: 'GET', path: '/insurer/claim-all-company', config: claimAllCompany },
+    // { method: 'GET', path: '/insurer/claim-all-company', config: claimAllCompany },
     { method: 'GET', path: '/insurer/get-claim/{companyId}', config: getClaim },
     { method: 'PUT', path: '/insurer/claim/{status}/{claimId}', config: insurerClaim },
   ]);
