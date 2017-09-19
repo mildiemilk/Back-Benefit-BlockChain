@@ -1,6 +1,7 @@
 import Joi from 'joi';
 import Boom from 'boom';
-import { BiddingRelation, Role, Bidding, InsuranceCompany } from '../models';
+import moment from 'moment';
+import { BiddingRelation, Role, Bidding, InsuranceCompany, BenefitPlan, EmployeeCompany } from '../models';
 
 const getAllInsurer = {
   tags: ['api'],
@@ -139,7 +140,7 @@ const getCompanyList = {
             myDate.setDate(myDate.getDate() - 1);
 
             return new Promise((resolve) => {
-              Bidding.findOne({ company: result.company, insurer: user.company.detail }, 'countBidding',(err, bidding) => {
+              Bidding.findOne({ company: result.company, insurerCompany: user.company.detail }, 'countBidding',(err, bidding) => {
                 let countBidding = 0;
                 if(bidding) {
                   countBidding = bidding.countBidding;
@@ -167,6 +168,53 @@ const getCompanyList = {
   },
 };
 
+const insurerCustomer = {
+  tags: ['api'],
+  auth: 'jwt',
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    const aggregatorOpts = [
+      {$match: {insurerCompany: user.company.detail}},
+      {$project:{"_id":1, "company": 1, "createdAt": 1}}, 
+      {$sort:{"createdAt": -1}},
+      {
+        $group: {
+          _id: "$company", 
+          lastPlan: { $first: "$_id" }
+        },
+      },
+    ];
+    BenefitPlan.aggregate(aggregatorOpts)
+    .exec((err, result) => {
+      BenefitPlan.populate(result, {path: 'lastPlan', select: 'effectiveDate expiredDate'}, (err, result) => {
+        EmployeeCompany.populate(result, {path: '_id', select: 'companyName logo.link numberOfEmployees completeStep'}, (err, result) => {
+          const test = result.map(benefit => {
+            const today = Date.now();
+            const { effectiveDate, expiredDate } = benefit.lastPlan;
+            let status;
+            if(moment(today).isBetween(effectiveDate, expiredDate, null , '[]')) {
+              status = 'active';
+            } else if(moment(today).isAfter(expiredDate)) {
+              status = 'inActive';
+            } else if(benefit._id.completeStep[3]) {
+              status = 'pending';
+            } else status = 'waiting';
+
+            return Object.assign({}, {
+              companyName: benefit._id.companyName,
+              logo: benefit._id.logo.link,
+              numberOfEmployees: benefit._id.numberOfEmployees,
+              expiredOldInsurance: effectiveDate,
+              startNewInsurance: expiredDate,
+              status,
+            });
+          });
+          reply(test);
+        });
+      });
+    });
+  },
+};
 
 export default function(app) {
   app.route([
@@ -176,5 +224,6 @@ export default function(app) {
     { method: 'GET', path: '/company/get-insurer-timeout', config: getTimeout },
     { method: 'GET', path: '/company/get-select-insurer', config: getSelectInsurer },
     { method: 'GET', path: '/insurer/company-list', config: getCompanyList },
+    { method: 'GET', path: '/insurer/customer', config: insurerCustomer },
   ]);
 }

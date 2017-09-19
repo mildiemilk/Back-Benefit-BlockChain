@@ -22,6 +22,9 @@ const BenefitPlanSchema = new mongoose.Schema ({
   effectiveDate: { type: Date },
   expiredDate: { type: Date },
   timeout: { type: Date, default: null},
+  insurerCompany: { type: Schema.Types.ObjectId, ref: "InsuranceCompany", required: true },
+  insurer: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  bidding: { type: Schema.Types.ObjectId, ref: "Bidding", required: true },
 });
 
 BenefitPlanSchema.plugin(timestamps);

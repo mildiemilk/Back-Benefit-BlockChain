@@ -109,7 +109,7 @@ const chooseFinalInsurer = {
               Bidding.findOne({ company:  user.company.detail, insurerCompany: insurerCompany })
               .exec((err, bidding) => {
                 biddingRelation[0].insurerWin = bidding.insurer;
-                biddingRelation[0].insurerCompanyWind = bidding.insurerCompany;
+                biddingRelation[0].insurerCompanyWin = bidding.insurerCompany;
                 biddingRelation[0].biddingWin = bidding;
                 biddingRelation[0].save().then(() => {
                   u.company.detail.completeStep[step] = true;
