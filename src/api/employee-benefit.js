@@ -217,13 +217,30 @@ const claimOption = {
       plans = plans.map(plan => plan.benefitPlan);
       const today = new Date();
       BenefitPlan.findOne({ _id: { $in: plans }, effectiveDate: { $lte: today }, expiredDate: { $gte: today }})
-      .populate('benefitPlan.detailPlan')
+      .populate('benefitPlan.detailPlan benefitPlan.plan.planId')
       .exec((err, result) => {
-        if(!result) {
+        if(!result.benefitPlan) {
           reply(Boom.badData('benefit plan not found'));
         } else {
+          const { planId } = result.benefitPlan.plan;
+          const { ipdType, opdPerYear, opdPerTime, opdTimeNotExceedPerYear,
+            dentalPerYear, lifePerYear, lifeTimeOfSalary, lifeNotExceed } = planId;
+          const insuranceList = [];
+          if ( ipdType && ipdType !== '' ) {
+            insuranceList.push('IPD');
+          }
+          if ( opdPerYear || opdPerTime || opdTimeNotExceedPerYear ) {
+            insuranceList.push('OPD');
+          }
+          if ( dentalPerYear ) {
+            insuranceList.push('Dental');
+          }
+          if ( lifePerYear || lifeTimeOfSalary || lifeNotExceed) {
+            insuranceList.push('Life');
+          }
           reply({
             claimUser: user.detail.familyDetail,
+            insuranceList,
             healthList: result.benefitPlan.detailPlan.health.healthList,
             expenseList: result.benefitPlan.detailPlan.expense.expenseList,
           });
