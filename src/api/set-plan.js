@@ -167,6 +167,7 @@ const editInsurerPlan = {
 
   validate: {
     payload: {
+      planId: Joi.number().integer(),
       planName: Joi.string(),
       employeeOfPlan: Joi.number().integer(),
       ipdType: Joi.string().allow(null),
@@ -400,6 +401,7 @@ const extendedPlan = {
 
   validate: {
     payload: {
+      planId: Joi.number().integer(),
       planName: Joi.string(),
       employeeOfPlan: Joi.number().integer(),
       ipdType: Joi.string().allow(null),
