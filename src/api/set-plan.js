@@ -462,7 +462,7 @@ const extendedPlan = {
       .then((masterPlan) => {
         const extendedFrom = masterPlan._id;
         const createdBy = user._id;
-        const company = user.company.detail;
+        const company = masterPlan.company;
         let newPlan = new  InsurerPlan({ company, employeeOfPlan, extendedFrom, createdBy, planName, ipdType, ipdLumsumPerYear, ipdLumsumPerTime, ipdLumsumTimeNotExceedPerYear, rbLumsumRoomPerNight,
           rbLumsumNigthNotExceedPerYear, rbLumsumPayNotExceedPerNight, rbLumsumPayNotExceedPerYear,
           rbSchedulePatient, rbScheduleIntensiveCarePatient, rbScheduleDoctor, rbScheduleSurgerySchedule, rbScheduleSurgeryNonSchedule,
