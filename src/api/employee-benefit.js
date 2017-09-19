@@ -94,7 +94,6 @@ const claim = {
     if (!Array.isArray(files)) {
       files = [files];
     }
-    console.log('files: ', files);
     const allFile = files.map(file => {
       return new Promise(resolve => {
         storage.upload({ file: file }, { isPublic }, (err, media) => {
@@ -106,8 +105,6 @@ const claim = {
               mediaImg.push(media._id);
               urlImg.push(url);
               resolve();
-              console.log('mediaImg>>>', mediaImg);
-              console.log('urlImg>>>', urlImg);
             });
           }
         });
