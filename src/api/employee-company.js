@@ -560,10 +560,12 @@ const summaryEmployeeBenefit = {
               let confirm = [];
               let amountOfPlan = [];
               let defaultPlan;
+              let type;
               const inProcess = new Promise((resolve) => {
                 EmployeeGroup.findOne({ groupName: group._id, company: user.company.detail })
                 .populate('benefitPlan defaultPlan')
                 .exec((err, empGroup) => {
+                  type = empGroup.type;
                   plan = empGroup.benefitPlan.map(element => element.benefitPlanName);
                   defaultPlan = empGroup.defaultPlan.benefitPlanName;
                   plan.map(() => {
@@ -589,6 +591,7 @@ const summaryEmployeeBenefit = {
                   amountOfPlan,
                   defaultPlan,
                   totalOfGroup: group.total,
+                  type,
                 }));
               });
             });
