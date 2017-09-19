@@ -1,7 +1,7 @@
 module.exports = {
   server: {
-    host: '127.0.0.1',
-    port: 8000
+    host: 'dev-api.benefitable.co',
+    port: 80
   },
   key: {
     privateKey: '$2a$10$7BnaKrZwxqzzqdI19MmgBe',

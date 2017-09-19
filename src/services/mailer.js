@@ -105,7 +105,7 @@ class MailerService {
     const token = this.genToken(base);
     let subject = 'Verify Your Account';
     let mailbody = '<p>Thanks for Registering on Benefitable</p><p>Please verify your email by clicking on the verification link below.<br/><a href="http://'
-                    + Config.server.host + ':' + Config.server.port + '/' + Config.email.verifyEmailUrl + '/'
+                    + Config.server.host + ':' + '/' + Config.email.verifyEmailUrl + '/'
                     + encodeURIComponent(email) + '&' + encodeURIComponent(token) + '&' + ts + '&' + encodeURIComponent(nounce) + '">Verification Link</a></p>';
     this.sendMail(email,subject,mailbody);
   }
