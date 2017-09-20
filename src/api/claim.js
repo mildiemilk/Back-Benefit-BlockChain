@@ -12,7 +12,7 @@ const getClaimListCompany = {
       { $match: { company: user.company.detail }},
       {
         $group: {
-          _id: { type: '$type', user: '$user', detail: '$detail', status: '$status', claimNumber: '$claimNumber' },
+          _id: { type: '$type', user: '$user', detail: '$detail', status: '$status', claimNumber: '$claimNumber', claimId: '$_id' },
           count: { $sum: 1 },
         },
       },
@@ -23,7 +23,8 @@ const getClaimListCompany = {
           status: { $push: '$_id.status' },
           detail: { $push: '$_id.detail' },
           amountOfClaim: { $sum: '$count' },
-          claimNumber: { $push: '$_id.claimNumber' }
+          claimNumber: { $push: '$_id.claimNumber' },
+          claimId: { $push: '$_id.claimId' },
         },
       },
       {
@@ -35,7 +36,21 @@ const getClaimListCompany = {
       if(err) reply(err);
       User.populate(claims, {path: 'user', select: 'detail.name detail.lastname'}, (err, result) => {
         if(err) reply(err);
-        reply(result);
+        const haveHealth = result.findIndex(element => element._id === 'health') !== -1;
+        const haveExpense = result.findIndex(element => element._id === 'expense') !== -1;
+        const haveInsurance = result.findIndex(element => element._id === 'insurance') !== -1;
+        if(!haveHealth) {
+          result.push({ _id: 'health', amountOfClaim: 0 });
+        }
+        if(!haveExpense) {
+          result.push({ _id: 'expense', amountOfClaim: 0 });
+        }
+        if(!haveInsurance) {
+          result.push({ _id: 'insurance', amountOfClaim: 0 });
+        }
+        LogUserClaim.count({ company: user.company.detail }, (err, total) => {
+          reply({ claims: result, total});
+        });
       });
     });
   },
@@ -169,7 +184,7 @@ const getClaim = {
       { $match: { company: mongoose.Types.ObjectId(companyId) }},
       {
         $group: {
-          _id: { user: '$user', detail: '$detail', status: '$status', claimNumber: '$claimNumber' },
+          _id: { user: '$user', detail: '$detail', status: '$status', claimNumber: '$claimNumber', claimId: '$_id' },
           count: { $sum: 1 },
         },
       },
@@ -180,6 +195,7 @@ const getClaim = {
           detail: { $push: '$_id.detail' },
           amountOfClaim: { $sum: '$count' },
           claimNumber: { $push: '$_id.claimNumber' },
+          claimId: { $push: '$_id.claimId' },
         }, 
       },
       {
@@ -190,10 +206,23 @@ const getClaim = {
     LogUserClaim.aggregate(aggregatorOpts)
     .exec((err, claims) => {
       if(err) reply(err);
-      console.log(companyId, claims);
       User.populate(claims, {path: 'user', select: 'detail.name detail.lastname'}, (err, result) => {
         if(err) reply(err);
-        reply(result);
+        const haveApprove = result.findIndex(element => element._id === 'approve') !== -1;
+        const haveReject = result.findIndex(element => element._id === 'reject') !== -1;
+        const haveWaiting = result.findIndex(element => element._id === 'waiting') !== -1;
+        if(!haveApprove) {
+          result.push({ _id: 'approve', amountOfClaim: 0 });
+        }
+        if(!haveReject) {
+          result.push({ _id: 'reject', amountOfClaim: 0 });
+        }
+        if(!haveWaiting) {
+          result.push({ _id: 'waiting', amountOfClaim: 0 });
+        }
+        LogUserClaim.count({ company: mongoose.Types.ObjectId(companyId) }, (err, total) => {
+          reply({ claims: result, total});
+        });
       });
     });
   },
