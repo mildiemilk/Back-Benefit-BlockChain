@@ -108,6 +108,7 @@ const chooseFinalInsurer = {
             .exec((err, biddingRelation) => {
               Bidding.findOne({ company:  user.company.detail, insurerCompany: insurerCompany })
               .exec((err, bidding) => {
+                console.log('bidding', bidding);
                 biddingRelation[0].insurerWin = bidding.insurer;
                 biddingRelation[0].insurerCompanyWin = bidding.insurerCompany;
                 biddingRelation[0].biddingWin = bidding;
