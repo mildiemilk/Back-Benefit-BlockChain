@@ -279,8 +279,12 @@ const getClaimStatus = {
     const today = new Date();
     const afterSevenDay = new Date();
     afterSevenDay.setDate(today.getDate() - 7);
-    LogUserClaim.find({ user: user._id, $and:[{createdAt:{$lte:today}},{createdAt:{$gte:afterSevenDay}}] }, '-createdAt -updatedAt -deleted').then((logClaim) => {
-      reply(logClaim);
+    LogUserClaim.find({ user: user._id, $and:[{createdAt:{$lte:today}},{createdAt:{$gte:afterSevenDay}}], status: { $in: ['approve', 'reject'] } }, '-createdAt -updatedAt -deleted')
+    .then((logClaim) => {
+      LogUserClaim.find({ user: user._id, status: 'pending' }).exec((err, pending) => {
+        const allClaim = pending.concat(logClaim);
+        reply(allClaim);
+      });
     });
   },
 };
@@ -292,7 +296,7 @@ const getClaimHistory = {
     const { user } = request.auth.credentials;
     const afterSevenDay = new Date();
     afterSevenDay.setDate(afterSevenDay.getDate() - 7);
-    LogUserClaim.find({ user: user._id, createdAt:{$lt:afterSevenDay }}, '-createdAt -updatedAt -deleted').then((logClaim) => {
+    LogUserClaim.find({ user: user._id, createdAt:{$lt:afterSevenDay}, status: { $in: ['approve', 'reject']}}, '-createdAt -updatedAt -deleted').then((logClaim) => {
       reply(logClaim);
     });
   },
