@@ -88,53 +88,133 @@ const claim = {
 
     const { storage } = request.server.app.services;
     const isPublic = true;
-    storage.upload({ file: files }, { isPublic }, (err, media) => {
-      if (!err) {
-        media.userId = user.id;
-        media.save();
-        storage.getUrl(media.path, (url) => {
-          detail = JSON.parse(detail);
-          detail.mediaImg = media._id;
-          detail.urlImg = url;
-          if (err) throw err;
-          if (type !== 'insurance') {
-            LogUserClaim
-            .find({ company: user.company.detail, type: 'insurance' })
-            .exec((err, result) => {
-              claimNumber = result.length + 1;
-              const createClaim = new LogUserClaim({
-                user: user._id,
-                company: user.company.detail,
-                detail,
-                status: 'pending',
-                claimNumber,
-                type,
-              });
-              createClaim.save().then(() => {
-                reply({ message: 'send claim success' });
-              });
-            });
-          } else {
-            LogUserClaim
-            .find({ company: user.company.detail, type: 'insurance' })
-            .exec((err, result) => {
-              claimNumber = result.length + 1;
-              const createClaim = new LogUserClaim({
-                user: user._id,
-                company: user.company.detail,
-                detail,
-                status: 'pending',
-                claimNumber,
-                policyNumber: null,
-                type,
-              });
-              createClaim.save().then(() => {
-                reply({ message: 'send claim success' });
-              });
+    detail = JSON.parse(detail);
+    const mediaImg = [];
+    const urlImg = [];
+    if (!Array.isArray(files)) {
+      files = [files];
+    }
+    const allFile = files.map(file => {
+      return new Promise(resolve => {
+        storage.upload({ file: file }, { isPublic }, (err, media) => {
+          if (!err) {
+            media.userId = user.id;
+            media.save();
+            storage.getUrl(media.path, (url) => {
+              if (err) throw err;
+              mediaImg.push(media._id);
+              urlImg.push(url);
+              resolve();
             });
           }
         });
+      });
+      
+    });
+
+    Promise.all(allFile).then(() => {
+      detail.imageClaimFile = {
+        mediaImg,
+        urlImg,
+      };
+      if (type !== 'insurance') {
+        LogUserClaim
+        .find({ company: user.company.detail, type: 'insurance' })
+        .exec((err, result) => {
+          claimNumber = result.length + 1;
+          const createClaim = new LogUserClaim({
+            user: user._id,
+            company: user.company.detail,
+            detail,
+            status: 'pending',
+            claimNumber,
+            type,
+          });
+          createClaim.save().then(() => {
+            reply({ message: 'send claim success' });
+          });
+        });
+      } else {
+        LogUserClaim
+        .find({ company: user.company.detail, type: 'insurance' })
+        .exec((err, result) => {
+          claimNumber = result.length + 1;
+          const createClaim = new LogUserClaim({
+            user: user._id,
+            company: user.company.detail,
+            detail,
+            status: 'pending',
+            claimNumber,
+            policyNumber: null,
+            type,
+          });
+          createClaim.save().then(() => {
+            reply({ message: 'send claim success' });
+          });
+        });
       }
+    });
+  },
+};
+
+const reClaim = {
+  tags: ['api'],
+  auth: 'jwt',
+  validate: {
+    params: {
+      claimId: Joi.string().required(),
+    },
+  },
+  payload: {
+    output: 'stream',
+    parse: true,
+    allow: 'multipart/form-data'
+  },
+  handler: (request, reply) => {
+    let { detail, files } = request.payload;
+    const { user } = request.auth.credentials;
+    const { claimId } = request.params;
+    let claimNumber = null;
+
+    const { storage } = request.server.app.services;
+    const isPublic = true;
+    detail = JSON.parse(detail);
+    const mediaImg = [];
+    const urlImg = [];
+    if (!Array.isArray(files)) {
+      files = [files];
+    }
+    const allFile = files.map(file => {
+      return new Promise(resolve => {
+        storage.upload({ file: file }, { isPublic }, (err, media) => {
+          if (!err) {
+            media.userId = user.id;
+            media.save();
+            storage.getUrl(media.path, (url) => {
+              if (err) throw err;
+              mediaImg.push(media._id);
+              urlImg.push(url);
+              resolve();
+            });
+          }
+        });
+      });
+      
+    });
+
+    Promise.all(allFile).then(() => {
+      detail.imageClaimFile = {
+        mediaImg,
+        urlImg,
+      };
+      LogUserClaim.findOne({ _id: claimId }).exec((err, claim) => {
+        claim.detail = detail;
+        claim.status = 'pending';
+        claim.save().then(() => {
+          reply({ message: 'send claim success' });
+        });
+      });
+      
     });
   },
 };
@@ -279,8 +359,12 @@ const getClaimStatus = {
     const today = new Date();
     const afterSevenDay = new Date();
     afterSevenDay.setDate(today.getDate() - 7);
-    LogUserClaim.find({ user: user._id, $and:[{createdAt:{$lte:today}},{createdAt:{$gte:afterSevenDay}}] }, '-createdAt -updatedAt -deleted').then((logClaim) => {
-      reply(logClaim);
+    LogUserClaim.find({ user: user._id, $and:[{updatedAt:{$lte:today}},{updatedAt:{$gte:afterSevenDay}}], status: { $in: ['approve', 'reject'] } }, '-createdAt -updatedAt -deleted')
+    .then((logClaim) => {
+      LogUserClaim.find({ user: user._id, status: 'pending' }).exec((err, pending) => {
+        const allClaim = pending.concat(logClaim);
+        reply(allClaim);
+      });
     });
   },
 };
@@ -292,7 +376,8 @@ const getClaimHistory = {
     const { user } = request.auth.credentials;
     const afterSevenDay = new Date();
     afterSevenDay.setDate(afterSevenDay.getDate() - 7);
-    LogUserClaim.find({ user: user._id, createdAt:{$lt:afterSevenDay }}, '-createdAt -updatedAt -deleted').then((logClaim) => {
+    LogUserClaim.find({ user: user._id, updatedAt:{$lt:afterSevenDay}, status: { $in: ['approve', 'reject']}}, '-createdAt -updatedAt -deleted')
+    .then((logClaim) => {
       reply(logClaim);
     });
   },
@@ -304,7 +389,8 @@ export default function(app) {
     { method: 'PUT', path: '/employee/select-benefit', config: selectPlan },
     { method: 'GET', path: '/employee/get-profile', config: getProfile },
     { method: 'PUT', path: '/employee/set-profile', config: setProfile },
-    { method: 'POST', path: '/employee/claim/{type}', config:claim },
+    { method: 'POST', path: '/employee/claim/{type}', config: claim },
+    { method: 'PUT', path: '/employee/re-claim/{claimId}', config: reClaim },
     { method: 'GET', path: '/employee/current-plan', config: currentPlan },
     { method: 'GET', path: '/employee/claim-option', config: claimOption },
     { method: 'GET', path: '/employee/confirm-plan', config: confirmPlan },
