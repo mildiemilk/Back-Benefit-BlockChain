@@ -142,28 +142,29 @@ const claimAllCompany = {
                   numberOfEmployees: company._id.numberOfEmployees,
                   expiredOldInsurance: expiredDate,
                   startNewInsurance: effectiveDate,
-                  amount: claims.amount,
+                  amount: company.amount,
                 });
               });
               reply(test);
             });
-          } else {
-            EmployeeCompany.populate(result, {path: '_id', select: 'companyName logo.link numberOfEmployees'}, (err, companys) => {
-              const test = companys.map(company => {
-                const { effectiveDate, expiredDate } = company.lastPlan;
-                return Object.assign({}, {
-                  companyId: company._id._id,
-                  companyName: company._id.companyName,
-                  logo: company._id.logo.link,
-                  numberOfEmployees: company._id.numberOfEmployees,
-                  expiredOldInsurance: expiredDate,
-                  startNewInsurance: effectiveDate,
-                  amount: 0,
-                });
-              });
-              reply(test);
-            });
-          }
+          } else reply(claims);
+          // } else {
+          //   EmployeeCompany.populate(result, {path: '_id', select: 'companyName logo.link numberOfEmployees'}, (err, companys) => {
+          //     const test = companys.map(company => {
+          //       const { effectiveDate, expiredDate } = company.lastPlan;
+          //       return Object.assign({}, {
+          //         companyId: company._id._id,
+          //         companyName: company._id.companyName,
+          //         logo: company._id.logo.link,
+          //         numberOfEmployees: company._id.numberOfEmployees,
+          //         expiredOldInsurance: expiredDate,
+          //         startNewInsurance: effectiveDate,
+          //         amount: 0,
+          //       });
+          //     });
+          //     reply(test);
+          //   });
+          // }
         });
       });
     });
