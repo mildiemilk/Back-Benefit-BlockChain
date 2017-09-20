@@ -55,6 +55,7 @@ const getClaimListCompany = {
                 userId: element.user[index]._id,
                 name: element.user[0].detail.name + ' ' + element.user[0].detail.lastname,
                 detail: element.detail[index],
+                status: element.status[index],
                 claimNumber: element.claimNumber[index],
                 claimId: claim,
               }));
