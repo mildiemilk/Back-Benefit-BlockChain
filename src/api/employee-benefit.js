@@ -157,6 +157,68 @@ const claim = {
   },
 };
 
+const reClaim = {
+  tags: ['api'],
+  auth: 'jwt',
+  validate: {
+    params: {
+      claimId: Joi.string().required(),
+    },
+  },
+  payload: {
+    output: 'stream',
+    parse: true,
+    allow: 'multipart/form-data'
+  },
+  handler: (request, reply) => {
+    let { detail, files } = request.payload;
+    const { user } = request.auth.credentials;
+    const { claimId } = request.params;
+    let claimNumber = null;
+
+    const { storage } = request.server.app.services;
+    const isPublic = true;
+    detail = JSON.parse(detail);
+    const mediaImg = [];
+    const urlImg = [];
+    if (!Array.isArray(files)) {
+      files = [files];
+    }
+    const allFile = files.map(file => {
+      return new Promise(resolve => {
+        storage.upload({ file: file }, { isPublic }, (err, media) => {
+          if (!err) {
+            media.userId = user.id;
+            media.save();
+            storage.getUrl(media.path, (url) => {
+              if (err) throw err;
+              mediaImg.push(media._id);
+              urlImg.push(url);
+              resolve();
+            });
+          }
+        });
+      });
+      
+    });
+
+    Promise.all(allFile).then(() => {
+      detail.imageClaimFile = {
+        mediaImg,
+        urlImg,
+      };
+      LogUserClaim.findOne({ _id: claimNumber }).exec((err, claim) => {
+        claim.detail = detail;
+        claim.status = 'pending';
+        claim.save().then(() => {
+          reply({ message: 'send claim success' });
+        });
+      });
+      
+    });
+  },
+};
+
 const getProfile = {
   tags: ['api'],
   auth: 'jwt',
@@ -327,7 +389,8 @@ export default function(app) {
     { method: 'PUT', path: '/employee/select-benefit', config: selectPlan },
     { method: 'GET', path: '/employee/get-profile', config: getProfile },
     { method: 'PUT', path: '/employee/set-profile', config: setProfile },
-    { method: 'POST', path: '/employee/claim/{type}', config:claim },
+    { method: 'POST', path: '/employee/claim/{type}', config: claim },
+    { method: 'PUT', path: '/employee/re-claim/{claimId}', config: reClaim },
     { method: 'GET', path: '/employee/current-plan', config: currentPlan },
     { method: 'GET', path: '/employee/claim-option', config: claimOption },
     { method: 'GET', path: '/employee/confirm-plan', config: confirmPlan },
