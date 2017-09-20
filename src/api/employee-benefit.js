@@ -112,7 +112,7 @@ const claim = {
       
     });
 
-    Promise.all(allFile).then(result => {
+    Promise.all(allFile).then(() => {
       detail.imageClaimFile = {
         mediaImg,
         urlImg,
@@ -293,7 +293,12 @@ const getClaimHistory = {
     const { user } = request.auth.credentials;
     const afterSevenDay = new Date();
     afterSevenDay.setDate(afterSevenDay.getDate() - 7);
-    LogUserClaim.find({ user: user._id, createdAt:{$lt:afterSevenDay }}, '-createdAt -updatedAt -deleted').then((logClaim) => {
+    LogUserClaim
+    .find(
+      { user: user._id, createdAt:{$lt:afterSevenDay }},
+      '-createdAt -updatedAt -deleted'
+    )
+    .then((logClaim) => {
       reply(logClaim);
     });
   },
