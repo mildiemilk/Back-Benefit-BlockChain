@@ -1,6 +1,6 @@
 import Joi from 'joi';
 import Boom from 'boom';
-import { User, Bidding, MasterPlan, InsurerPlan, Role, TemplatePlan, BenefitPlan, BiddingRelation } from '../models';
+import { User, MasterPlan, InsurerPlan, Role, TemplatePlan, BenefitPlan, BiddingRelation } from '../models';
 
 const getInsurancePlan = {
   tags: ['api'],
@@ -143,16 +143,15 @@ const getTemplatePlan = {
     Role.findOne({ _id: user.role }).then((thisRole) => {
       const role =  thisRole.roleName;
       if(role == 'HR'){
-        TemplatePlan.findOne({ company: user.company.detail }, null, {sort: {createdAt: -1}})
-        .populate('plan.master plan.insurer')
+        console.log(user.company);
+        TemplatePlan.find({ company: user.company.detail }, null, {sort: {createdAt: -1}})
         .exec((err, result) => {
-          console.log(result);
           reply({ 
-            plan: result.plan,
-            isExpense: result.isExpense,
-            expense: result.expense,
-            isHealth: result.isHealth,
-            health: result.health,
+            plan: result[0].plan,
+            isExpense: result[0].isExpense,
+            expense: result[0].expense,
+            isHealth: result[0].isHealth,
+            health: result[0].health,
           });
         });
       }else{
@@ -192,7 +191,10 @@ const setBenefitPlan = {
               result.effectiveDate = effectiveDate;
               result.expiredDate = expiredDate;
               result.save().then(() => {
-                reply({ message: 'edit benefit plan success' });
+                BenefitPlan.find({ bidding: result.biddingWin }, 'benefitPlanName benefitPlan', {sort: {createdAt: 1}})
+                .populate({ path: 'benefitPlan.plan.planId', select: 'planName' }).exec((err, result) => {
+                  reply(result);
+                });
               });
             });
           } else {
@@ -217,6 +219,31 @@ const setBenefitPlan = {
   },
 };
 
+const deleteBenefitPlan = {
+  tags: ['api'],
+  auth: 'jwt',
+  validate: {
+    payload: {
+      benefitPlanId: Joi.string().required(),
+    },
+  },
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    const { benefitPlanId } = request.payload;
+    Role.findOne({ _id: user.role }).then((thisRole) => {
+      const role = thisRole.roleName;
+      if(role == 'HR'){
+        BenefitPlan.findByIdAndRemove(benefitPlanId, function(err) {
+          if (err) reply(err);
+          reply({ message: 'deleted success' });
+        });
+      }else{
+        reply(Boom.badData('This page for HR only'));
+      }
+    });
+  },
+};
+
 const getBenefitPlan = {
   tags: ['api'],
   auth: 'jwt',
@@ -225,11 +252,10 @@ const getBenefitPlan = {
     const { user } = request.auth.credentials;
     Role.findOne({ _id: user.role }).then((thisRole) => {
       const role = thisRole.roleName;
-      const today = new Date();
       if(role == 'HR'){
-        User.findOne({ _id: user._id }).populate('company.detail').exec((err, result) => {
-          const company = result.company.detail._id;
-          BenefitPlan.find({ company, timeout: { $gte: today }}, 'benefitPlanName benefitPlan', {sort: {createdAt: 1}})
+        BiddingRelation.find({ company: user.company.detail }, null, {sort: { createdAt: -1 }})
+        .exec((err, biddingRelation) => {
+          BenefitPlan.find({ bidding: biddingRelation[0].biddingWin }, 'benefitPlanName benefitPlan', {sort: {createdAt: 1}})
           .populate({ path: 'benefitPlan.plan.planId', select: 'planName' }).exec((err, result) => {
             reply(result);
           });
@@ -287,7 +313,8 @@ export default function(app) {
     { method: 'PUT', path: '/company/set-template-benefit', config: setTemplateBenefit },
     { method: 'GET', path: '/company/get-template-plan', config: getTemplatePlan },
     { method: 'POST', path: '/company/set-benefit-plan', config: setBenefitPlan },
+    { method: 'DELETE', path: '/company/delete-benefit-plan', config: deleteBenefitPlan },
     { method: 'GET', path: '/company/get-benefit-plan', config: getBenefitPlan },
-    { method: 'PUT', path: '/company/set-benefit-timeout', config: setTimeout },
+    { method: 'PUT', path: '/company/set-timeout', config: setTimeout },
   ]);
 }

@@ -77,77 +77,83 @@ const companyClaim = {
   },
 };
 
-// const claimAllCompany = {
-//   tags: ['api'],
-//   auth: 'jwt',
-//   handler: (request, reply) => {
-//     const { user } = request.auth.credentials;
-//     const aggregatorOpts = [
-//       { $match: { insurerCompany: user.company.detail }},
-//       {
-//         $group: {
-//           _id: { company: '$company', insurerCompany: '$insurerCompany' },
-//         },
-//       },
-//       {
-//         $group: {
-//           _id: '$_id.insurerCompany',
-//           companys: { $push: '$_id.company' },
-//         },
-//       },
-//       {
-//         $sort: { _id: -1 }
-//       }
-//     ];
-//     BenefitPlan.aggregate(aggregatorOpts)
-//     .exec((err, result) => {
-//       console.log('result', result);
-//     });
-//     // EmployeeCompany.find({ deleted: false }, 'insurers')
-//     // .exec((err, companys) => {
-//     //   companys = companys.filter(company => { //TODO: deleted insurers from employee company , change logic!
-//     //     const length = company.insurers.length-1;
-//     //     console.log(company);
-//     //     if( length > 0){
-//     //       const lastInsurer = company.insurers[length].insurerCompany.toString();
-//     //       return lastInsurer === user.company.detail.toString();
-//     //     }
-//     //     return false;
-//     //   });
-//     //   companys = companys.map(company => company._id);
-//     //   const aggregatorOpts = [
-//     //     { $match: { company: { $in: companys }, status: 'pending'}},
-//     //     {
-//     //       $group: {
-//     //         _id: '$company',
-//     //         amountOfClaim: { $sum: 1 },
-//     //       },
-//     //     },
-//     //     {
-//     //       $sort: { _id: 1 }
-//     //     }
-//     //   ];
-//     //   LogUserClaim.aggregate(aggregatorOpts)
-//     //   .exec((err, claims) => {
-//     //     EmployeeCompany.populate(claims, { path: '_id', select: 'numberOfEmployee expiredInsurance logo.link companyName' }, (err, results) => {
-//     //       const allClaims = results.map( result => {
-//     //         const startNewInsurance = result._id.expiredInsurance;
-//     //         startNewInsurance.setDate(startNewInsurance.getDate() - 1);
-//     //         return Object.assign({}, {
-//     //           _id: result._id._id,
-//     //           companyName: result._id.companyName,
-//     //           expiredOldInsurance: result._id.expiredInsurance,
-//     //           startNewInsurance,
-//     //           logo: result._id.logo.link,
-//     //           amountOfClaim: result.amountOfClaim,
-//     //         });
-//     //       });
-//     //       reply(allClaims);
-//     //     });
-//     //   });
-//     // });
-//   },
-// };
+const claimAllCompany = {
+  tags: ['api'],
+  auth: 'jwt',
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    const today = new Date();
+    const aggregatorOpts = [
+      {$match: { insurerCompany: user.company.detail,
+        effectiveDate: { $lte: today},
+        expiredDate: { $gte: today},
+      }},
+      {$project:{"_id":1, "company": 1, "createdAt": 1}}, 
+      {$sort:{"createdAt": -1}},
+      {
+        $group: {
+          _id: "$company", 
+          lastPlan: { $first: "$_id" }
+        },
+      },
+    ];
+    BenefitPlan.aggregate(aggregatorOpts)
+    .exec((err, result) => {
+      BenefitPlan.populate(result, {path: 'lastPlan', select: 'effectiveDate expiredDate'}, (err, result) => {
+        const companyList = result.map(result => result._id);
+        const aggregatorOpts = [
+          { $match: { company: { $in: companyList }, status: 'pending'}},
+          {
+            $group: {
+              _id: '$company',
+              amount: { $sum: 1 },
+            },
+          },
+          {
+            $sort: { _id: 1 }
+          }
+        ];
+        LogUserClaim.aggregate(aggregatorOpts)
+        .exec((err, claims) => {
+          if(claims.length > 0) {
+            EmployeeCompany.populate(claims, {path: '_id', select: 'companyName logo.link numberOfEmployees'}, (err, companys) => {
+              const test = companys.map(company => {
+                const index = result.findIndex((element) => element._id.toString() === company._id._id.toString());
+                const { effectiveDate, expiredDate } = result[index].lastPlan;
+                return Object.assign({}, {
+                  companyId: company._id._id,
+                  companyName: company._id.companyName,
+                  logo: company._id.logo.link,
+                  numberOfEmployees: company._id.numberOfEmployees,
+                  expiredOldInsurance: expiredDate,
+                  startNewInsurance: effectiveDate,
+                  amount: claims.amount,
+                });
+              });
+              reply(test);
+            });
+          } else {
+            EmployeeCompany.populate(result, {path: '_id', select: 'companyName logo.link numberOfEmployees'}, (err, companys) => {
+              const test = companys.map(company => {
+                const { effectiveDate, expiredDate } = company.lastPlan;
+                return Object.assign({}, {
+                  companyId: company._id._id,
+                  companyName: company._id.companyName,
+                  logo: company._id.logo.link,
+                  numberOfEmployees: company._id.numberOfEmployees,
+                  expiredOldInsurance: expiredDate,
+                  startNewInsurance: effectiveDate,
+                  amount: 0,
+                });
+              });
+              reply(test);
+            });
+          }
+        });
+      });
+    });
+  },
+};
 
 const getClaim = {
   tags: ['api'],
@@ -233,7 +239,7 @@ export default function(app) {
   app.route([
     { method: 'GET', path: '/company/get-claim-list', config: getClaimListCompany },
     { method: 'PUT', path: '/company/claim/{status}/{claimId}', config: companyClaim },
-    // { method: 'GET', path: '/insurer/claim-all-company', config: claimAllCompany },
+    { method: 'GET', path: '/insurer/claim-all-company', config: claimAllCompany },
     { method: 'GET', path: '/insurer/get-claim/{companyId}', config: getClaim },
     { method: 'PUT', path: '/insurer/claim/{status}/{claimId}', config: insurerClaim },
   ]);

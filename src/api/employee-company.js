@@ -221,7 +221,29 @@ const uploadEmployee = {
     }
   }
 };
+const getFileEmployee = {
+  tags: ['api'],
+  auth: 'jwt',
 
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    Role.findOne({ _id: user.role }, (err, thisRole) => {
+      const role =  thisRole.roleName;
+      if(role == 'HR'){
+        EmployeeCompany.populate(user, {path: 'company.detail'}, (err, company) => {
+          console.log(company);
+          Media.populate(company, {path: 'company.detail.fileEmployee', select: 'name'}, (err, result) => {
+            console.log('result', result);
+            reply({ filename: result.company.detail.fileEmployee.name});          
+          });
+        });
+        
+      }else{    
+        reply(Boom.badData('This page for HR only'));
+      }
+    });
+  },
+};
 const getTemplate = {
   tags: ['api'],
   auth: 'jwt',
@@ -560,10 +582,12 @@ const summaryEmployeeBenefit = {
               let confirm = [];
               let amountOfPlan = [];
               let defaultPlan;
+              let type;
               const inProcess = new Promise((resolve) => {
                 EmployeeGroup.findOne({ groupName: group._id, company: user.company.detail })
                 .populate('benefitPlan defaultPlan')
                 .exec((err, empGroup) => {
+                  type = empGroup.type;
                   plan = empGroup.benefitPlan.map(element => element.benefitPlanName);
                   defaultPlan = empGroup.defaultPlan.benefitPlanName;
                   plan.map(() => {
@@ -589,6 +613,7 @@ const summaryEmployeeBenefit = {
                   amountOfPlan,
                   defaultPlan,
                   totalOfGroup: group.total,
+                  type,
                 }));
               });
             });
@@ -635,6 +660,7 @@ export default function(app) {
     { method: 'POST', path: '/company/register-company', config: registerCompany },
     { method: 'PUT', path: '/company/set-logo', config: setLogo },
     { method: 'POST', path: '/company/upload-employee', config: uploadEmployee },
+    { method: 'GET', path: '/company/get-file-employee', config: getFileEmployee },
     { method: 'GET', path: '/company/get-template', config: getTemplate },
     { method: 'PUT', path: '/company/upload-claimdata', config: uploadClaimData },
     { method: 'GET', path: '/company/get-employee', config: getEmployee },
