@@ -88,51 +88,69 @@ const claim = {
 
     const { storage } = request.server.app.services;
     const isPublic = true;
-    storage.upload({ file: files }, { isPublic }, (err, media) => {
-      if (!err) {
-        media.userId = user.id;
-        media.save();
-        storage.getUrl(media.path, (url) => {
-          detail = JSON.parse(detail);
-          detail.mediaImg = media._id;
-          detail.urlImg = url;
-          if (err) throw err;
-          if (type !== 'insurance') {
-            LogUserClaim
-            .find({ company: user.company.detail, type: 'insurance' })
-            .exec((err, result) => {
-              claimNumber = result.length + 1;
-              const createClaim = new LogUserClaim({
-                user: user._id,
-                company: user.company.detail,
-                detail,
-                status: 'pending',
-                claimNumber,
-                type,
-              });
-              createClaim.save().then(() => {
-                reply({ message: 'send claim success' });
-              });
-            });
-          } else {
-            LogUserClaim
-            .find({ company: user.company.detail, type: 'insurance' })
-            .exec((err, result) => {
-              claimNumber = result.length + 1;
-              const createClaim = new LogUserClaim({
-                user: user._id,
-                company: user.company.detail,
-                detail,
-                status: 'pending',
-                claimNumber,
-                policyNumber: null,
-                type,
-              });
-              createClaim.save().then(() => {
-                reply({ message: 'send claim success' });
-              });
+    detail = JSON.parse(detail);
+    const mediaImg = [];
+    const urlImg = [];
+    if (!Array.isArray(files)) {
+      files = [files];
+    }
+    const allFile = files.map(file => {
+      return new Promise(resolve => {
+        storage.upload({ file: file }, { isPublic }, (err, media) => {
+          if (!err) {
+            media.userId = user.id;
+            media.save();
+            storage.getUrl(media.path, (url) => {
+              if (err) throw err;
+              mediaImg.push(media._id);
+              urlImg.push(url);
+              resolve();
             });
           }
+        });
+      });
+      
+    });
+
+    Promise.all(allFile).then(() => {
+      detail.imageClaimFile = {
+        mediaImg,
+        urlImg,
+      };
+      if (type !== 'insurance') {
+        LogUserClaim
+        .find({ company: user.company.detail, type: 'insurance' })
+        .exec((err, result) => {
+          claimNumber = result.length + 1;
+          const createClaim = new LogUserClaim({
+            user: user._id,
+            company: user.company.detail,
+            detail,
+            status: 'pending',
+            claimNumber,
+            type,
+          });
+          createClaim.save().then(() => {
+            reply({ message: 'send claim success' });
+          });
+        });
+      } else {
+        LogUserClaim
+        .find({ company: user.company.detail, type: 'insurance' })
+        .exec((err, result) => {
+          claimNumber = result.length + 1;
+          const createClaim = new LogUserClaim({
+            user: user._id,
+            company: user.company.detail,
+            detail,
+            status: 'pending',
+            claimNumber,
+            policyNumber: null,
+            type,
+          });
+          createClaim.save().then(() => {
+            reply({ message: 'send claim success' });
+          });
         });
       }
     });
@@ -296,7 +314,8 @@ const getClaimHistory = {
     const { user } = request.auth.credentials;
     const afterSevenDay = new Date();
     afterSevenDay.setDate(afterSevenDay.getDate() - 7);
-    LogUserClaim.find({ user: user._id, createdAt:{$lt:afterSevenDay}, status: { $in: ['approve', 'reject']}}, '-createdAt -updatedAt -deleted').then((logClaim) => {
+    LogUserClaim.find({ user: user._id, createdAt:{$lt:afterSevenDay}, status: { $in: ['approve', 'reject']}}, '-createdAt -updatedAt -deleted')
+    .then((logClaim) => {
       reply(logClaim);
     });
   },
