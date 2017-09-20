@@ -37,19 +37,33 @@ const getClaimListCompany = {
       User.populate(claims, {path: 'user', select: 'detail.name detail.lastname'}, (err, result) => {
         if(err) reply(err);
         const haveHealth = result.findIndex(element => element._id === 'health') !== -1;
-        const haveExpense = result.findIndex(element => element._id === 'expense') !== -1;
+        const haveGeneral = result.findIndex(element => element._id === 'general') !== -1;
         const haveInsurance = result.findIndex(element => element._id === 'insurance') !== -1;
         if(!haveHealth) {
           result.push({ _id: 'health', amountOfClaim: 0 });
         }
-        if(!haveExpense) {
-          result.push({ _id: 'expense', amountOfClaim: 0 });
+        if(!haveGeneral) {
+          result.push({ _id: 'general', amountOfClaim: 0 });
         }
         if(!haveInsurance) {
           result.push({ _id: 'insurance', amountOfClaim: 0 });
         }
         LogUserClaim.count({ company: user.company.detail }, (err, total) => {
-          reply({ claims: result, total});
+          const claims = result.map(element => {
+            if(element.amountOfClaim > 0) {
+              const claims = element.claimId.map((claim, index) => Object.assign({}, {
+                userId: element.user[index]._id,
+                name: element.user[index].name + element.user[index].lastname,
+                detail: element.detail[index],
+                claimNumber: element.claimNumber[index],
+                claimId: claim,
+              }));
+              return { type: element._id, claims, amountOfClaim: element.amountOfClaim };
+            }
+            else return { type: element._id, amountOfClaim: element.amountOfClaim };
+           
+          });
+          reply({ claims, total });
         });
       });
     });
