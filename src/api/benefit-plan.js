@@ -1,6 +1,6 @@
 import Joi from 'joi';
 import Boom from 'boom';
-import { User, Bidding, MasterPlan, InsurerPlan, Role, TemplatePlan, BenefitPlan, BiddingRelation } from '../models';
+import { User, MasterPlan, InsurerPlan, Role, TemplatePlan, BenefitPlan, BiddingRelation } from '../models';
 
 const getInsurancePlan = {
   tags: ['api'],
@@ -219,6 +219,31 @@ const setBenefitPlan = {
   },
 };
 
+const deleteBenefitPlan = {
+  tags: ['api'],
+  auth: 'jwt',
+  validate: {
+    payload: {
+      benefitPlanId: Joi.string().required(),
+    },
+  },
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    const { benefitPlanId } = request.payload;
+    Role.findOne({ _id: user.role }).then((thisRole) => {
+      const role = thisRole.roleName;
+      if(role == 'HR'){
+        BenefitPlan.findByIdAndRemove(benefitPlanId, function(err) {
+          if (err) reply(err);
+          reply({ message: 'deleted success' });
+        });
+      }else{
+        reply(Boom.badData('This page for HR only'));
+      }
+    });
+  },
+};
+
 const getBenefitPlan = {
   tags: ['api'],
   auth: 'jwt',
@@ -230,7 +255,6 @@ const getBenefitPlan = {
       if(role == 'HR'){
         BiddingRelation.find({ company: user.company.detail }, null, {sort: { createdAt: -1 }})
         .exec((err, biddingRelation) => {
-          console.log(biddingRelation);
           BenefitPlan.find({ bidding: biddingRelation[0].biddingWin }, 'benefitPlanName benefitPlan', {sort: {createdAt: 1}})
           .populate({ path: 'benefitPlan.plan.planId', select: 'planName' }).exec((err, result) => {
             reply(result);
@@ -289,7 +313,8 @@ export default function(app) {
     { method: 'PUT', path: '/company/set-template-benefit', config: setTemplateBenefit },
     { method: 'GET', path: '/company/get-template-plan', config: getTemplatePlan },
     { method: 'POST', path: '/company/set-benefit-plan', config: setBenefitPlan },
+    { method: 'DELETE', path: '/company/delete-benefit-plan', config: deleteBenefitPlan },
     { method: 'GET', path: '/company/get-benefit-plan', config: getBenefitPlan },
-    { method: 'PUT', path: '/company/set-benefit-plan', config: setTimeout },
+    { method: 'PUT', path: '/company/set-timeout', config: setTimeout },
   ]);
 }
