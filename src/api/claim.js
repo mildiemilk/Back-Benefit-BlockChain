@@ -53,7 +53,7 @@ const getClaimListCompany = {
             if(element.amountOfClaim > 0) {
               const claims = element.claimId.map((claim, index) => Object.assign({}, {
                 userId: element.user[index]._id,
-                name: element.user[index].name + element.user[index].lastname,
+                name: element.user[0].detail.name + ' ' + element.user[0].detail.lastname,
                 detail: element.detail[index],
                 claimNumber: element.claimNumber[index],
                 claimId: claim,
@@ -225,18 +225,32 @@ const getClaim = {
         if(err) reply(err);
         const haveApprove = result.findIndex(element => element._id === 'approve') !== -1;
         const haveReject = result.findIndex(element => element._id === 'reject') !== -1;
-        const haveWaiting = result.findIndex(element => element._id === 'waiting') !== -1;
+        const havePending = result.findIndex(element => element._id === 'pending') !== -1;
         if(!haveApprove) {
           result.push({ _id: 'approve', amountOfClaim: 0 });
         }
         if(!haveReject) {
           result.push({ _id: 'reject', amountOfClaim: 0 });
         }
-        if(!haveWaiting) {
-          result.push({ _id: 'waiting', amountOfClaim: 0 });
+        if(!havePending) {
+          result.push({ _id: 'pending', amountOfClaim: 0 });
         }
         LogUserClaim.count({ company: mongoose.Types.ObjectId(companyId) }, (err, total) => {
-          reply({ claims: result, total});
+          const claims = result.map(element => {
+            if(element.amountOfClaim > 0) {
+              const claims = element.claimId.map((claim, index) => Object.assign({}, {
+                userId: element.user[index]._id,
+                name: element.user[0].detail.name + ' ' + element.user[0].detail.lastname,
+                detail: element.detail[index],
+                claimNumber: element.claimNumber[index],
+                claimId: claim,
+              }));
+              return { type: element._id, claims, amountOfClaim: element.amountOfClaim };
+            }
+            else return { type: element._id, amountOfClaim: element.amountOfClaim };
+           
+          });
+          reply({ claims, total });
         });
       });
     });
