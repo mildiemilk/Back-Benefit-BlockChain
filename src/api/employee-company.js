@@ -62,15 +62,13 @@ const setLogo = {
     const isPublic = true;
 
     storage.upload({ file }, { isPublic }, (err, media) => {
-      console.log('err', err);
-      console.log('media', media);
       if (!err) {
         media.userId = user.id;
         media.save();
         User.findOne({ _id: user._id }).populate('company.detail').exec((err, u) => {
           storage.getUrl(media.path, (url) => {
             if (!err) {
-              u.company.detail.logo = { logoId: media._id, link: url };
+              u.company.detail.logo = { mediaId: media._id, link: url };
               u.company.detail.save();
               reply({logo: url});
             }
@@ -128,36 +126,37 @@ const uploadEmployee = {
                 return new Promise((resolve) => {
                   const detail = {
                     email: employee.email,
-                    password: 'Donut555',
+                    password: 'Benefit2017',
                     role,
                     company: user.company,
                     detail: {
-                      employee_code: employee.employee_code,
+                      employeeCode: employee.employee_code,
+                      gender: employee.gender,
                       profilePic: null,
                       personalVerify: false,
-                      effectiveDate: null,
+                      personalEmail: null,
                       prefix: employee.prefix,
                       name: employee.name,
                       lastname: employee.lastname,
-                      citizen_id: employee.citizen_id,
-                      phone_number: employee.phone_number,
-                      type_of_employee: employee.type_of_employee,
+                      citizenId: employee.citizen_id,
+                      phoneNumber: employee.phone_number,
+                      typeOfEmployee: employee.type_of_employee,
                       title: employee.title,
                       department: employee.department,
                       level: employee.level,
-                      start_date: employee.start_date,
-                      benefit_group: employee.benefit_group,
-                      date_of_birth: employee.date_of_birth,
-                      account_number: employee.account_number,
-                      bank_name: employee.bank_name,
-                      marriage_status: employee.marriage_status,
+                      startDate: employee.start_date,
+                      benefitGroup: employee.benefit_group,
+                      dateOfBirth: employee.date_of_birth,
+                      accountNumber: employee.account_number,
+                      bankName: employee.bank_name,
+                      marriageStatus: employee.marriage_status,
                       familyDetail: [],
                     }
                   };
                   const newEmployee = new User(detail);
                   newEmployee.save().then((emp) => {
-                    // const { mailer } = request.server.app.services;
-                    // mailer.sendMailToEmployee(detail.email, detail.password);
+                    const { mailer } = request.server.app.services;
+                    mailer.sendMailToEmployee(detail.email, detail.password);
                     resolve(emp);
                   });
                 });
@@ -167,7 +166,7 @@ const uploadEmployee = {
                   { $match: { "company.detail": user.company.detail, "role": role } },
                   {
                     $group: {
-                      _id: "$detail.benefit_group",
+                      _id: "$detail.benefitGroup",
                       count: { $sum: 1 }
                     }
                   }
@@ -428,7 +427,7 @@ const setCompleteStep = {
                   User.find({ 'company.detail': company, role, deleted: false }, (err, employees) => {
                     const setBenefitPlan = employees.map((employee) => {
                       return new Promise((resolve) => {
-                        EmployeeGroup.findOne({ company, groupName: employee.detail.benefit_group }).populate('defaultPlan').exec((err, group) => {
+                        EmployeeGroup.findOne({ company, groupName: employee.detail.benefitGroup }).populate('defaultPlan').exec((err, group) => {
                           const employeePlan = new EmployeePlan({ user: employee, company, benefitPlan: group.defaultPlan, selectGroup: group.groupName });
                           employeePlan.save().then(() => {
                             resolve(true);
@@ -522,7 +521,7 @@ const summaryGroup = {
         { $match: { "company.detail": user.company.detail, "role": role } },
         {
           $group: {
-            _id: "$detail.benefit_group",
+            _id: "$detail.benefitGroup",
             count: { $sum: 1 }
           }
         },
@@ -625,6 +624,76 @@ const summaryEmployeeBenefit = {
   }
 };
 
+const addEmployee = {
+  tags: ['api'],
+  auth: 'jwt',
+  payload: {
+    output: 'stream',
+    parse: true,
+    allow: 'multipart/form-data'
+  },
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    const { file } = request.payload;
+    let { detail } = request.payload;
+    const { storage } = request.server.app.services;
+    const isPublic = true;
+    detail = JSON.parse(detail);
+
+    Role.findOne({ roleName: 'Employee' }).then((roleId) => {
+      const role = roleId._id;
+      const company = user.company;
+      const data = {
+        email: detail.email,
+        password: 'Benefit2017',
+        role,
+        company,
+        detail: {
+          ...detail,
+          personalVerify: false,
+          profilePic: null,
+        }
+      };
+      if(file) {
+        storage.upload({ file }, { isPublic }, (err, media) => {
+          if (!err) {
+            media.userId = user.id;
+            media.save();
+            storage.getUrl(media.path, (url) => {
+              if (!err) {
+                data.detail.profilePic = { mediaId: media._id, link: url };
+                const newEmployee = new User(data);
+                newEmployee.save().then((employee) => {
+                  const { mailer } = request.server.app.services;
+                  mailer.sendMailToEmployee(data.email, data.password);
+                  EmployeeGroup.findOne({ _id: employee._id }).populate('defaultPlan').exec((err, group) => {
+                    const employeePlan = new EmployeePlan({ user: employee._id, company, benefitPlan: group.defaultPlan, selectGroup: group.groupName });
+                    employeePlan.save().then(() => {
+                      reply({ message: "add employee success" });
+                    });
+                  });
+                });
+              }
+            });
+          }
+        });
+      } else {
+        const newEmployee = new User(data);
+        newEmployee.save().then((employee) => {
+          const { mailer } = request.server.app.services;
+          mailer.sendMailToEmployee(data.email, data.password);
+          EmployeeGroup.findOne({ _id: employee._id }).populate('defaultPlan').exec((err, group) => {
+            const employeePlan = new EmployeePlan({ user: employee._id, company, benefitPlan: group.defaultPlan, selectGroup: group.groupName });
+            employeePlan.save().then(() => {
+              reply({ message: "add employee success" });
+            });
+          });
+        });
+      }
+    });
+  }
+};
+
 // const summaryEmployee = {
 //   tags: ['api'],
 //   auth: 'jwt',
@@ -665,6 +734,7 @@ export default function(app) {
     { method: 'PUT', path: '/company/upload-claimdata', config: uploadClaimData },
     { method: 'GET', path: '/company/get-employee', config: getEmployee },
     { method: 'DELETE', path: '/company/delete-employee', config: deleteEmployee },
+    { method: 'POST', path: '/company/add-employee', config: addEmployee },
     { method: 'GET', path: '/company/get-claim-data', config: getClaimData },
     { method: 'PUT', path: '/company/set-complete-step', config: setCompleteStep },
     { method: 'GET', path: '/company/get-complete-step', config: getCompleteStep },
