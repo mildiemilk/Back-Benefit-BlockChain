@@ -200,58 +200,39 @@ const getClaim = {
       { $match: { company: mongoose.Types.ObjectId(companyId) }},
       {
         $group: {
-          _id: { user: '$user', detail: '$detail', status: '$status', claimNumber: '$claimNumber', claimId: '$_id' },
+          _id: '$status',
           count: { $sum: 1 },
         },
       },
       {
-        $group: {
-          _id: '$_id.status',
-          user: { $push: '$_id.user' },
-          detail: { $push: '$_id.detail' },
-          amountOfClaim: { $sum: '$count' },
-          claimNumber: { $push: '$_id.claimNumber' },
-          claimId: { $push: '$_id.claimId' },
-        }, 
-      },
-      {
         $sort: { _id: 1 }
-      }
+      },
     ];
-
-    LogUserClaim.aggregate(aggregatorOpts)
+    LogUserClaim.find({ company: companyId }, 'detail status claimNumber _id')
     .exec((err, claims) => {
-      if(err) reply(err);
-      User.populate(claims, {path: 'user', select: 'detail.name detail.lastname'}, (err, result) => {
-        if(err) reply(err);
-        const haveApprove = result.findIndex(element => element._id === 'approve') !== -1;
-        const haveReject = result.findIndex(element => element._id === 'reject') !== -1;
-        const havePending = result.findIndex(element => element._id === 'pending') !== -1;
-        if(!haveApprove) {
-          result.push({ _id: 'approve', amountOfClaim: 0 });
-        }
-        if(!haveReject) {
-          result.push({ _id: 'reject', amountOfClaim: 0 });
-        }
-        if(!havePending) {
-          result.push({ _id: 'pending', amountOfClaim: 0 });
-        }
-        LogUserClaim.count({ company: mongoose.Types.ObjectId(companyId) }, (err, total) => {
-          const claims = result.map(element => {
-            if(element.amountOfClaim > 0) {
-              const claims = element.claimId.map((claim, index) => Object.assign({}, {
-                userId: element.user[index]._id,
-                name: element.user[0].detail.name + ' ' + element.user[0].detail.lastname,
-                detail: element.detail[index],
-                claimNumber: element.claimNumber[index],
-                claimId: claim,
-              }));
-              return { type: element._id, claims, amountOfClaim: element.amountOfClaim };
-            }
-            else return { type: element._id, amountOfClaim: element.amountOfClaim };
-           
+      EmployeeCompany.findOne({ _id: companyId }, 'logo.link companyName effectiveDate expriedDate numberOfEmployees', (err, com) => {
+        const company = {
+          numberOfEmployees: com.numberOfEmployees,
+          startInsurance: com.effectiveDate,
+          expiredInsurance: com.expiredDate,
+          logo: com.logo.link,
+          companyName: com.companyName,
+        };
+        LogUserClaim.aggregate(aggregatorOpts)
+        .exec((err, result) => {
+          const approve = result.findIndex(element => element._id === 'approve');
+          const reject = result.findIndex(element => element._id === 'reject');
+          const pending = result.findIndex(element => element._id === 'pending');
+          const count = {
+            approve: approve !== -1 ? result[approve].count : 0,
+            reject: reject !== -1 ? result[reject].count : 0,
+            pending: pending !== -1 ? result[pending].count : 0,
+          };
+          reply({
+            claims,
+            company,
+            count,
           });
-          reply({ claims, total });
         });
       });
     });
