@@ -228,6 +228,7 @@ const getClaim = {
             reject: reject !== -1 ? result[reject].count : 0,
             pending: pending !== -1 ? result[pending].count : 0,
           };
+          count.total = count.approve + count.reject + count.pending;
           reply({
             claims,
             company,
