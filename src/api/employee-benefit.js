@@ -8,7 +8,7 @@ const getAllBenefit = {
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
     EmployeeGroup
-    .findOne({ company: user.company.detail, groupName: user.detail.benefit_group })
+    .findOne({ company: user.company.detail, groupName: user.detail.benefitGroup })
     .exec((err, group) => {
       BenefitPlan.find({ _id: { $in: group.benefitPlan }})
       .populate('benefitPlan.plan.planId benefitPlan.detailPlan')
@@ -136,7 +136,7 @@ const claim = {
         });
       } else {
         LogUserClaim
-        .find({ company: user.company.detail, type: 'insurance' })
+        .find({ company: user.company.detail, type: ['health', 'general'] })
         .exec((err, result) => {
           claimNumber = result.length + 1;
           const createClaim = new LogUserClaim({
@@ -174,7 +174,6 @@ const reClaim = {
     let { detail, files,type } = request.payload;
     const { user } = request.auth.credentials;
     const { claimId } = request.params;
-    let claimNumber = null;
 
     const { storage } = request.server.app.services;
     const isPublic = true;

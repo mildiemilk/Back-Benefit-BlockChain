@@ -255,7 +255,7 @@ const getBenefitPlan = {
       if(role == 'HR'){
         BiddingRelation.find({ company: user.company.detail }, null, {sort: { createdAt: -1 }})
         .exec((err, biddingRelation) => {
-          BenefitPlan.find({ bidding: biddingRelation[0].biddingWin }, 'benefitPlanName benefitPlan', {sort: {createdAt: 1}})
+          BenefitPlan.find({ bidding: biddingRelation[0].biddingWin }, 'benefitPlanName benefitPlan timeout', {sort: {createdAt: 1}})
           .populate({ path: 'benefitPlan.plan.planId', select: 'planName' }).exec((err, result) => {
             reply(result);
           });

@@ -37,19 +37,34 @@ const getClaimListCompany = {
       User.populate(claims, {path: 'user', select: 'detail.name detail.lastname'}, (err, result) => {
         if(err) reply(err);
         const haveHealth = result.findIndex(element => element._id === 'health') !== -1;
-        const haveExpense = result.findIndex(element => element._id === 'expense') !== -1;
+        const haveGeneral = result.findIndex(element => element._id === 'general') !== -1;
         const haveInsurance = result.findIndex(element => element._id === 'insurance') !== -1;
         if(!haveHealth) {
           result.push({ _id: 'health', amountOfClaim: 0 });
         }
-        if(!haveExpense) {
-          result.push({ _id: 'expense', amountOfClaim: 0 });
+        if(!haveGeneral) {
+          result.push({ _id: 'general', amountOfClaim: 0 });
         }
         if(!haveInsurance) {
           result.push({ _id: 'insurance', amountOfClaim: 0 });
         }
         LogUserClaim.count({ company: user.company.detail }, (err, total) => {
-          reply({ claims: result, total});
+          const claims = result.map(element => {
+            if(element.amountOfClaim > 0) {
+              const claims = element.claimId.map((claim, index) => Object.assign({}, {
+                userId: element.user[index]._id,
+                name: element.user[0].detail.name + ' ' + element.user[0].detail.lastname,
+                detail: element.detail[index],
+                status: element.status[index],
+                claimNumber: element.claimNumber[index],
+                claimId: claim,
+              }));
+              return { type: element._id, claims, amountOfClaim: element.amountOfClaim };
+            }
+            else return { type: element._id, amountOfClaim: element.amountOfClaim };
+           
+          });
+          reply({ claims, total });
         });
       });
     });
@@ -61,7 +76,7 @@ const companyClaim = {
   auth: 'jwt',
   validate: {
     payload: {
-      reason: Joi.string(),
+      reason: Joi.string().allow(null),
     },
     params: {
       status: Joi.string().valid('approve','reject').required(),
@@ -142,28 +157,29 @@ const claimAllCompany = {
                   numberOfEmployees: company._id.numberOfEmployees,
                   expiredOldInsurance: expiredDate,
                   startNewInsurance: effectiveDate,
-                  amount: claims.amount,
+                  amount: company.amount,
                 });
               });
               reply(test);
             });
-          } else {
-            EmployeeCompany.populate(result, {path: '_id', select: 'companyName logo.link numberOfEmployees'}, (err, companys) => {
-              const test = companys.map(company => {
-                const { effectiveDate, expiredDate } = company.lastPlan;
-                return Object.assign({}, {
-                  companyId: company._id._id,
-                  companyName: company._id.companyName,
-                  logo: company._id.logo.link,
-                  numberOfEmployees: company._id.numberOfEmployees,
-                  expiredOldInsurance: expiredDate,
-                  startNewInsurance: effectiveDate,
-                  amount: 0,
-                });
-              });
-              reply(test);
-            });
-          }
+          } else reply(claims);
+          // } else {
+          //   EmployeeCompany.populate(result, {path: '_id', select: 'companyName logo.link numberOfEmployees'}, (err, companys) => {
+          //     const test = companys.map(company => {
+          //       const { effectiveDate, expiredDate } = company.lastPlan;
+          //       return Object.assign({}, {
+          //         companyId: company._id._id,
+          //         companyName: company._id.companyName,
+          //         logo: company._id.logo.link,
+          //         numberOfEmployees: company._id.numberOfEmployees,
+          //         expiredOldInsurance: expiredDate,
+          //         startNewInsurance: effectiveDate,
+          //         amount: 0,
+          //       });
+          //     });
+          //     reply(test);
+          //   });
+          // }
         });
       });
     });
@@ -184,44 +200,40 @@ const getClaim = {
       { $match: { company: mongoose.Types.ObjectId(companyId) }},
       {
         $group: {
-          _id: { user: '$user', detail: '$detail', status: '$status', claimNumber: '$claimNumber', claimId: '$_id' },
+          _id: '$status',
           count: { $sum: 1 },
         },
       },
       {
-        $group: {
-          _id: '$_id.status',
-          user: { $push: '$_id.user' },
-          detail: { $push: '$_id.detail' },
-          amountOfClaim: { $sum: '$count' },
-          claimNumber: { $push: '$_id.claimNumber' },
-          claimId: { $push: '$_id.claimId' },
-        }, 
-      },
-      {
         $sort: { _id: 1 }
-      }
+      },
     ];
-
-    LogUserClaim.aggregate(aggregatorOpts)
+    LogUserClaim.find({ company: companyId }, 'detail status claimNumber _id')
     .exec((err, claims) => {
-      if(err) reply(err);
-      User.populate(claims, {path: 'user', select: 'detail.name detail.lastname'}, (err, result) => {
-        if(err) reply(err);
-        const haveApprove = result.findIndex(element => element._id === 'approve') !== -1;
-        const haveReject = result.findIndex(element => element._id === 'reject') !== -1;
-        const haveWaiting = result.findIndex(element => element._id === 'waiting') !== -1;
-        if(!haveApprove) {
-          result.push({ _id: 'approve', amountOfClaim: 0 });
-        }
-        if(!haveReject) {
-          result.push({ _id: 'reject', amountOfClaim: 0 });
-        }
-        if(!haveWaiting) {
-          result.push({ _id: 'waiting', amountOfClaim: 0 });
-        }
-        LogUserClaim.count({ company: mongoose.Types.ObjectId(companyId) }, (err, total) => {
-          reply({ claims: result, total});
+      EmployeeCompany.findOne({ _id: companyId }, 'logo.link companyName effectiveDate expriedDate numberOfEmployees', (err, com) => {
+        const company = {
+          numberOfEmployees: com.numberOfEmployees,
+          startInsurance: com.effectiveDate,
+          expiredInsurance: com.expiredDate,
+          logo: com.logo.link,
+          companyName: com.companyName,
+        };
+        LogUserClaim.aggregate(aggregatorOpts)
+        .exec((err, result) => {
+          const approve = result.findIndex(element => element._id === 'approve');
+          const reject = result.findIndex(element => element._id === 'reject');
+          const pending = result.findIndex(element => element._id === 'pending');
+          const count = {
+            approve: approve !== -1 ? result[approve].count : 0,
+            reject: reject !== -1 ? result[reject].count : 0,
+            pending: pending !== -1 ? result[pending].count : 0,
+          };
+          count.total = count.approve + count.reject + count.pending;
+          reply({
+            claims,
+            company,
+            count,
+          });
         });
       });
     });

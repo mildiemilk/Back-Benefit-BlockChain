@@ -60,7 +60,7 @@ const verify = {
     if((DateNow-Dateconfirm)<5*60000){
       if (token === mailer.genToken(base)) {
         User.findOneAndUpdate({ email: email }, { $set: { emailConfirmedAt: Date.now() }},() => {
-          reply.redirect('dev.benefitable.co/login');
+          reply.redirect('http://dev.benefitable.co/login');
           mailer.sendMailToAdminApproveAccount(email);
         });
       } else reply('invalid');
