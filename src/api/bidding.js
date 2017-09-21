@@ -34,14 +34,14 @@ const bidding = {
       bidding.save().then((bidding) => {
         BiddingRelation.find({ company: companyId }, null, {sort: { createdAt: -1 }})
         .exec(biddingRelation => {
-          const { minPrice } = biddingRelation;
+          const { minPrice } = biddingRelation[0];
           const { totalPrice } = bidding;
           if(minPrice !== null) {
             if(minPrice > totalPrice) {
-              biddingRelation.minPrice = totalPrice;
+              biddingRelation[0].minPrice = totalPrice;
             }
           }
-          biddingRelation.save().then(() => {
+          biddingRelation[0].save().then(() => {
             reply({
               biddingId: bidding.biddingId,
               countBidding: bidding.countBidding,
