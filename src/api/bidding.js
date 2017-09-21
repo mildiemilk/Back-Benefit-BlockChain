@@ -88,7 +88,7 @@ const getBidding = {
         });
       });
       Promise.all(detail).then((result) => {
-        reply({ biddingDetail: result, minPrice: BiddingRelation[0].minPrice });
+        reply({ biddingDetail: result, minPrice: biddings[0].minPrice });
       });
     });
   },
