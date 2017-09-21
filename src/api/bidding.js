@@ -32,12 +32,24 @@ const bidding = {
         bidding = new Bidding({ company: companyId, insurer, insurerCompany, totalPrice, plan, quotationId, countBidding: 1 });
       }
       bidding.save().then((bidding) => {
-        reply({
-          biddingId: bidding.biddingId,
-          countBidding: bidding.countBidding,
-          updatedAt: bidding.updatedAt,
-          plan: bidding.plan,
-          totalPrice: bidding.totalPrice,
+        BiddingRelation.find({ company: companyId }, null, {sort: { createdAt: -1 }})
+        .exec(biddingRelation => {
+          const { minPrice } = biddingRelation;
+          const { totalPrice } = bidding;
+          if(minPrice > 0) {
+            if(minPrice > totalPrice) {
+              biddingRelation.minPrice = totalPrice;
+            }
+          }
+          biddingRelation.save().then(() => {
+            reply({
+              biddingId: bidding.biddingId,
+              countBidding: bidding.countBidding,
+              updatedAt: bidding.updatedAt,
+              plan: bidding.plan,
+              totalPrice: bidding.totalPrice,
+            });
+          });
         });
       });
     });
@@ -58,7 +70,7 @@ const getBidding = {
             if(result) {
               resolve({
                 ...insurer._doc,
-                biddingId: result.biddingId,
+                biddingId: result.quotationId,
                 updatedAt: result.updatedAt,
                 totalPrice: result.totalPrice,
                 countBidding: result.countBidding,
@@ -76,7 +88,7 @@ const getBidding = {
         });
       });
       Promise.all(detail).then((result) => {
-        reply(result);
+        reply({ biddingDetail: result, minPrice: BiddingRelation[0].minPrice });
       });
     });
   },
