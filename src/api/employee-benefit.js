@@ -171,7 +171,7 @@ const reClaim = {
     allow: 'multipart/form-data'
   },
   handler: (request, reply) => {
-    let { detail, files } = request.payload;
+    let { detail, files,type } = request.payload;
     const { user } = request.auth.credentials;
     const { claimId } = request.params;
 
@@ -209,6 +209,7 @@ const reClaim = {
       LogUserClaim.findOne({ _id: claimId }).exec((err, claim) => {
         claim.detail = detail;
         claim.status = 'pending';
+        claim.type = type;
         claim.save().then(() => {
           reply({ message: 'send claim success' });
         });
