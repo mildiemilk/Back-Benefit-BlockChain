@@ -18,7 +18,7 @@ const login = {
     .then((user) => {
       if (!user || user.emailConfirmedAt === null) {
         if (!user){
-          reply(Boom.unauthorized('อีเมลหรือพาวเวิร์ดไม่ถูกต้อง'));  
+          reply(Boom.unauthorized('อีเมลหรือพาวเวิร์ดไม่ถูกต้อง'));
         } else {
           reply(Boom.unauthorized('กรุณายืนยันอีเมลของคุณด้วยค่ะ'));
         }
