@@ -147,6 +147,7 @@ const getTemplatePlan = {
         TemplatePlan.find({ company: user.company.detail }, null, {sort: {createdAt: -1}})
         .exec((err, result) => {
           reply({ 
+            _id: result[0]._id,
             plan: result[0].plan,
             isExpense: result[0].isExpense,
             expense: result[0].expense,
