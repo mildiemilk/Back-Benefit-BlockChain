@@ -243,7 +243,7 @@ const biddingDetailForInsurer = {
             .then(() => {
               reply({
                 companyId: result.company._id,
-                company: result.company.companyName,
+                companyName: result.company.companyName,
                 logo: result.company.logo.link,
                 numberOfEmployees: result.company.numberOfEmployees,
                 expiredOldInsurance: result.company.expiredInsurance,
@@ -273,7 +273,7 @@ const biddingDetailForInsurer = {
             });
             reply({
               companyId: result.company._id,
-              company: result.company.companyName,
+              companyName: result.company.companyName,
               logo: result.company.logo.link,
               numberOfEmployees: result.company.numberOfEmployees,
               expiredOldInsurance: result.company.expiredInsurance,
