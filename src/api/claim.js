@@ -12,7 +12,7 @@ const getClaimListCompany = {
       { $match: { company: user.company.detail }},
       {
         $group: {
-          _id: { type: '$type', user: '$user', detail: '$detail', status: '$status', claimNumber: '$claimNumber', claimId: '$_id' },
+          _id: { type: '$type', user: '$user', detail: '$detail', status: '$status', claimNumber: '$claimNumber', claimId: '$_id', date: '$updatedAt' },
           count: { $sum: 1 },
         },
       },
@@ -25,6 +25,7 @@ const getClaimListCompany = {
           amountOfClaim: { $sum: '$count' },
           claimNumber: { $push: '$_id.claimNumber' },
           claimId: { $push: '$_id.claimId' },
+          date: { $push: '$_id.date' },
         },
       },
       {
@@ -51,20 +52,32 @@ const getClaimListCompany = {
         LogUserClaim.count({ company: user.company.detail }, (err, total) => {
           const claims = result.map(element => {
             if(element.amountOfClaim > 0) {
-              const claims = element.claimId.map((claim, index) => Object.assign({}, {
-                userId: element.user[index]._id,
-                name: element.user[0].detail.name + ' ' + element.user[0].detail.lastname,
-                detail: element.detail[index],
-                status: element.status[index],
-                claimNumber: element.claimNumber[index],
-                claimId: claim,
-              }));
+              const claims = element.claimId.map((claim, index) => {
+                element.detail[index].date = element.date[index];
+                return Object.assign({}, {
+                  userId: element.user[index]._id,
+                  name: element.user[0].detail.name + ' ' + element.user[0].detail.lastname,
+                  detail: element.detail[index],
+                  status: element.status[index],
+                  claimNumber: element.claimNumber[index],
+                  claimId: claim,
+                });
+              });
               return { type: element._id, claims, amountOfClaim: element.amountOfClaim };
             }
             else return { type: element._id, amountOfClaim: element.amountOfClaim };
-           
           });
-          reply({ claims, total });
+          const newClaim = [];
+          claims.map((claim) => {
+            if(claim.type === 'expense') {
+              newClaim[0] = claim;
+            } else if(claim.type === 'health') {
+              newClaim[1] = claim;
+            } else {
+              newClaim[2] = claim;
+            }
+          });
+          reply({ claims: newClaim, total });
         });
       });
     });
@@ -208,7 +221,7 @@ const getClaim = {
         $sort: { _id: 1 }
       },
     ];
-    LogUserClaim.find({ company: companyId }, 'detail status claimNumber _id')
+    LogUserClaim.find({ company: companyId }, 'detail status claimNumber _id updatedAt')
     .exec((err, claims) => {
       EmployeeCompany.findOne({ _id: companyId }, 'logo.link companyName effectiveDate expriedDate numberOfEmployees', (err, com) => {
         const company = {
@@ -229,6 +242,15 @@ const getClaim = {
             pending: pending !== -1 ? result[pending].count : 0,
           };
           count.total = count.approve + count.reject + count.pending;
+          claims = claims.map((claim) => {
+            claim.detail.date = claim.updatedAt;
+            return Object.assign({}, {
+              detail: claim.detail,
+              status: claim.status,
+              claimNumber: claim.claimNumber,
+              _id: claim._id,
+            });
+          });
           reply({
             claims,
             company,
