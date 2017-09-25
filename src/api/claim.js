@@ -267,7 +267,7 @@ const insurerClaim = {
   auth: 'jwt',
   validate: {
     payload: {
-      reason: Joi.string(),
+      reason: Joi.string().allow(null),
     },
     params: {
       status: Joi.string().valid('approve','reject').required(),
