@@ -145,7 +145,7 @@ const claimAllCompany = {
       BenefitPlan.populate(result, {path: 'lastPlan', select: 'effectiveDate expiredDate'}, (err, result) => {
         const companyList = result.map(result => result._id);
         const aggregatorOpts = [
-          { $match: { company: { $in: companyList }, status: 'pending'}},
+          { $match: { company: { $in: companyList }, status: 'pending' , type: 'insurance'}},
           {
             $group: {
               _id: '$company',
