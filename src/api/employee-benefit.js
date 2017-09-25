@@ -119,7 +119,7 @@ const claim = {
       };
       if (type !== 'insurance') {
         LogUserClaim
-        .find({ company: user.company.detail, type: 'insurance' })
+        .find({ company: user.company.detail, type: {$in: ['health', 'general']} })
         .exec((err, result) => {
           claimNumber = result.length + 1;
           const createClaim = new LogUserClaim({
@@ -136,7 +136,7 @@ const claim = {
         });
       } else {
         LogUserClaim
-        .find({ company: user.company.detail, type: ['health', 'general'] })
+        .find({ company: user.company.detail, type: 'insurance' })
         .exec((err, result) => {
           claimNumber = result.length + 1;
           const createClaim = new LogUserClaim({
@@ -171,12 +171,13 @@ const reClaim = {
     allow: 'multipart/form-data'
   },
   handler: (request, reply) => {
-    let { detail, files,type } = request.payload;
+    let { detail, files, type } = request.payload;
+    type = JSON.parse(type);
     const { user } = request.auth.credentials;
     const { claimId } = request.params;
-
     const { storage } = request.server.app.services;
     const isPublic = true;
+    let claimNumber = null;
     detail = JSON.parse(detail);
     const mediaImg = [];
     const urlImg = [];
@@ -207,14 +208,54 @@ const reClaim = {
         urlImg,
       };
       LogUserClaim.findOne({ _id: claimId }).exec((err, claim) => {
-        claim.detail = detail;
-        claim.status = 'pending';
-        claim.type = type;
-        claim.save().then(() => {
-          reply({ message: 'send claim success' });
-        });
+        if (claim.type == 'insurance' && type != 'insurance') {
+          claim.delete(() => {
+            LogUserClaim
+            .find({ company: user.company.detail, type: {$in: ['health', 'general']} })
+            .exec((err, result) => {
+              claimNumber = result.length + 1;
+              const createClaim = new LogUserClaim({
+                user: user._id,
+                company: user.company.detail,
+                detail,
+                status: 'pending',
+                claimNumber,
+                policyNumber: null,
+                type,
+              });
+              createClaim.save().then(() => {
+                reply({ message: 'send claim success' });
+              });
+            });
+          });
+        } else if (claim.type != 'insurance' && type == 'insurance') {
+          claim.delete(() => {
+            LogUserClaim
+            .find({ company: user.company.detail, type: 'insurance' })
+            .exec((err, result) => {
+              claimNumber = result.length + 1;
+              const createClaim = new LogUserClaim({
+                user: user._id,
+                company: user.company.detail,
+                detail,
+                status: 'pending',
+                claimNumber,
+                type,
+              });
+              createClaim.save().then(() => {
+                reply({ message: 'send claim success' });
+              });
+            });
+          });
+        } else {
+          claim.detail = detail;
+          claim.status = 'pending';
+          claim.type = type;
+          claim.save().then(() => {
+            reply({ message: 'send claim success' });
+          });
+        }
       });
-      
     });
   },
 };
@@ -359,9 +400,20 @@ const getClaimStatus = {
     const today = new Date();
     const afterSevenDay = new Date();
     afterSevenDay.setDate(today.getDate() - 7);
-    LogUserClaim.find({ user: user._id, $and:[{updatedAt:{$lte:today}},{updatedAt:{$gte:afterSevenDay}}], status: { $in: ['approve', 'reject'] } }, '-createdAt -updatedAt -deleted')
+    LogUserClaim.find(
+      {
+        user: user._id,
+        $and:[
+          { updatedAt: { $lte: today } },
+          { updatedAt: { $gte: afterSevenDay } }
+        ],
+        status: { $in: ['approve', 'reject'] },
+        deleted: false
+      },
+      '-createdAt -updatedAt -deleted'
+    )
     .then((logClaim) => {
-      LogUserClaim.find({ user: user._id, status: 'pending' }).exec((err, pending) => {
+      LogUserClaim.find({ user: user._id, status: 'pending', }).exec((err, pending) => {
         const allClaim = pending.concat(logClaim);
         reply(allClaim);
       });
@@ -376,7 +428,15 @@ const getClaimHistory = {
     const { user } = request.auth.credentials;
     const afterSevenDay = new Date();
     afterSevenDay.setDate(afterSevenDay.getDate() - 7);
-    LogUserClaim.find({ user: user._id, updatedAt:{$lt:afterSevenDay}, status: { $in: ['approve', 'reject']}}, '-createdAt -updatedAt -deleted')
+    LogUserClaim.find(
+      {
+        user: user._id,
+        updatedAt:{$lt:afterSevenDay},
+        status: { $in: ['approve', 'reject'] },
+        deleted: false
+      },
+      '-createdAt -updatedAt -deleted'
+    )
     .then((logClaim) => {
       reply(logClaim);
     });
