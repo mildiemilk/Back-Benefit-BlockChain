@@ -209,7 +209,7 @@ const getClaim = {
   handler: (request, reply) => {
     const { companyId } = request.params;
     const aggregatorOpts = [
-      { $match: { company: mongoose.Types.ObjectId(companyId) }},
+      { $match: { company: mongoose.Types.ObjectId(companyId) , type: 'insurance'}},
       {
         $group: {
           _id: '$status',
