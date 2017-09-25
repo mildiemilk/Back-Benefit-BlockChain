@@ -66,7 +66,7 @@ const getBidding = {
     BiddingRelation.find({ company }, null, {sort: { createdAt: -1 }}).populate('insurers.insurerCompany', 'logo.link companyName').exec((err, biddings) => {
       const detail = biddings[0].insurers.map((insurer) => {
         return new Promise((resolve) => {
-          Bidding.findOne({ company, insurerCompany: insurer.insurerCompany }, 'updatedAt totalPrice countBidding, quotationId', (err, result) => {
+          Bidding.findOne({ company, insurerCompany: insurer.insurerCompany }, 'updatedAt totalPrice countBidding quotationId', (err, result) => {
             if(result) {
               resolve({
                 ...insurer._doc,
