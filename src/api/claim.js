@@ -69,7 +69,7 @@ const getClaimListCompany = {
           });
           const newClaim = [];
           claims.map((claim) => {
-            if(claim.type === 'expense') {
+            if(claim.type === 'general') {
               newClaim[0] = claim;
             } else if(claim.type === 'health') {
               newClaim[1] = claim;
