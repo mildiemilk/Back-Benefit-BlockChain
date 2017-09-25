@@ -388,8 +388,7 @@ const getAllPlan = {
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
     MasterPlan.find({ company: user.company.detail }).sort({planId: 1}).exec(function(err, plans) {
-      if (err) throw err;
-      console.log('plan', plans);
+      if (err) reply(err);
       reply(plans);
     });
   },
@@ -473,8 +472,8 @@ const extendedPlan = {
           ipdCoPayDeductable, ipdCoPayMixPercentage, ipdCoPayMixNotExceed, ipdCoPayMixYear, opdPerYear, opdPerTime, opdTimeNotExceedPerYear,
           opdCoPay, opdCoPayQuota, opdCoPayDeductable, opdCoPayMixPercentage, opdCoPayMixNotExceed, opdCoPayMixYear, dentalPerYear,
           lifePerYear, lifeTimeOfSalary, lifeNotExceed});
-        newPlan.save().then(() => {
-          reply({message: 'create extended plan completed!'});
+        newPlan.save().then((plan) => {
+          reply(plan);
         });
       });
   },

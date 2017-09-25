@@ -57,14 +57,14 @@ const verify = {
     let base = email + ts + nounce;
     let DateNow = moment(Date.now());
     let Dateconfirm = ts;
-    if((DateNow-Dateconfirm)<5*60000){
+    if((DateNow-Dateconfirm)<60*60000){
       if (token === mailer.genToken(base)) {
         User.findOneAndUpdate({ email: email }, { $set: { emailConfirmedAt: Date.now() }},() => {
           reply.redirect('http://dev.benefitable.co/login');
           mailer.sendMailToAdminApproveAccount(email);
         });
       } else reply('invalid');
-    } else reply('Link expired ');
+    } else reply('Link expired');
 
   },
 };

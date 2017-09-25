@@ -248,7 +248,7 @@ const getTemplate = {
   auth: 'jwt',
   handler: (request, reply) => {
     const { storage } = request.server.app.services;
-    const path = '860/864/8d92ac9fbfec93f6b7e1f10e5cb149e7.xlsx';
+    const path = '625/442/8419e2b7c98caaa6f15ee0c7ad8cc2dd.xlsx';
     storage.download(path, (err, data) => {
       if (err) {
         reply(err);
