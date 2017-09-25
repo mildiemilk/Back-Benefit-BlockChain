@@ -220,7 +220,7 @@ const getClaim = {
         $sort: { _id: 1 }
       },
     ];
-    LogUserClaim.find({ company: companyId }, 'detail status claimNumber _id updatedAt')
+    LogUserClaim.find({ company: companyId, type: 'insurance' }, 'detail status claimNumber _id updatedAt')
     .exec((err, claims) => {
       EmployeeCompany.findOne({ _id: companyId }, 'logo.link companyName effectiveDate expriedDate numberOfEmployees', (err, com) => {
         const company = {
