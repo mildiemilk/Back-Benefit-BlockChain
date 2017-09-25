@@ -337,6 +337,7 @@ const copyPlan = {
         newPlan.save().then(() => {
           MasterPlan.findOneAndUpdate({ planId: newPlan.planId }, { $set:
           {
+            ipdType: masterPlan.ipdType,
             ipdLumsumPerYear: masterPlan.ipdLumsumPerYear,
             ipdLumsumPerTime: masterPlan.ipdLumsumPerTime,
             ipdLumsumTimeNotExceedPerYear: masterPlan.ipdLumsumTimeNotExceedPerYear,
