@@ -248,7 +248,7 @@ const getTemplate = {
   auth: 'jwt',
   handler: (request, reply) => {
     const { storage } = request.server.app.services;
-    const path = '860/864/8d92ac9fbfec93f6b7e1f10e5cb149e7.xlsx';
+    const path = '625/442/8419e2b7c98caaa6f15ee0c7ad8cc2dd.xlsx';
     storage.download(path, (err, data) => {
       if (err) {
         reply(err);
@@ -548,6 +548,82 @@ const summaryEmployeeBenefit = {
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
     const today = new Date();
+    EmployeeCompany.populate(user, {path: 'company.detail', select: 'effectiveDate expiredDate'}, (err, result) => {
+      const { effectiveDate, expiredDate } = result.company.detail;
+      BenefitPlan.find({ company: user.company.detail, effectiveDate, expiredDate})
+      .exec((err, benefitPlans) => {
+        benefitPlans = benefitPlans.map(benefitPlan => benefitPlan._id);
+        const aggregatorOpts = [
+          { $match: { company: user.company.detail, benefitPlan: { $in: benefitPlans }}},
+          {
+            $group: {
+              _id: { benefitPlan: '$benefitPlan', selectGroup: '$selectGroup', confirm: '$confirm'},
+              countAll: { $sum: 1 },
+            },
+          },
+          {
+            $group: {
+              _id: '$_id.selectGroup',
+              benefitPlan: { $push: '$_id.benefitPlan' },
+              confirm: { $push: '$_id.confirm' },
+              countPerPlan: { $push: '$countAll' },
+              total: { $sum: '$countAll' },
+            }, 
+          },
+          {
+            $sort: { _id: 1 }
+          }
+        ];
+        EmployeePlan.aggregate(aggregatorOpts)
+        .exec((err, plans) => {
+          BenefitPlan.populate(plans, {path: 'benefitPlan', select: 'benefitPlanName'}, (err, groups) => {
+            const summary = groups.map((group) => {
+              return new Promise((resolve) => {
+                let plan = [];
+                let confirm = [];
+                let amountOfPlan = [];
+                let defaultPlan;
+                let type;
+                const inProcess = new Promise((resolve) => {
+                  EmployeeGroup.findOne({ groupName: group._id, company: user.company.detail })
+                  .populate('benefitPlan defaultPlan')
+                  .exec((err, empGroup) => {
+                    type = empGroup.type;
+                    plan = empGroup.benefitPlan.map(element => element.benefitPlanName);
+                    defaultPlan = empGroup.defaultPlan.benefitPlanName;
+                    plan.map(() => {
+                      confirm.push(0);
+                      amountOfPlan.push(0);
+                    });
+                    group.benefitPlan.map((benefitPlan, index) => {
+                      const i = plan.indexOf(benefitPlan.benefitPlanName);
+                      if (group.confirm[index]) {
+                        confirm[i] += group.countPerPlan[index];
+                      }
+                      amountOfPlan[i] += group.countPerPlan[index];
+                    });
+                    resolve();
+                  });
+                });
+                
+                inProcess.then(() => {
+                  resolve(Object.assign({}, {
+                    groupName: group._id,
+                    plan,
+                    confirm,
+                    amountOfPlan,
+                    defaultPlan,
+                    totalOfGroup: group.total,
+                    type,
+                  }));
+                });
+              });
+            });
+            Promise.all(summary).then((groups) => reply(groups));
+          });
+        });
+      });
+    });
     BenefitPlan.find({ company: user.company.detail, timeout: { $gte: today }})
     .exec((err, benefitPlans) => {
       benefitPlans = benefitPlans.map(benefitPlan => benefitPlan._id);

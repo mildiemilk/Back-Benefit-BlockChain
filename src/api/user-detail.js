@@ -17,6 +17,7 @@ const updatePersonalDetails = {
       user.detail.phone_number = phone;
       user.detail.personalVerify = true;
       user.markModified('detail');
+      user.emailConfirmedAt = Date.now();
       user.save(function(err) {
         if (err) {
           reply({ error: err });

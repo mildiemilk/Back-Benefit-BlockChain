@@ -186,6 +186,7 @@ const insurerCustomer = {
     ];
     BenefitPlan.aggregate(aggregatorOpts)
     .exec((err, result) => {
+      console.log(result);
       BenefitPlan.populate(result, {path: 'lastPlan', select: 'effectiveDate expiredDate'}, (err, result) => {
         EmployeeCompany.populate(result, {path: '_id', select: 'companyName logo.link numberOfEmployees completeStep'}, (err, result) => {
           const test = result.map(benefit => {

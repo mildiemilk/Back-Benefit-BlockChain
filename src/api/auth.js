@@ -16,12 +16,8 @@ const login = {
     const { email, password } = request.payload;
     User.findOne({ email })
     .then((user) => {
-      if (!user || user.emailConfirmedAt === null) {
-        if (!user){
-          reply(Boom.unauthorized('อีเมลหรือพาวเวิร์ดไม่ถูกต้อง'));  
-        } else {
-          reply(Boom.unauthorized('กรุณายืนยันอีเมลของคุณด้วยค่ะ'));
-        }
+      if (!user){
+        reply(Boom.unauthorized('อีเมลหรือพาสเวิร์ดไม่ถูกต้อง'));
       } else {
         let company = null;
         let approve = null;
@@ -30,6 +26,9 @@ const login = {
         User.findOne({ _id: user._id }).populate('company.detail role').exec((err, uCompany) => {
           const role = uCompany.role.roleName;
           logo.link = null;
+          if (role !== 'Employee' && user.emailConfirmedAt === null) {
+            reply(Boom.unauthorized('กรุณายืนยันอีเมลของคุณด้วยค่ะ'));
+          }
           if (uCompany.company.detail) {
             company = uCompany.company.detail.companyName;
             approve = uCompany.company.detail.approve;
