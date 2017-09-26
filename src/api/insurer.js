@@ -202,6 +202,7 @@ const insurerCustomer = {
             } else status = 'waiting';
 
             return Object.assign({}, {
+              companyId: benefit._id,
               companyName: benefit._id.companyName,
               logo: benefit._id.logo.link,
               numberOfEmployees: benefit._id.numberOfEmployees,
