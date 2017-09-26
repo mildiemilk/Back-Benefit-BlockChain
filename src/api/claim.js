@@ -56,7 +56,7 @@ const getClaimListCompany = {
                 element.detail[index].date = element.date[index];
                 return Object.assign({}, {
                   userId: element.user[index]._id,
-                  name: element.user[0].detail.name + ' ' + element.user[0].detail.lastname,
+                  name: element.user[index].detail.name + ' ' + element.user[index].detail.lastname,
                   detail: element.detail[index],
                   status: element.status[index],
                   claimNumber: element.claimNumber[index],
