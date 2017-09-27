@@ -264,32 +264,45 @@ const biddingDetailForInsurer = {
             });
           });
         } else {
+          let master = [];
+          let insurer = [];
           MasterPlan.find({ company: companyId }).sort({planId: 1}).exec(function(err, plans) {
-            const plan = plans.map((plan) => {
+            master = plans.map((plan) => {
               return Object.assign({}, {
                 planDetail: plan,
                 price: null,
               });
             });
-            reply({
-              companyId: result.company._id,
-              companyName: result.company.companyName,
-              logo: result.company.logo.link,
-              numberOfEmployees: result.company.numberOfEmployees,
-              expiredOldInsurance: result.company.expiredInsurance,
-              startNewInsurance: myDate,
-              status: result.insurers.find((insurer) => insurer.insurerCompany.toString() === user.company.detail.toString()).status,
-              candidateInsurer: result.insurers.length,
-              minPrice: result.minPrice,
-              timeout: result.timeout,
-              biddingId: null,
-              countBidding: 0,
-              updatedAt: null,
-              plan: {master: plan, insurer: []},
-              totalPrice: null,
-              claimData: null,
-              memberList: null,
-              quotationId: null,
+          }).then(() => {
+            InsurerPlan.find({ company: companyId, createdBy: user._id }).sort({planId: 1}).exec(function(err, plans) {
+              insurer = plans.map(plan => {
+                return Object.assign({}, {
+                  planDetail: plan,
+                  price: null,
+                });
+              });
+            })
+            .then(() => {
+              reply({
+                companyId: result.company._id,
+                companyName: result.company.companyName,
+                logo: result.company.logo.link,
+                numberOfEmployees: result.company.numberOfEmployees,
+                expiredOldInsurance: result.company.expiredInsurance,
+                startNewInsurance: myDate,
+                status: result.insurers.find((insurer) => insurer.insurerCompany.toString() === user.company.detail.toString()).status,
+                candidateInsurer: result.insurers.length,
+                minPrice: result.minPrice,
+                timeout: result.timeout,
+                biddingId: null,
+                countBidding: 0,
+                updatedAt: null,
+                plan: { master, insurer },
+                totalPrice: null,
+                claimData: null,
+                memberList: null,
+                quotationId: null,
+              });
             });
           });
         }
