@@ -3,7 +3,9 @@ import Boom from 'boom';
 import exceltojson from 'xlsx-to-json-lc';
 import fs from 'fs';
 import moment from 'moment';
-import { EmployeeCompany, User, Media, Role, BiddingRelation, EmployeeGroup, EmployeePlan, BenefitPlan, EmployeeLog } from '../models';
+import { EmployeeCompany, User, Media, Role,
+  BiddingRelation, EmployeeGroup, EmployeePlan,
+  BenefitPlan, EmployeeLog, TemplatePlan } from '../models';
 
 const registerCompany = {
   tags: ['api'],
@@ -358,9 +360,16 @@ const getEmployee = {
           return new Promise((resolve) => {
             EmployeeLog.findOne({ user: emp._id, effectiveDate: { $gt: Date.now()} }).then((log) => {
               if(log) {
-                emp.detail.typeOfEmployee = log.typeOfEmployee;
+                let status;
+                switch(log.status) {
+                  case 'new' : status = 'พนักงานใหม่'; break;
+                  case 'promote' : status = 'ปรับตำแหน่ง'; break;
+                  case 'resign' : status = 'ลาออก'; break;
+                }
+                emp.detail.status = status;
                 emp.detail.effectiveDate = log.effectiveDate;
               } else {
+                emp.detail.status = 'พนักงาน';
                 emp.detail.effectiveDate = '-';
               }
               resolve();
@@ -698,7 +707,6 @@ const addEmployee = {
                           status: 'new',
                           effectiveDate: employee.detail.startDate,
                           updatedBy: user._id,
-                          typeOfEmployee: 'พนักงานใหม่',
                         });
                         emp.save().then(() => {
                           reply({ message: "add employee success" });
@@ -729,7 +737,6 @@ const addEmployee = {
                   status: 'new',
                   effectiveDate: employee.detail.startDate,
                   updatedBy: user._id,
-                  typeOfEmployee: 'พนักงานใหม่',
                 });
                 emp.save().then(() => {
                   reply({ message: "add employee success" });
@@ -785,7 +792,6 @@ const editEmployee = {
                         user: employee._id,
                         company: employee.company.detail,
                         status:'resign',
-                        typeOfEmployee: 'ลาออก',
                         reason: '',
                         updatedBy: user._id,
                       });
@@ -809,7 +815,6 @@ const editEmployee = {
           EmployeeLog.findOne({ user: employee._id, effectiveDate: { $gt: Date.now()} }).then((log) => {
             if(log) {
               log.status = 'resign';
-              log.typeOfEmployee = 'ลาออก';
               log.reason = '';
               log.effectiveDate = employee.detail.endDate;
               log.updatedBy = user._id;
@@ -818,7 +823,6 @@ const editEmployee = {
                 user: employee._id,
                 company: employee.company.detail,
                 status:'resign',
-                typeOfEmployee: 'ลาออก',
                 reason: '',
                 updatedBy: user._id,
               });
@@ -919,6 +923,144 @@ const summaryEmployee = {
   }
 };
 
+const summaryBenefitPlan = {
+  tags: ['api'],
+  auth: 'jwt',
+
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    EmployeeCompany.populate(user, {path: 'company.detail', select: 'startInsurance expiredInsurance'}, (err, result) => {
+      const effectiveDate = result.company.detail.startInsurance;
+      const expiredDate = result.company.detail.expiredInsurance;
+      BenefitPlan.find({ company: user.company.detail, effectiveDate, expiredDate})
+      .exec((err, benefitPlans) => {
+        const allPlans = benefitPlans.map(benefitPlan => benefitPlan._id);
+        const aggregatorOpts = [
+          { $match: { company: user.company.detail._id, benefitPlan: { $in: allPlans }, confirm: true }},
+          {
+            $group: {
+              _id: '$benefitPlan',
+              count: { $sum: 1 },
+            },
+          },
+          {
+            $sort: { _id: 1 }
+          }
+        ];
+        EmployeePlan.aggregate(aggregatorOpts)
+        .exec((err, plans) => {
+          const summary = benefitPlans.map((plan) => {
+            const indexPlan = plans.findIndex(p => p._id.toString() === plan._id.toString());
+            if(indexPlan !== -1) {
+              return Object.assign({}, {
+                benefitPlanId: plan._id,
+                benefitPlanName: plan.benefitPlanName,
+                amount: plans[indexPlan].count,
+              });
+            } else {
+              return Object.assign({}, {
+                benefitPlanId: plan._id,
+                benefitPlanName: plan.benefitPlanName,
+                amount: 0,
+              });
+            }
+          });
+          reply(summary);
+        });
+      });
+    });
+  }
+};
+
+const summaryInsurancePlan = {
+  tags: ['api'],
+  auth: 'jwt',
+
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    EmployeeCompany.populate(user, {path: 'company.detail', select: 'startInsurance expiredInsurance'}, (err, result) => {
+      const effectiveDate = result.company.detail.startInsurance;
+      const expiredDate = result.company.detail.expiredInsurance;
+      BenefitPlan.find({ company: user.company.detail, effectiveDate, expiredDate})
+      .exec((err, benefitPlans) => {
+        const allPlans = benefitPlans.map(benefitPlan => benefitPlan._id);
+        const aggregatorOpts = [
+          { $match: { company: user.company.detail._id, benefitPlan: { $in: allPlans }, confirm: true }},
+          { 
+            $lookup: {
+              from: "benefitplans",
+              localField: "benefitPlan",
+              foreignField: "_id",
+              as: "benefitPlan",
+            }
+          },
+          {
+            $group: {
+              _id: '$benefitPlan.benefitPlan.plan',
+              count: { $sum: 1 },
+            },
+          },
+          {
+            $group: {
+              _id: '$_id.type',
+              planId: { $push: '$_id.planId' },
+              amount: { $push: '$count' },
+            },
+          },
+          { $unwind: '$_id'},
+        ];
+        EmployeePlan.aggregate(aggregatorOpts)
+        .exec((err, plans) => {
+          const summary = plans.reduce((o, a) => Object.assign(o, { [a._id]: a }), {});
+          TemplatePlan.find({ company: user.company.detail }, 'plan', {sort: {createdAt: -1}})
+          .populate('plan.insurer.planId plan.master.planId')
+          .exec((err, template) => {
+            const master = template[0].plan.master.map(plan => {
+              let index = -1;
+              if(summary.MasterPlan !== undefined) {
+                index = summary.MasterPlan.planId.findIndex(p => p[0].toString() === plan.planId._id.toString());
+              }
+              if(index !== -1) {
+                return Object.assign({}, {
+                  planId: plan.planId._id,
+                  planName: plan.planId.planName,
+                  amount: summary.master.amount[index],
+                });
+              } else {
+                return Object.assign({}, {
+                  planId: plan.planId._id,
+                  planName: plan.planId.planName,
+                  amount: 0,
+                });
+              }
+            });
+            const insurer = template[0].plan.insurer.map(plan => {
+              let index = -1;
+              if(summary.InsurerPlan !== undefined) {
+                index = summary.InsurerPlan.planId.findIndex(p => p[0].toString() === plan.planId._id.toString());
+              }
+              if(index !== -1) {
+                return Object.assign({}, {
+                  planId: plan.planId._id,
+                  planName: plan.planId.planName,
+                  amount: summary.insurer.amount[index],
+                });
+              } else {
+                return Object.assign({}, {
+                  planId: plan.planId._id,
+                  planName: plan.planId.planName,
+                  amount: 0,
+                });
+              }
+            });
+            const sum = master.concat(insurer);
+            reply(sum);
+          });
+        });
+      });
+    });
+  }
+};
 
 export default function(app) {
   app.route([
@@ -941,5 +1083,7 @@ export default function(app) {
     { method: 'GET', path: '/company/summary-group', config: summaryGroup },
     { method: 'GET', path: '/company/summary-employee-benefit', config: summaryEmployeeBenefit },
     { method: 'GET', path: '/company/summary-employee', config: summaryEmployee },
+    { method: 'GET', path: '/company/summary-benefit-plan', config: summaryBenefitPlan },
+    { method: 'GET', path: '/company/summary-insurance-plan', config: summaryInsurancePlan },
   ]);
 }

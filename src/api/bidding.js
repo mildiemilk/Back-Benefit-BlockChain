@@ -335,19 +335,7 @@ const biddingDetailForCompany = {
                   planDetail: plan,
                   price: bidding.plan.master[index].price,
                 });
-              } else {
-                return Object.assign({}, {
-                  planDetail: plan,
-                  price: null,
-                });
               }
-            });
-          } else {
-            master = plans.map(plan => {
-              return Object.assign({}, {
-                planDetail: plan,
-                price: null,
-              });
             });
           }
         })
@@ -361,19 +349,7 @@ const biddingDetailForCompany = {
                     planDetail: plan,
                     price: bidding.plan.insurer[index].price,
                   });
-                } else {
-                  return Object.assign({}, {
-                    planDetail: plan,
-                    price: null,
-                  });
                 }
-              });
-            } else {
-              insurer = plans.map(plan => {
-                return Object.assign({}, {
-                  planDetail: plan,
-                  price: null,
-                });
               });
             }
           })
