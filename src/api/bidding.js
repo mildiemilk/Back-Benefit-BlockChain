@@ -326,7 +326,7 @@ const biddingDetailForCompany = {
       if (bidding) {
         let master = [];
         let insurer = [];
-        MasterPlan.find({ company: companyId }).sort({planId: 1}).exec(function(err, plans) {
+        MasterPlan.find({ company: user.company.detail }).sort({planId: 1}).exec(function(err, plans) {
           if (bidding.plan.master !== undefined) {
             master = plans.map(plan => {
               const index = bidding.plan.master.findIndex(element => plan._id == element.planId);
@@ -352,7 +352,7 @@ const biddingDetailForCompany = {
           }
         })
         .then(() => {
-          InsurerPlan.find({ company: companyId, createdBy: user._id }).sort({planId: 1}).exec(function(err, plans) {
+          InsurerPlan.find({ company: user.company.detail, createdBy: user._id }).sort({planId: 1}).exec(function(err, plans) {
             if (bidding.plan.insurer !== undefined) {
               insurer = plans.map(plan => {
                 const index = bidding.plan.insurer.findIndex(element => plan._id == element.planId);
