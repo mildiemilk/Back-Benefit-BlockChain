@@ -2,7 +2,8 @@ import Joi from 'joi';
 import Boom from 'boom';
 import exceltojson from 'xlsx-to-json-lc';
 import fs from 'fs';
-import { EmployeeCompany, User, Media, Role, BiddingRelation, EmployeeGroup, EmployeePlan, BenefitPlan } from '../models';
+import moment from 'moment';
+import { EmployeeCompany, User, Media, Role, BiddingRelation, EmployeeGroup, EmployeePlan, BenefitPlan, EmployeeLog } from '../models';
 
 const registerCompany = {
   tags: ['api'],
@@ -121,7 +122,7 @@ const uploadEmployee = {
                 //---------------random password---------------------------------
                 // const num = Math.round(Math.random()*26);
                 // const alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-                // const password = Math.random().toString(36).slice(-8) + alpha[num];
+                // const password = Math.random().toString(36).slice(-8) + alpha[num]; //may be base 58
                 //---------------------------------------------------------------
                 return new Promise((resolve) => {
                   const detail = {
@@ -135,6 +136,8 @@ const uploadEmployee = {
                       profilePic: null,
                       personalVerify: false,
                       personalEmail: null,
+                      policyNumber: null,
+                      memberNumber: null,
                       prefix: employee.prefix,
                       name: employee.name,
                       lastname: employee.lastname,
@@ -350,8 +353,23 @@ const getEmployee = {
     const { user } = request.auth.credentials;
     Role.findOne({ roleName: 'Employee' }).then((roleId) => {
       const role = roleId._id;
-      User.find({ company: user.company, role, deleted: false }, 'email detail', (err, employees) => {
-        reply(employees);
+      User.find({ company: user.company, role, deleted: false }, 'email detail', {sort: {'detail.employeeCode': 1}}, (err, employees) => {
+        const getLog = employees.map(emp => {
+          return new Promise((resolve) => {
+            EmployeeLog.findOne({ user: emp._id, effectiveDate: { $gt: Date.now()} }).then((log) => {
+              if(log) {
+                emp.detail.typeOfEmployee = log.typeOfEmployee;
+                emp.detail.effectiveDate = log.effectiveDate;
+              } else {
+                emp.detail.effectiveDate = '-';
+              }
+              resolve();
+            });
+          });
+        });
+        Promise.all(getLog).then(() => {
+          reply(employees);
+        });
       });
     });
   }
@@ -518,7 +536,7 @@ const summaryGroup = {
     Role.findOne({ roleName: 'Employee' }).then((roleId) => {
       const role = roleId._id;
       const aggregatorOpts = [
-        { $match: { "company.detail": user.company.detail, "role": role } },
+        { $match: { "company.detail": user.company.detail, "role": role, delete: false } },
         {
           $group: {
             _id: "$detail.benefitGroup",
@@ -638,6 +656,8 @@ const addEmployee = {
     const { storage } = request.server.app.services;
     const isPublic = true;
     detail = JSON.parse(detail);
+    const isStart = moment(detail.startDate).isAfter(Date.now());
+    console.log('isStart', isStart, detail.startDate, detail);
 
     Role.findOne({ roleName: 'Employee' }).then((roleId) => {
       const role = roleId._id;
@@ -665,11 +685,26 @@ const addEmployee = {
                 newEmployee.save().then((employee) => {
                   const { mailer } = request.server.app.services;
                   mailer.sendMailToEmployee(data.email, data.password);
-                  EmployeeGroup.findOne({ _id: employee._id }).populate('defaultPlan').exec((err, group) => {
-                    const employeePlan = new EmployeePlan({ user: employee._id, company, benefitPlan: group.defaultPlan, selectGroup: group.groupName });
-                    employeePlan.save().then(() => {
+                  EmployeeGroup.findOne({ groupName: employee.detail.benefitGroup, company: employee.company.detail })
+                  .populate('defaultPlan').exec((err, group) => {
+                    const employeePlan = new EmployeePlan({ user: employee._id, company: employee.company.detail, benefitPlan: group.defaultPlan, selectGroup: group.groupName });
+                    if(!isStart) {
                       reply({ message: "add employee success" });
-                    });
+                    } else {  
+                      employeePlan.save().then(() => {
+                        const emp = new EmployeeLog({
+                          user: employee._id,
+                          company: employee.company.detail,
+                          status: 'new',
+                          effectiveDate: employee.detail.startDate,
+                          updatedBy: user._id,
+                          typeOfEmployee: 'พนักงานใหม่',
+                        });
+                        emp.save().then(() => {
+                          reply({ message: "add employee success" });
+                        });
+                      });
+                    }
                   });
                 });
               }
@@ -681,11 +716,26 @@ const addEmployee = {
         newEmployee.save().then((employee) => {
           const { mailer } = request.server.app.services;
           mailer.sendMailToEmployee(data.email, data.password);
-          EmployeeGroup.findOne({ _id: employee._id }).populate('defaultPlan').exec((err, group) => {
-            const employeePlan = new EmployeePlan({ user: employee._id, company, benefitPlan: group.defaultPlan, selectGroup: group.groupName });
-            employeePlan.save().then(() => {
+          EmployeeGroup.findOne({ groupName: employee.detail.benefitGroup, company: employee.company.detail })
+          .populate('defaultPlan').exec((err, group) => {
+            const employeePlan = new EmployeePlan({ user: employee._id, company: employee.company.detail, benefitPlan: group.defaultPlan, selectGroup: group.groupName });
+            if(!isStart) {
               reply({ message: "add employee success" });
-            });
+            } else {  
+              employeePlan.save().then(() => {
+                const emp = new EmployeeLog({
+                  user: employee._id,
+                  company: employee.company.detail,
+                  status: 'new',
+                  effectiveDate: employee.detail.startDate,
+                  updatedBy: user._id,
+                  typeOfEmployee: 'พนักงานใหม่',
+                });
+                emp.save().then(() => {
+                  reply({ message: "add employee success" });
+                });
+              });
+            }
           });
         });
       }
@@ -693,34 +743,181 @@ const addEmployee = {
   }
 };
 
-// const summaryEmployee = {
-//   tags: ['api'],
-//   auth: 'jwt',
+const editEmployee = {
+  tags: ['api'],
+  auth: 'jwt',
+  payload: {
+    output: 'stream',
+    parse: true,
+    allow: 'multipart/form-data'
+  },
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    const { file } = request.payload;
+    let { detail } = request.payload;
+    const { storage } = request.server.app.services;
+    const isPublic = true;
+    detail = JSON.parse(detail);
+    const isEnd = moment(detail.endDate).isAfter(Date.now());
 
-//   handler: (request, reply) => {
-//     const { user } = request.auth.credentials;
-//     Role.findOne({ roleName: 'Employee' }).then((roleId) => {
-//       const role = roleId._id;
-//       const month = new Date().getMonth();
-//       const aggregatorOpts = [
-//         { $project: { 'detail.effectiveDate': { $ifNull: [ { $month: "$detail.effectiveDate" }, 0 ]}}},
-//         { $match: { company: user.company, role, deleted: false, 'detail.effectiveDate' : { $month: month }}},
-//         {
-//           $group: {
-//             _id: "$detail.type_of_employee",
-//             count: { $sum: 1 }
-//           }
-//         },
-//         {
-//           $sort: { _id: 1 }
-//         }
-//       ];
-//       User.aggregate(aggregatorOpts).exec((err, employees) => {
-//         reply(employees);
-//       });
-//     });
-//   }
-// };
+    if(file) {
+      storage.upload({ file }, { isPublic }, (err, media) => {
+        if (!err) {
+          media.userId = user.id;
+          media.save();
+          storage.getUrl(media.path, (url) => {
+            if (!err) {
+              detail.profilePic = { mediaId: media._id, link: url };
+              user.detail = detail;
+              user.save().then((employee) => {
+                if(!isEnd) {
+                  reply({ message: "edit employee success" });
+                } else {
+                  EmployeeLog.findOne({ user: employee._id, effectiveDate: { $gt: Date.now()} }).then((log) => {
+                    if(log) {
+                      log.status = 'resign';
+                      log.typeOfEmployee = 'ลาออก';
+                      log.reason = '';
+                      log.effectiveDate = employee.detail.endDate;
+                      log.updatedBy = user._id;
+                    } else {
+                      log = new EmployeeLog({
+                        user: employee._id,
+                        company: employee.company.detail,
+                        status:'resign',
+                        typeOfEmployee: 'ลาออก',
+                        reason: '',
+                        updatedBy: user._id,
+                      });
+                    }
+                    log.save().then(() => {
+                      reply({ message: "edit employee success" });
+                    });
+                  });
+                }
+              });
+            }
+          });
+        }
+      });
+    } else {
+      user.detail = detail;
+      user.save().then((employee) => {
+        if(!isEnd) {
+          reply({ message: "edit employee success" });
+        } else {
+          EmployeeLog.findOne({ user: employee._id, effectiveDate: { $gt: Date.now()} }).then((log) => {
+            if(log) {
+              log.status = 'resign';
+              log.typeOfEmployee = 'ลาออก';
+              log.reason = '';
+              log.effectiveDate = employee.detail.endDate;
+              log.updatedBy = user._id;
+            } else {
+              log = new EmployeeLog({
+                user: employee._id,
+                company: employee.company.detail,
+                status:'resign',
+                typeOfEmployee: 'ลาออก',
+                reason: '',
+                updatedBy: user._id,
+              });
+            }
+            log.save().then(() => {
+              reply({ message: "edit employee success" });
+            });
+          });
+        }
+      });
+    }
+  }
+};
+
+const manageEmployee = {
+  tags: ['api'],
+  auth: 'jwt',
+  validate: {
+    payload: {
+      status: Joi.string().allow('resign', 'promote').required(),
+      employeeId: Joi.string().required(),
+      effectiveDate: Joi.date().required(),
+      typeOfEmployee: Joi.string(),
+      department: Joi.string(),
+      title: Joi.string(),
+      benefitGroup: Joi.string(),
+      timeout: Joi.date(),
+      reason: Joi.string(),
+    }
+  },
+
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    const company = user.company.detail;
+    const { status, employeeId, effectiveDate, typeOfEmployee, department, title, benefitGroup, timeout, reason } = request.payload;
+    EmployeeLog.findOne({ user: employeeId, effectiveDate: { $gt: Date.now()} }).then((log) => {
+      if(log) {
+        log.status = status;
+        log.typeOfEmployee = typeOfEmployee;
+        log.department = department;
+        log.title = title;
+        log.benefitGroup = benefitGroup;
+        log.timeout = timeout;
+        log.reason = reason;
+      } else {
+        log = new EmployeeLog({
+          user: employeeId, company, status ,effectiveDate, typeOfEmployee,
+          department, title, benefitGroup, timeout, reason,
+          updatedBy: user._id });
+      }
+      log.save().then(() => {
+        reply({ message: "success" });
+      }).catch((err) => {
+        reply(err);
+      });
+    }).catch((err) => {
+      reply(err);
+    });
+  }
+};
+
+const summaryEmployee = {
+  tags: ['api'],
+  auth: 'jwt',
+
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    const month = new Date().getMonth() + 1;
+    const aggregatorOpts = [
+      { $project: { company: 1, status: 1, month:{ $month: "$effectiveDate" }}},
+      { $match: { company: user.company.detail, month: month }},
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { _id: 1 }
+      }
+    ];
+    EmployeeLog.aggregate(aggregatorOpts).exec((err, logs) => {
+      const haveNew = logs.findIndex(element => element._id === 'new') !== -1;
+      const havePromote = logs.findIndex(element => element._id === 'promote') !== -1;
+      const haveResign = logs.findIndex(element => element._id === 'resign') !== -1;
+      if(!haveNew) {
+        logs.push({ _id: 'new', count: 0 });
+      }
+      if(!havePromote) {
+        logs.push({ _id: 'promote', count: 0 });
+      }
+      if(!haveResign) {
+        logs.push({ _id: 'resign', count: 0 });
+      }
+      const summary = logs.reduce((o, a) => Object.assign(o, { [a._id]: a.count }), {});
+      reply(summary);
+    });
+  }
+};
 
 
 export default function(app) {
@@ -734,6 +931,8 @@ export default function(app) {
     { method: 'GET', path: '/company/get-employee', config: getEmployee },
     { method: 'DELETE', path: '/company/delete-employee', config: deleteEmployee },
     { method: 'POST', path: '/company/add-employee', config: addEmployee },
+    { method: 'PUT', path: '/company/edit-employee', config: editEmployee },
+    { method: 'POST', path: '/company/manage-employee/{status}', config: manageEmployee },
     { method: 'GET', path: '/company/get-claim-data', config: getClaimData },
     { method: 'PUT', path: '/company/set-complete-step', config: setCompleteStep },
     { method: 'GET', path: '/company/get-complete-step', config: getCompleteStep },
@@ -741,6 +940,6 @@ export default function(app) {
     { method: 'PUT', path: '/company/set-group-benefit/{employeeGroupId}', config: setGroupBenefit },
     { method: 'GET', path: '/company/summary-group', config: summaryGroup },
     { method: 'GET', path: '/company/summary-employee-benefit', config: summaryEmployeeBenefit },
-    // { method: 'GET', path: '/company/summary-employee', config: summaryEmployee },
+    { method: 'GET', path: '/company/summary-employee', config: summaryEmployee },
   ]);
 }
