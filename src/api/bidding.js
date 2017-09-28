@@ -36,8 +36,8 @@ const bidding = {
         .exec(biddingRelation => {
           const { minPrice } = biddingRelation[0];
           const { totalPrice } = bidding;
-          if(minPrice > 0) {
-            if(minPrice > totalPrice) {
+          if(minPrice >= 0) {
+            if(minPrice > totalPrice || minPrice === 0) {
               biddingRelation[0].minPrice = totalPrice;
             }
           }
