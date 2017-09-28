@@ -169,7 +169,8 @@ const reClaim = {
   payload: {
     output: 'stream',
     parse: true,
-    allow: 'multipart/form-data'
+    allow: 'multipart/form-data',
+    maxBytes: 20000000,
   },
   handler: (request, reply) => {
     let { detail, files, type } = request.payload;
@@ -276,7 +277,8 @@ const setProfile = {
   payload: {
     output: 'stream',
     parse: true,
-    allow: 'multipart/form-data'
+    allow: 'multipart/form-data',
+    maxBytes: 20000000,
   },
   handler: (request, reply) => {
     const { user } = request.auth.credentials;

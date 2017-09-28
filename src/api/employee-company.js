@@ -55,7 +55,8 @@ const setLogo = {
   payload: {
     output: 'stream',
     parse: true,
-    allow: 'multipart/form-data'
+    allow: 'multipart/form-data',
+    maxBytes: 20000000,
   },
 
   handler: (request, reply) => {
@@ -88,7 +89,8 @@ const uploadEmployee = {
   payload: {
     output: 'stream',
     parse: true,
-    allow: 'multipart/form-data'
+    allow: 'multipart/form-data',
+    maxBytes: 20000000,
   },
 
   handler: (request, reply) => {
@@ -278,7 +280,8 @@ const uploadClaimData = {
   payload: {
     output: 'stream',
     parse: true,
-    allow: 'multipart/form-data'
+    allow: 'multipart/form-data',
+    maxBytes: 20000000,
   },
 
   handler: (request, reply) => {
@@ -656,7 +659,8 @@ const addEmployee = {
   payload: {
     output: 'stream',
     parse: true,
-    allow: 'multipart/form-data'
+    allow: 'multipart/form-data',
+    maxBytes: 20000000,
   },
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
@@ -756,7 +760,8 @@ const editEmployee = {
   payload: {
     output: 'stream',
     parse: true,
-    allow: 'multipart/form-data'
+    allow: 'multipart/form-data',
+    maxBytes: 20000000,
   },
   handler: (request, reply) => {
     const { user } = request.auth.credentials;

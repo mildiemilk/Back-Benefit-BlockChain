@@ -7,7 +7,8 @@ const uploadFile = {
   payload: {
     output: 'stream',
     parse: true,
-    allow: 'multipart/form-data'
+    allow: 'multipart/form-data',
+    maxBytes: 20000000,
   },
 
   handler: (request, reply) => {  //TODO: deleted file on S3
