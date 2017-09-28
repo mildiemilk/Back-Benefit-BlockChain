@@ -1,7 +1,9 @@
 import Joi from 'joi';
 import Boom from 'boom';
 import moment from 'moment';
-import { BiddingRelation, Role, Bidding, InsuranceCompany, BenefitPlan, EmployeeCompany } from '../models';
+import json2csv from 'json2csv';
+import mongoose from 'mongoose';
+import { BiddingRelation, Role, Bidding, InsuranceCompany, BenefitPlan, EmployeeCompany, TemplatePlan, User, EmployeeLog } from '../models';
 
 const getAllInsurer = {
   tags: ['api'],
@@ -218,6 +220,76 @@ const insurerCustomer = {
   },
 };
 
+const insurerCustomerEmployee = {
+  tags: ['api'],
+  auth: 'jwt',
+  validate: {
+    params: {
+      companyId: Joi.string().required(),
+    }
+  },
+  handler: (request, reply) => {
+    const { companyId } = request.params;
+    const month = new Date().getMonth() + 1;
+    const aggregatorOpts = [
+      { $project: { company: 1, status: 1, month:{ $month: "$effectiveDate" }}},
+      { $match: { company: mongoose.Types.ObjectId(companyId), month: month }},
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { _id: 1 }
+      }
+    ];
+    EmployeeLog.aggregate(aggregatorOpts).exec((err, logs) => {
+      const haveNew = logs.findIndex(element => element._id === 'new') !== -1;
+      const havePromote = logs.findIndex(element => element._id === 'promote') !== -1;
+      const haveResign = logs.findIndex(element => element._id === 'resign') !== -1;
+      if(!haveNew) {
+        logs.push({ _id: 'new', count: 0 });
+      }
+      if(!havePromote) {
+        logs.push({ _id: 'promote', count: 0 });
+      }
+      if(!haveResign) {
+        logs.push({ _id: 'resign', count: 0 });
+      }
+      const summary = logs.reduce((o, a) => Object.assign(o, { [a._id]: a.count }), {});
+      Role.findOne({ roleName: 'Employee' }).then((roleId) => {
+        const role = roleId._id;
+        User.find({ 'company.detail': companyId, role, deleted: false }, 'email detail', {sort: {'detail.employeeCode': 1}}, (err, employees) => {
+          const getLog = employees.map(emp => {
+            return new Promise((resolve) => {
+              EmployeeLog.findOne({ user: emp._id, effectiveDate: { $gt: Date.now()} }).then((log) => {
+                if(log) {
+                  let status;
+                  switch(log.status) {
+                    case 'new' : status = 'พนักงานใหม่'; break;
+                    case 'promote' : status = 'ปรับตำแหน่ง'; break;
+                    case 'resign' : status = 'ลาออก'; break;
+                  }
+                  emp.detail.status = status;
+                  emp.detail.effectiveDate = log.effectiveDate;
+                } else {
+                  emp.detail.status = 'พนักงาน';
+                  emp.detail.effectiveDate = '-';
+                }
+                resolve();
+              });
+            });
+          });
+          Promise.all(getLog).then(() => {
+            reply({employees, summary});
+          });
+        });
+      });
+    });
+  }
+};
+
 const insurerCustomerPlan = {
   tags: ['api'],
   auth: 'jwt',
@@ -241,6 +313,83 @@ const insurerCustomerPlan = {
   },
 };
 
+const insurerCustomerSelectPlan = {
+  tags: ['api'],
+  auth: 'jwt',
+  validate: {
+    params: {
+      companyId: Joi.string().required(),
+    }
+  },
+  handler: (request, reply) => {
+    const { companyId } = request.params;
+    TemplatePlan.find({ company: companyId })
+    .sort({ createdAt: -1 })
+    .populate('plan.master.planId plan.insurer.planId')
+    .exec((err, template) => {
+      const allPlan = template[0].plan.master.concat(template[0].plan.insurer);
+      reply(allPlan);
+    });
+  },
+};
+
+const insurerCustomerFile = {
+  tags: ['api'],
+  auth: 'jwt',
+  validate: {
+    params: {
+      companyId: Joi.string().required(),
+    }
+  },
+  handler: (request, reply) => {
+    const { companyId } = request.params;
+    Role.findOne({ roleName: 'Employee' }).then((roleId) => {
+      const role = roleId._id;
+      User.find({ role, 'company.detail': companyId })
+      .select('email detail')
+      .exec((err, employees) => {
+        employees = employees.map(emp => {
+          emp.detail.email = emp.email;
+          delete emp.detail.personalVerify;
+          delete emp.detail.profilePic;
+          delete emp.detail.familyDetail;
+          return emp.detail;
+        });
+        const fields = [
+          'email',
+          'employeeCode',
+          'gender',
+          'prefix',
+          'name',
+          'lastname',
+          'citizenId',
+          'phoneNumber',
+          'typeOfEmployee',
+          'title',
+          'department',
+          'level',
+          'endDate',
+          'startDate',
+          'nationality',
+          'benefitPlan',
+          'address',
+          'benefitGroup',
+          'dateOfBirth',
+          'accountNumber',
+          'bankName',
+          'marriageStatus',
+          'personalEmail',
+          'policyNumber',
+          'memberNumber',
+        ];
+        const csv = json2csv({ data: employees, fields: fields });
+        console.log(csv);
+        reply(employees);
+      });
+    });
+  }
+};
+
 export default function(app) {
   app.route([
     { method: 'GET', path: '/company/get-all-insurer', config: getAllInsurer },
@@ -250,6 +399,9 @@ export default function(app) {
     { method: 'GET', path: '/company/get-select-insurer', config: getSelectInsurer },
     { method: 'GET', path: '/insurer/company-list', config: getCompanyList },
     { method: 'GET', path: '/insurer/customer', config: insurerCustomer },
+    { method: 'GET', path: '/insurer/customer-employee/{companyId}', config: insurerCustomerEmployee },
     { method: 'GET', path: '/insurer/customer-plan/{companyId}', config: insurerCustomerPlan },
+    { method: 'GET', path: '/insurer/customer-select-plan/{companyId}', config: insurerCustomerSelectPlan },
+    { method: 'GET', path: '/insurer/customer-file/{companyId}', config: insurerCustomerFile },
   ]);
 }
