@@ -36,8 +36,8 @@ const bidding = {
         .exec(biddingRelation => {
           const { minPrice } = biddingRelation[0];
           const { totalPrice } = bidding;
-          if(minPrice > 0) {
-            if(minPrice > totalPrice) {
+          if(minPrice >= 0) {
+            if(minPrice > totalPrice || minPrice === 0) {
               biddingRelation[0].minPrice = totalPrice;
             }
           }
@@ -335,19 +335,7 @@ const biddingDetailForCompany = {
                   planDetail: plan,
                   price: bidding.plan.master[index].price,
                 });
-              } else {
-                return Object.assign({}, {
-                  planDetail: plan,
-                  price: null,
-                });
               }
-            });
-          } else {
-            master = plans.map(plan => {
-              return Object.assign({}, {
-                planDetail: plan,
-                price: null,
-              });
             });
           }
         })
@@ -361,19 +349,7 @@ const biddingDetailForCompany = {
                     planDetail: plan,
                     price: bidding.plan.insurer[index].price,
                   });
-                } else {
-                  return Object.assign({}, {
-                    planDetail: plan,
-                    price: null,
-                  });
                 }
-              });
-            } else {
-              insurer = plans.map(plan => {
-                return Object.assign({}, {
-                  planDetail: plan,
-                  price: null,
-                });
               });
             }
           })
