@@ -248,6 +248,7 @@ const getClaim = {
             return Object.assign({}, {
               detail: claim.detail,
               status: claim.status,
+              reason: claim.reason,
               claimNumber: claim.claimNumber,
               _id: claim._id,
             });
