@@ -202,7 +202,7 @@ const insurerCustomer = {
             } else status = 'waiting';
 
             return Object.assign({}, {
-              companyId: benefit._id,
+              companyId: benefit._id._id,
               companyName: benefit._id.companyName,
               logo: benefit._id.logo.link,
               numberOfEmployees: benefit._id.numberOfEmployees,
@@ -218,6 +218,29 @@ const insurerCustomer = {
   },
 };
 
+const insurerCustomerPlan = {
+  tags: ['api'],
+  auth: 'jwt',
+  validate: {
+    params: {
+      companyId: Joi.string().required(),
+    }
+  },
+  handler: (request, reply) => {
+    const { user } = request.auth.credentials;
+    const { companyId } = request.params;
+    BenefitPlan.find({ insurerCompany: user.company.detail, company: companyId })
+    .sort({ createdAt: -1 })
+    .exec((err, result) => {
+      Bidding.findOne({ _id: result[0].bidding })
+      .populate('plan.master.planId plan.insurer.planId')
+      .exec((err, bidding) => {
+        reply(bidding.plan);
+      });
+    });
+  },
+};
+
 export default function(app) {
   app.route([
     { method: 'GET', path: '/company/get-all-insurer', config: getAllInsurer },
@@ -227,5 +250,6 @@ export default function(app) {
     { method: 'GET', path: '/company/get-select-insurer', config: getSelectInsurer },
     { method: 'GET', path: '/insurer/company-list', config: getCompanyList },
     { method: 'GET', path: '/insurer/customer', config: insurerCustomer },
+    { method: 'GET', path: '/insurer/customer-plan/{companyId}', config: insurerCustomerPlan },
   ]);
 }
