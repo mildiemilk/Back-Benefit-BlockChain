@@ -10,7 +10,16 @@ const BiddingSchema = new mongoose.Schema ({
   insurerCompany: { type: Schema.Types.ObjectId, ref: "InsuranceCompany", required: true },
   insurer: { type: Schema.Types.ObjectId, ref: "User", required: true },
   countBidding : { type: Number, default: 0, required: true },
-  plan: { type: Object, required: true },
+  plan: { 
+    master: [{
+      planId: { type: Schema.Types.ObjectId, ref: "MasterPlan" },
+      price: { type: Number }
+    }],
+    insurer: [{
+      planId: { type: Schema.Types.ObjectId, ref: "InsurerPlan" },
+      price: { type: Number }
+    }],
+  },
   totalPrice: { type: Number, required: true },
   quotationId: { type: String, required: true},
 });

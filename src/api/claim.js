@@ -12,7 +12,7 @@ const getClaimListCompany = {
       { $match: { company: user.company.detail }},
       {
         $group: {
-          _id: { type: '$type', user: '$user', detail: '$detail', status: '$status', claimNumber: '$claimNumber', claimId: '$_id', date: '$updatedAt' },
+          _id: { type: '$type', user: '$user', detail: '$detail', status: '$status', claimNumber: '$claimNumber', claimId: '$_id', date: '$updatedAt', reason: '$reason' },
           count: { $sum: 1 },
         },
       },
@@ -22,6 +22,7 @@ const getClaimListCompany = {
           user: { $push: '$_id.user' },
           status: { $push: '$_id.status' },
           detail: { $push: '$_id.detail' },
+          reason: { $push: '$_id.reason' },
           amountOfClaim: { $sum: '$count' },
           claimNumber: { $push: '$_id.claimNumber' },
           claimId: { $push: '$_id.claimId' },
@@ -59,6 +60,7 @@ const getClaimListCompany = {
                   name: element.user[index].detail.name + ' ' + element.user[index].detail.lastname,
                   detail: element.detail[index],
                   status: element.status[index],
+                  reason: element.reason[index],
                   claimNumber: element.claimNumber[index],
                   claimId: claim,
                 });
@@ -246,6 +248,7 @@ const getClaim = {
             return Object.assign({}, {
               detail: claim.detail,
               status: claim.status,
+              reason: claim.reason,
               claimNumber: claim.claimNumber,
               _id: claim._id,
             });
