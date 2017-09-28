@@ -467,17 +467,29 @@ const extendedPlan = {
       .then((masterPlan) => {
         const extendedFrom = masterPlan._id;
         const createdBy = user._id;
+        const createdByCompanyId = user.company.detail;
         const company = masterPlan.company;
-        let newPlan = new  InsurerPlan({ company, employeeOfPlan, extendedFrom, createdBy, planName, ipdType, ipdLumsumPerYear, ipdLumsumPerTime, ipdLumsumTimeNotExceedPerYear, rbLumsumRoomPerNight,
-          rbLumsumNigthNotExceedPerYear, rbLumsumPayNotExceedPerNight, rbLumsumPayNotExceedPerYear,
-          rbSchedulePatient, rbScheduleIntensiveCarePatient, rbScheduleDoctor, rbScheduleSurgerySchedule, rbScheduleSurgeryNonSchedule,
-          rbScheduleService, rbScheduleSmallSurgery, rbScheduleAdviser, rbScheduleAmbulance,
-          rbScheduleAccident, rbScheduleTreatment, rbScheduleTransplant, ipdCoPay, ipdCoPayQuota,
-          ipdCoPayDeductable, ipdCoPayMixPercentage, ipdCoPayMixNotExceed, ipdCoPayMixYear, opdPerYear, opdPerTime, opdTimeNotExceedPerYear,
-          opdCoPay, opdCoPayQuota, opdCoPayDeductable, opdCoPayMixPercentage, opdCoPayMixNotExceed, opdCoPayMixYear, dentalPerYear,
-          lifePerYear, lifeTimeOfSalary, lifeNotExceed});
-        newPlan.save().then((plan) => {
-          reply(plan);
+        let copyNumber = 1;
+        // console.log('');
+        InsurerPlan
+        .find({ extendedFrom, createdByCompanyId })
+        .sort({ copyNumber: -1 })
+        .then(result => {
+          if (result.length > 0) {
+            copyNumber = result[0].copyNumber + 1;
+          }
+          const newPlanName = `${planName} (${copyNumber})`;
+          let newPlan = new  InsurerPlan({ company, employeeOfPlan, extendedFrom, copyNumber, createdBy, createdByCompanyId, planName: newPlanName, ipdType, ipdLumsumPerYear, ipdLumsumPerTime, ipdLumsumTimeNotExceedPerYear, rbLumsumRoomPerNight,
+            rbLumsumNigthNotExceedPerYear, rbLumsumPayNotExceedPerNight, rbLumsumPayNotExceedPerYear,
+            rbSchedulePatient, rbScheduleIntensiveCarePatient, rbScheduleDoctor, rbScheduleSurgerySchedule, rbScheduleSurgeryNonSchedule,
+            rbScheduleService, rbScheduleSmallSurgery, rbScheduleAdviser, rbScheduleAmbulance,
+            rbScheduleAccident, rbScheduleTreatment, rbScheduleTransplant, ipdCoPay, ipdCoPayQuota,
+            ipdCoPayDeductable, ipdCoPayMixPercentage, ipdCoPayMixNotExceed, ipdCoPayMixYear, opdPerYear, opdPerTime, opdTimeNotExceedPerYear,
+            opdCoPay, opdCoPayQuota, opdCoPayDeductable, opdCoPayMixPercentage, opdCoPayMixNotExceed, opdCoPayMixYear, dentalPerYear,
+            lifePerYear, lifeTimeOfSalary, lifeNotExceed});
+          newPlan.save().then((plan) => {
+            reply(plan);
+          });
         });
       });
   },
