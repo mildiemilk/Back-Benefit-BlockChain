@@ -78,7 +78,8 @@ const claim = {
   payload: {
     output: 'stream',
     parse: true,
-    allow: 'multipart/form-data'
+    allow: 'multipart/form-data',
+    maxBytes: 20000000,
   },
   handler: (request, reply) => {
     let { detail, files } = request.payload;
