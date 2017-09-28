@@ -552,7 +552,7 @@ const summaryGroup = {
     Role.findOne({ roleName: 'Employee' }).then((roleId) => {
       const role = roleId._id;
       const aggregatorOpts = [
-        { $match: { "company.detail": user.company.detail, "role": role, delete: false } },
+        { $match: { "company.detail": user.company.detail, "role": role, deleted: false } },
         {
           $group: {
             _id: "$detail.benefitGroup",
@@ -567,7 +567,7 @@ const summaryGroup = {
         groups = groups.map(group => 
           Object.assign({}, { groupName: group._id, count: group.count })
         );
-        User.count({ "company.detail": user.company.detail, "role": role }, (err, total) => {
+        User.count({ "company.detail": user.company.detail, "role": role, deleted: false }, (err, total) => {
           reply({ total, groups});
         });
       });
@@ -858,7 +858,7 @@ const manageEmployee = {
       department: Joi.string(),
       title: Joi.string(),
       benefitGroup: Joi.string(),
-      timeout: Joi.date(),
+      benefitPlan: Joi.string(),
       reason: Joi.string(),
     }
   },
@@ -866,7 +866,7 @@ const manageEmployee = {
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
     const company = user.company.detail;
-    const { status, employeeId, effectiveDate, typeOfEmployee, department, title, benefitGroup, timeout, reason } = request.payload;
+    const { status, employeeId, effectiveDate, typeOfEmployee, department, title, benefitGroup, benefitPlan, reason } = request.payload;
     EmployeeLog.findOne({ user: employeeId, effectiveDate: { $gt: Date.now()} }).then((log) => {
       if(log) {
         log.status = status;
@@ -874,12 +874,12 @@ const manageEmployee = {
         log.department = department;
         log.title = title;
         log.benefitGroup = benefitGroup;
-        log.timeout = timeout;
+        log.benefitPlan = benefitPlan;
         log.reason = reason;
       } else {
         log = new EmployeeLog({
           user: employeeId, company, status ,effectiveDate, typeOfEmployee,
-          department, title, benefitGroup, timeout, reason,
+          department, title, benefitGroup, benefitPlan, reason,
           updatedBy: user._id });
       }
       log.save().then(() => {
