@@ -14,7 +14,7 @@ const EmployeeLogSchema = new mongoose.Schema ({
   department: { type: String },
   title: { type: String },
   benefitGroup: { type: String },
-  timeout: { type: Date },
+  benefitPlan: { type: Schema.Types.ObjectId, ref: "BenefitPlan"},
   reason: { type: String },
   updatedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
 });

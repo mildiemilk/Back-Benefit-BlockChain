@@ -13,6 +13,7 @@ const InsurerPlanSchema = new mongoose.Schema ({
   createdByCompanyId: { type: Schema.Types.ObjectId, ref: "InsuranceCompany", required: true },
   extendedFrom: { type: Schema.Types.ObjectId, ref: "MasterPlan", default: null},
   copyNumber: { type: Number, required: true },
+  fileDetail: { type: Schema.Types.ObjectId, ref: "Media", default: null },
   ipdType: { type: String, default: null },
   ipdLumsumPerYear: { type: Number, default: null },
   ipdLumsumPerTime: { type: Number, default: null },

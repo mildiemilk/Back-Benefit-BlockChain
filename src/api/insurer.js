@@ -2,8 +2,12 @@ import Joi from 'joi';
 import Boom from 'boom';
 import moment from 'moment';
 import json2csv from 'json2csv';
+import exceltojson from 'xlsx-to-json-lc';
+import fs from 'fs';
 import mongoose from 'mongoose';
-import { BiddingRelation, Role, Bidding, InsuranceCompany, BenefitPlan, EmployeeCompany, TemplatePlan, User, EmployeeLog } from '../models';
+import { BiddingRelation, Role, Bidding, InsuranceCompany,
+  BenefitPlan, EmployeeCompany, TemplatePlan, User, EmployeeLog,
+  MasterPlan, InsurerPlan, Media } from '../models';
 
 const getAllInsurer = {
   tags: ['api'],
@@ -327,8 +331,32 @@ const insurerCustomerSelectPlan = {
     .sort({ createdAt: -1 })
     .populate('plan.master.planId plan.insurer.planId')
     .exec((err, template) => {
-      const allPlan = template[0].plan.master.concat(template[0].plan.insurer);
-      reply(allPlan);
+      const master = template[0].plan.master.map(plan => {
+        return new Promise((resolve) => {
+          Media.populate(plan.planId, {path: 'fileDetail', select: 'name'}, () => {
+            resolve(Object.assign({}, {
+              ...plan._doc,
+              type: 'master',
+            }));
+          });
+        });
+      });
+      Promise.all(master).then((master) => {
+        const insurer = template[0].plan.insurer.map(plan => {
+          return new Promise((resolve) => {
+            Media.populate(plan.planId, {path: 'fileDetail', select: 'name'}, () => {
+              resolve(Object.assign({}, {
+                ...plan._doc,
+                type: 'insurer',
+              }));
+            });
+          });
+        });
+        Promise.all(insurer).then((insurer) => {
+          const allPlan = master.concat(insurer);
+          reply(allPlan);
+        });
+      });
     });
   },
 };
@@ -383,11 +411,145 @@ const insurerCustomerFile = {
           'memberNumber',
         ];
         const csv = json2csv({ data: employees, fields: fields });
-        console.log(csv);
-        reply(employees);
+        reply(csv.toString('utf-8'))
+        .header('Content-Type', 'application/octet-stream')
+        .header('content-disposition', 'attachment; filename=CronjReport.csv;');
       });
     });
   }
+};
+
+const insurerCustomerUploadFile = {
+  tags: ['api'],
+  auth: 'jwt',
+  validate: {
+    params: {
+      companyId: Joi.string().required(),
+    }
+  },
+  payload: {
+    output: 'stream',
+    parse: true,
+    allow: 'multipart/form-data',
+    maxBytes: 20000000,
+  },
+
+  handler: (request, reply) => {
+    const { file } = request.payload;
+    const { companyId } = request.params;
+    const data = file;
+    const name = data.hapi.filename;
+    const path = __dirname + "/" + name;
+    //------------save to directory---------------//
+    if (data) {
+      let file = fs.createWriteStream(path);
+      file.on('error', function (err) { 
+        console.error(err); 
+      });
+      data.pipe(file);
+      file.on('finish', function(err){
+        if(err) console.log('file:error', err);
+        //-----------convert-to-json------------------
+        exceltojson({
+          input: path,
+          output: null,
+          lowerCaseHeaders: false //to convert all excel headers to lowr case in json
+        }, function(err, result) {
+          if(err) {
+            console.error(err);
+          } else {
+            let role;
+            Role.findOne({ roleName: 'Employee' }).then((roleId) => {
+              role = roleId._id;
+              const addEmployee = result.map((employee) => {
+                return new Promise((resolve, reject) => {
+                  User.findOne({ 'company.detail': companyId, 'detail.employeeCode': employee.employeeCode, role })
+                  .exec((err, emp) => {
+                    if(emp) {
+                      emp.detail.policyNumber = employee.policyNumber,
+                      emp.detail.memberNumber = employee.memberNumber,
+                      emp.markModified('detail');
+                      emp.save().then((emp) => {
+                        resolve(emp);
+                      });
+                    } else {
+                      reject();
+                    }
+                  });
+                });
+              });
+              Promise.all(addEmployee).then(() => {
+                fs.unlink(path, (err) => {
+                  if (err) throw err;
+                  reply({ message: 'upload policy success'});
+                });
+              });
+            });
+          }
+        });
+      });
+    }
+  }
+};
+
+const insurerCustomerUploadFileDetail = {
+  tags: ['api'],
+  auth: 'jwt',
+  payload: {
+    output: 'stream',
+    parse: true,
+    allow: 'multipart/form-data',
+    maxBytes: 20000000,
+  },
+
+  handler: (request, reply) => {
+    let { file, type, planId } = request.payload;
+    const { storage } = request.server.app.services;
+    const { user } = request.auth.credentials;
+    const info = null;
+    let planType;
+    switch(type) {
+      case 'master' : planType = MasterPlan; break;
+      case 'insurer' : planType = InsurerPlan; break;
+    }
+    storage.upload({ file }, { info }, (err, media) => {
+      if (!err) {
+        media.userId = user.id;
+        media.save().then(detail => {
+          planType.findOne({ _id: planId }).exec((err, plan) => {
+            plan.fileDetail = detail;
+            plan.save().then(() => {
+              reply({ message: 'upload detail plan success' });
+            });
+          });
+        });
+      }
+    });
+  }
+};
+
+const insurerCustomerEditPolicy = {
+  tags: ['api'],
+  auth: 'jwt',
+  validate: {
+    payload: {
+      employeeId: Joi.string().required(),
+      policyNumber: Joi.string().required(),
+      memberNumber: Joi.string().required(),
+    },
+  },
+  handler: (request, reply) => {
+    const { employeeId, policyNumber, memberNumber } = request.payload;
+    User.findOne({ _id: employeeId })
+    .exec((err, emp) => {
+      emp.detail.policyNumber = policyNumber,
+      emp.detail.memberNumber = memberNumber,
+      emp.markModified('detail');
+      emp.save().then(() => {
+        reply({ message: 'edit policy number success' });
+      });
+    });
+  },
 };
 
 export default function(app) {
@@ -400,8 +562,11 @@ export default function(app) {
     { method: 'GET', path: '/insurer/company-list', config: getCompanyList },
     { method: 'GET', path: '/insurer/customer', config: insurerCustomer },
     { method: 'GET', path: '/insurer/customer-employee/{companyId}', config: insurerCustomerEmployee },
+    { method: 'PUT', path: '/insurer/customer-edit-policy', config: insurerCustomerEditPolicy },
     { method: 'GET', path: '/insurer/customer-plan/{companyId}', config: insurerCustomerPlan },
     { method: 'GET', path: '/insurer/customer-select-plan/{companyId}', config: insurerCustomerSelectPlan },
     { method: 'GET', path: '/insurer/customer-file/{companyId}', config: insurerCustomerFile },
+    { method: 'PUT', path: '/insurer/customer-upload-file/{companyId}', config: insurerCustomerUploadFile },
+    { method: 'PUT', path: '/insurer/customer-upload-file-detail', config: insurerCustomerUploadFileDetail },
   ]);
 }

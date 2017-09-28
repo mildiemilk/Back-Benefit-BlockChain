@@ -58,9 +58,15 @@ const selectPlan = {
       } else {
         result[0].benefitPlan = planId;
         result[0].confirm = true;
-        result[0].save(function(err) {
-          if (err) throw err;
-          reply({ txt: 'Updated select plan and change status.', planId });
+        result[0].save(function(err, plan) {
+          if (err) reply(err);
+          BenefitPlan.populate(plan, {path: 'benefitPlan'}, (err, benefitPlan) => {
+            user.detail.benefitPlan = benefitPlan.benefitPlan.benefitPlanName;
+            user.markModified('detail');
+            user.save().then(() => {
+              reply({ txt: 'Updated select plan and change status.', planId });
+            });
+          });
         });
       }
     });
