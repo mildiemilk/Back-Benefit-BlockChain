@@ -283,102 +283,105 @@ const editInsurerPlan = {
   },
 };
 
-const deletePlan = {
+const deletePlanInsurer = {
   tags: ['api'],
   auth: 'jwt',
-
-  validate: {
-    params: {
-      planId: Joi.number().integer().required(),
-      editBy: Joi.string().valid('company', 'insurer').required(),
-    },
-  },
   handler: (request, reply) => {
-    const { planId, editBy } = request.params;
+    const { planId } = request.params;
     const { user } = request.auth.credentials;
-    switch(editBy) {
-      case 'company' : 
-        MasterPlan.findOneAndRemove({ planId, company: user.company.detail }, (err) => {
+    InsurerPlan.findOne({ planId }).populate('createdBy').exec((err, plan) => {
+      if (plan.createdBy.company.detail.toString() === user.company.detail.toString()) {
+        plan.remove().then(() => {
+          reply({message:'deleted complete!'});
+        });
+      } else reply({message:"You can't delete this plan!"});
+    }); 
+  },
+};
+
+const deletePlanCompany = {
+  tags: ['api'],
+  auth: 'jwt',
+  handler: (request, reply) => {
+    const data = request.payload;
+    const { user } = request.auth.credentials;
+    const deleted = data.map(ele => {
+      return new Promise(resolve => {
+        MasterPlan.findOneAndRemove({ planId: ele, company: user.company.detail }, (err) => {
           if (!err)
-            reply({message:'deleted complete!'});
-        }); 
-        break;
-      case 'insurer' : 
-        InsurerPlan.findOne({ planId }).populate('createdBy').exec((err, plan) => {
-          if (plan.createdBy.company.detail.toString() === user.company.detail.toString()) {
-            plan.remove().then(() => {
-              reply({message:'deleted complete!'});
-            });
-          } else reply({message:"You can't delete this plan!"});
-        }); 
-        break;
-    }
+            resolve();
+        });
+      });
+    });
+    Promise.all(deleted).then(() => {
+      reply({ message: "deleted completed!" });
+    });
   },
 };
 
 const copyPlan = {
   tags: ['api'],
   auth: 'jwt',
-
-  validate: {
-    params: {
-      planId: Joi.number().integer().required(),
-    },
-  },
-
   handler: (request, reply) => {
-    const { planId } = request.params;
-    MasterPlan.findOne({ planId })
-      .then((masterPlan) => {
-        const planName = masterPlan.planName + ' (Copy)';
-        const company = masterPlan.company;
-        const employeeOfPlan = masterPlan.employeeOfPlan;
-        let newPlan = new MasterPlan({ planName, company, employeeOfPlan });
-        newPlan.save().then(() => {
-          MasterPlan.findOneAndUpdate({ planId: newPlan.planId }, { $set:
-          {
-            ipdType: masterPlan.ipdType,
-            ipdLumsumPerYear: masterPlan.ipdLumsumPerYear,
-            ipdLumsumPerTime: masterPlan.ipdLumsumPerTime,
-            ipdLumsumTimeNotExceedPerYear: masterPlan.ipdLumsumTimeNotExceedPerYear,
-            rbLumsumRoomPerNight: masterPlan.rbLumsumRoomPerNight,
-            rbLumsumNigthNotExceedPerYear: masterPlan.rbLumsumPayNotExceedPerYear,
-            rbLumsumPayNotExceedPerNight: masterPlan.rbLumsumPayNotExceedPerNight,
-            rbLumsumPayNotExceedPerYear: masterPlan.rbLumsumPayNotExceedPerYear,
-            rbSchedulePatient: masterPlan.rbSchedulePatient,
-            rbScheduleIntensiveCarePatient: masterPlan.rbScheduleIntensiveCarePatient,
-            rbScheduleDoctor: masterPlan.rbScheduleDoctor,
-            rbScheduleSurgerySchedule: masterPlan.rbScheduleSurgerySchedule,
-            rbScheduleSurgeryNonSchedule: masterPlan.rbScheduleSurgeryNonSchedule,
-            rbScheduleService: masterPlan.rbScheduleService,
-            rbScheduleSmallSurgery: masterPlan.rbScheduleSmallSurgery,
-            rbScheduleAdviser: masterPlan.rbScheduleAdviser,
-            rbScheduleAmbulance: masterPlan.rbScheduleAmbulance,
-            rbScheduleAccident: masterPlan.rbScheduleAccident,
-            rbScheduleTreatment: masterPlan.rbScheduleTreatment,
-            rbScheduleTransplant: masterPlan.rbScheduleTransplant,
-            ipdCoPay: masterPlan.ipdCoPay,
-            ipdCoPayQuota: masterPlan.ipdCoPayQuota,
-            ipdCoPayDeductable: masterPlan.ipdCoPayDeductable,
-            ipdCoPayMixPercentage: masterPlan.ipdCoPayMixPercentage,
-            ipdCoPayMixNotExceed: masterPlan.ipdCoPayMixNotExceed,
-            ipdCoPayMixYear: masterPlan.ipdCoPayMixYear,
-            opdPerYear: masterPlan.opdPerYear,
-            opdPerTime: masterPlan.opdPerTime,
-            opdTimeNotExceedPerYear: masterPlan.opdTimeNotExceedPerYear,
-            opdCoPay: masterPlan.opdCoPay,
-            opdCoPayQuota: masterPlan.opdCoPayQuota,
-            opdCoPayDeductable: masterPlan.opdCoPayDeductable,
-            opdCoPayMixPercentage: masterPlan.opdCoPayMixPercentage,
-            opdCoPayMixNotExceed: masterPlan.opdCoPayMixNotExceed,
-            opdCoPayMixYear: masterPlan.opdCoPayMixYear,
-            lifePerYear: masterPlan.lifePerYear,
-            lifeTimeOfSalary: masterPlan.lifeTimeOfSalary,
-            lifeNotExceed: masterPlan.lifeNotExceed,
-            dentalPerYear: masterPlan.dentalPerYear,
-          }}, () => reply({message: 'copy plan complete'}));
+    const data = request.payload;
+    const copy = data.map(ele => {
+      return new Promise(resolve => {
+        MasterPlan.findOne({ planId: ele })
+        .then((masterPlan) => {
+          const planName = masterPlan.planName + ' (Copy)';
+          const company = masterPlan.company;
+          const employeeOfPlan = masterPlan.employeeOfPlan;
+          let newPlan = new MasterPlan({ planName, company, employeeOfPlan });
+          newPlan.save().then(() => {
+            MasterPlan.findOneAndUpdate({ planId: newPlan.planId }, { $set:
+            {
+              ipdType: masterPlan.ipdType,
+              ipdLumsumPerYear: masterPlan.ipdLumsumPerYear,
+              ipdLumsumPerTime: masterPlan.ipdLumsumPerTime,
+              ipdLumsumTimeNotExceedPerYear: masterPlan.ipdLumsumTimeNotExceedPerYear,
+              rbLumsumRoomPerNight: masterPlan.rbLumsumRoomPerNight,
+              rbLumsumNigthNotExceedPerYear: masterPlan.rbLumsumPayNotExceedPerYear,
+              rbLumsumPayNotExceedPerNight: masterPlan.rbLumsumPayNotExceedPerNight,
+              rbLumsumPayNotExceedPerYear: masterPlan.rbLumsumPayNotExceedPerYear,
+              rbSchedulePatient: masterPlan.rbSchedulePatient,
+              rbScheduleIntensiveCarePatient: masterPlan.rbScheduleIntensiveCarePatient,
+              rbScheduleDoctor: masterPlan.rbScheduleDoctor,
+              rbScheduleSurgerySchedule: masterPlan.rbScheduleSurgerySchedule,
+              rbScheduleSurgeryNonSchedule: masterPlan.rbScheduleSurgeryNonSchedule,
+              rbScheduleService: masterPlan.rbScheduleService,
+              rbScheduleSmallSurgery: masterPlan.rbScheduleSmallSurgery,
+              rbScheduleAdviser: masterPlan.rbScheduleAdviser,
+              rbScheduleAmbulance: masterPlan.rbScheduleAmbulance,
+              rbScheduleAccident: masterPlan.rbScheduleAccident,
+              rbScheduleTreatment: masterPlan.rbScheduleTreatment,
+              rbScheduleTransplant: masterPlan.rbScheduleTransplant,
+              ipdCoPay: masterPlan.ipdCoPay,
+              ipdCoPayQuota: masterPlan.ipdCoPayQuota,
+              ipdCoPayDeductable: masterPlan.ipdCoPayDeductable,
+              ipdCoPayMixPercentage: masterPlan.ipdCoPayMixPercentage,
+              ipdCoPayMixNotExceed: masterPlan.ipdCoPayMixNotExceed,
+              ipdCoPayMixYear: masterPlan.ipdCoPayMixYear,
+              opdPerYear: masterPlan.opdPerYear,
+              opdPerTime: masterPlan.opdPerTime,
+              opdTimeNotExceedPerYear: masterPlan.opdTimeNotExceedPerYear,
+              opdCoPay: masterPlan.opdCoPay,
+              opdCoPayQuota: masterPlan.opdCoPayQuota,
+              opdCoPayDeductable: masterPlan.opdCoPayDeductable,
+              opdCoPayMixPercentage: masterPlan.opdCoPayMixPercentage,
+              opdCoPayMixNotExceed: masterPlan.opdCoPayMixNotExceed,
+              opdCoPayMixYear: masterPlan.opdCoPayMixYear,
+              lifePerYear: masterPlan.lifePerYear,
+              lifeTimeOfSalary: masterPlan.lifeTimeOfSalary,
+              lifeNotExceed: masterPlan.lifeNotExceed,
+              dentalPerYear: masterPlan.dentalPerYear,
+            }}, () => resolve());
+          });
         });
       });
+    });
+    Promise.all(copy).then(() => {
+      reply({ message: "copy completed!" });
+    });
   },
 };
 
@@ -486,8 +489,9 @@ export default function(app) {
     { method: 'POST', path: '/insurer/extended-plan/{planId}', config: extendedPlan },
     { method: 'PUT', path: '/company/edit-plan/{planId}/{typeEdit}', config: editMasterPlan },
     { method: 'PUT', path: '/insurer/edit-plan/{planId}', config: editInsurerPlan },
-    { method: 'DELETE', path: '/{editBy}/delete-plan/{planId}', config: deletePlan },
-    { method: 'POST', path: '/company/copy-plan/{planId}', config: copyPlan },
+    { method: 'DELETE', path: '/insurer/delete-plan/{planId}', config: deletePlanInsurer },
+    { method: 'DELETE', path: '/company/delete-plan', config: deletePlanCompany },
+    { method: 'POST', path: '/company/copy-plan', config: copyPlan },
     { method: 'GET', path: '/company/get-all-plan', config: getAllPlan },
   ]);
 }

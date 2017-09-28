@@ -12,7 +12,8 @@ const manifest = Manifest();
 
 Promise.promisifyAll(mongoose);
 mongoose.Promise = Promise;
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/mydb');
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://52.163.114.114:27017/mydb');
+// mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/mydb');
 
 if (!process.env.PRODUCTION) {
   manifest.registrations.push({
