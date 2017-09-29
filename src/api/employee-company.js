@@ -855,7 +855,6 @@ const manageEmployee = {
   auth: 'jwt',
   validate: {
     payload: {
-      status: Joi.string().allow('resign', 'promote').required(),
       employeeId: Joi.string().required(),
       effectiveDate: Joi.date().required(),
       typeOfEmployee: Joi.string(),
@@ -864,13 +863,17 @@ const manageEmployee = {
       benefitGroup: Joi.string(),
       benefitPlan: Joi.string(),
       reason: Joi.string(),
+    },
+    params: {
+      status: Joi.string().allow('resign', 'promote').required(),
     }
   },
 
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
     const company = user.company.detail;
-    const { status, employeeId, effectiveDate, typeOfEmployee, department, title, benefitGroup, benefitPlan, reason } = request.payload;
+    const { status } = request.params;
+    const { employeeId, effectiveDate, typeOfEmployee, department, title, benefitGroup, benefitPlan, reason } = request.payload;
     EmployeeLog.findOne({ user: employeeId, effectiveDate: { $gt: Date.now()} }).then((log) => {
       if(log) {
         log.status = status;
