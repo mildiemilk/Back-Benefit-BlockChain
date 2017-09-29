@@ -192,7 +192,7 @@ const biddingDetailForInsurer = {
           MasterPlan.find({ company: companyId }).sort({planId: 1}).exec(function(err, plans) {
             if (bidding.plan.master !== undefined) {
               master = plans.map(plan => {
-                const index = bidding.plan.master.findIndex(element => plan._id == element.planId);
+                const index = bidding.plan.master.findIndex(element => plan._id.toString() == element.planId.toString());
                 if(index !== -1) {
                   return Object.assign({}, {
                     planDetail: plan,
@@ -218,7 +218,7 @@ const biddingDetailForInsurer = {
             InsurerPlan.find({ company: companyId, createdBy: user._id }).sort({planId: 1}).exec(function(err, plans) {
               if (bidding.plan.insurer !== undefined) {
                 insurer = plans.map(plan => {
-                  const index = bidding.plan.insurer.findIndex(element => plan._id == element.planId);
+                  const index = bidding.plan.insurer.findIndex(element => plan._id.toString() == element.planId.toString());
                   if(index !== -1) {
                     return Object.assign({}, {
                       planDetail: plan,
@@ -329,7 +329,7 @@ const biddingDetailForCompany = {
         MasterPlan.find({ company: user.company.detail }).sort({planId: 1}).exec(function(err, plans) {
           if (bidding.plan.master !== undefined) {
             master = plans.map(plan => {
-              const index = bidding.plan.master.findIndex(element => plan._id == element.planId);
+              const index = bidding.plan.master.findIndex(element => plan._id.toString() == element.planId.toString());
               if(index !== -1) {
                 return Object.assign({}, {
                   planDetail: plan,
@@ -343,7 +343,7 @@ const biddingDetailForCompany = {
           InsurerPlan.find({ company: user.company.detail, createdBy: user._id }).sort({planId: 1}).exec(function(err, plans) {
             if (bidding.plan.insurer !== undefined) {
               insurer = plans.map(plan => {
-                const index = bidding.plan.insurer.findIndex(element => plan._id == element.planId);
+                const index = bidding.plan.insurer.findIndex(element => plan._id.toString() == element.planId.toString());
                 if(index !== -1) {
                   return Object.assign({}, {
                     planDetail: plan,
