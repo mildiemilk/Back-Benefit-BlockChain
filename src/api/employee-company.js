@@ -366,7 +366,8 @@ const getEmployee = {
       User.find({ company: user.company, role, deleted: false }, 'email detail', {sort: {'detail.employeeCode': 1}}, (err, employees) => {
         const getLog = employees.map(emp => {
           return new Promise((resolve) => {
-            EmployeeLog.findOne({ user: emp._id, effectiveDate: { $gt: Date.now()} }).then((log) => {
+            EmployeeLog.findOne({ user: emp._id, effectiveDate: { $gt: Date.now()} })
+            .select('-createdAt -updateAt -__v -deleted').then((log) => {
               if(log) {
                 let status;
                 switch(log.status) {
@@ -376,16 +377,25 @@ const getEmployee = {
                 }
                 emp.detail.status = status;
                 emp.detail.effectiveDate = log.effectiveDate;
+                emp = {
+                  ...emp._doc,
+                  log,
+                };
               } else {
                 emp.detail.status = 'พนักงาน';
                 emp.detail.effectiveDate = '-';
+                emp.log = null;
+                emp = {
+                  ...emp._doc,
+                  log,
+                };
               }
-              resolve();
+              resolve(emp);
             });
           });
         });
-        Promise.all(getLog).then(() => {
-          reply(employees);
+        Promise.all(getLog).then((emps) => {
+          reply(emps);
         });
       });
     });
