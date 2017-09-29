@@ -33,7 +33,7 @@ const bidding = {
       }
       bidding.save().then((bidding) => {
         BiddingRelation.find({ company: companyId }, null, {sort: { createdAt: -1 }})
-        .exec(biddingRelation => {
+        .exec((err, biddingRelation) => {
           const { minPrice } = biddingRelation[0];
           const { totalPrice } = bidding;
           if(minPrice >= 0) {
