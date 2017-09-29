@@ -154,7 +154,7 @@ const uploadEmployee = {
                       endDate: null,
                       startDate: employee.start_date,
                       nationality: employee.nationality,
-                      benefitPlan: employee.benefit_plan,
+                      benefitPlan: null,
                       address: employee.address,
                       benefitGroup: employee.benefit_group,
                       dateOfBirth: employee.date_of_birth,
