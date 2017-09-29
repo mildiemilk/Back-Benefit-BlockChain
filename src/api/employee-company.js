@@ -798,63 +798,69 @@ const editEmployee = {
           storage.getUrl(media.path, (url) => {
             if (!err) {
               detail.profilePic = { mediaId: media._id, link: url };
-              user.detail = detail;
-              user.save().then((employee) => {
-                if(!isEnd) {
-                  reply({ message: "edit employee success" });
-                } else {
-                  EmployeeLog.findOne({ user: employee._id, effectiveDate: { $gt: Date.now()} }).then((log) => {
-                    if(log) {
-                      log.status = 'resign';
-                      log.typeOfEmployee = 'ลาออก';
-                      log.reason = '';
-                      log.effectiveDate = employee.detail.endDate;
-                      log.updatedBy = user._id;
-                    } else {
-                      log = new EmployeeLog({
-                        user: employee._id,
-                        company: employee.company.detail,
-                        status:'resign',
-                        reason: '',
-                        updatedBy: user._id,
+              User.findOne({ _id: detail.employeeId })
+              .exec((err, emp) => {
+                emp.detail = detail;
+                emp.save().then((employee) => {
+                  if(!isEnd) {
+                    reply({ message: "edit employee success" });
+                  } else {
+                    EmployeeLog.findOne({ user: employee._id, effectiveDate: { $gt: Date.now()} }).then((log) => {
+                      if(log) {
+                        log.status = 'resign';
+                        log.typeOfEmployee = 'ลาออก';
+                        log.reason = '';
+                        log.effectiveDate = employee.detail.endDate;
+                        log.updatedBy = user._id;
+                      } else {
+                        log = new EmployeeLog({
+                          user: employee._id,
+                          company: employee.company.detail,
+                          status:'resign',
+                          reason: '',
+                          updatedBy: user._id,
+                        });
+                      }
+                      log.save().then(() => {
+                        reply({ message: "edit employee success" });
                       });
-                    }
-                    log.save().then(() => {
-                      reply({ message: "edit employee success" });
                     });
-                  });
-                }
+                  }
+                });
               });
             }
           });
         }
       });
     } else {
-      user.detail = detail;
-      user.save().then((employee) => {
-        if(!isEnd) {
-          reply({ message: "edit employee success" });
-        } else {
-          EmployeeLog.findOne({ user: employee._id, effectiveDate: { $gt: Date.now()} }).then((log) => {
-            if(log) {
-              log.status = 'resign';
-              log.reason = '';
-              log.effectiveDate = employee.detail.endDate;
-              log.updatedBy = user._id;
-            } else {
-              log = new EmployeeLog({
-                user: employee._id,
-                company: employee.company.detail,
-                status:'resign',
-                reason: '',
-                updatedBy: user._id,
+      User.findOne({ _id: detail.employeeId })
+      .exec((err, emp) => {
+        emp.detail = detail;
+        emp.save().then((employee) => {
+          if(!isEnd) {
+            reply({ message: "edit employee success" });
+          } else {
+            EmployeeLog.findOne({ user: employee._id, effectiveDate: { $gt: Date.now()} }).then((log) => {
+              if(log) {
+                log.status = 'resign';
+                log.reason = '';
+                log.effectiveDate = employee.detail.endDate;
+                log.updatedBy = user._id;
+              } else {
+                log = new EmployeeLog({
+                  user: employee._id,
+                  company: employee.company.detail,
+                  status:'resign',
+                  reason: '',
+                  updatedBy: user._id,
+                });
+              }
+              log.save().then(() => {
+                reply({ message: "edit employee success" });
               });
-            }
-            log.save().then(() => {
-              reply({ message: "edit employee success" });
             });
-          });
-        }
+          }
+        });
       });
     }
   }
