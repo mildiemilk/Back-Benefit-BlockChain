@@ -1056,7 +1056,7 @@ const summaryInsurancePlan = {
                 return Object.assign({}, {
                   planId: plan.planId._id,
                   planName: plan.planId.planName,
-                  amount: summary.master.amount[index],
+                  amount: summary.MasterPlan.amount[index],
                 });
               } else {
                 return Object.assign({}, {
@@ -1075,7 +1075,7 @@ const summaryInsurancePlan = {
                 return Object.assign({}, {
                   planId: plan.planId._id,
                   planName: plan.planId.planName,
-                  amount: summary.insurer.amount[index],
+                  amount: summary.InsurerPlan.amount[index],
                 });
               } else {
                 return Object.assign({}, {
