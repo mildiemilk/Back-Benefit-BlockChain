@@ -790,7 +790,6 @@ const editEmployee = {
     const isPublic = true;
     detail = JSON.parse(detail);
     const isEnd = moment(detail.endDate).isAfter(Date.now());
-
     if(file) {
       storage.upload({ file }, { isPublic }, (err, media) => {
         if (!err) {
