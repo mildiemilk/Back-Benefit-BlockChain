@@ -17,6 +17,7 @@ const bidding = {
     }
   },
   handler: (request, reply) => {
+    console.log(request);
     const { user } = request.auth.credentials;
     const { companyId } = request.params;
     const { totalPrice, quotationId } = request.payload;
@@ -123,10 +124,17 @@ const chooseFinalInsurer = {
             .exec((err, biddingRelation) => {
               Bidding.findOne({ company:  user.company.detail, insurerCompany: insurerCompany })
               .exec((err, bidding) => {
-                console.log('bidding', bidding);
                 biddingRelation[0].insurerWin = bidding.insurer;
                 biddingRelation[0].insurerCompanyWin = bidding.insurerCompany;
                 biddingRelation[0].biddingWin = bidding;
+                biddingRelation[0].insurers.map((insurer, index) => {
+                  if(insurer.insurerCompany.toString() === bidding.insurerCompany.toString()) {
+                    biddingRelation[0].insurers[index].status = 'selected';
+                  } else {
+                    biddingRelation[0].insurers[index].status = 'notSelected';
+                  }
+                });
+                biddingRelation[0].markModified('insurers');
                 biddingRelation[0].save().then(() => {
                   u.company.detail.completeStep[step] = true;
                   u.company.detail.markModified('completeStep');
@@ -135,8 +143,8 @@ const chooseFinalInsurer = {
                     templatePlan.save().then(() => {
                       reply({completeStep: company.completeStep, message:'เลือก insurer เรียบร้อยแล้ว'});
                     });
-                  });
-                });
+                  }).catch((err) => reply(err));
+                }).catch((err) => reply(err));
               });
             });
           });
