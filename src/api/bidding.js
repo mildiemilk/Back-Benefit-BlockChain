@@ -19,9 +19,12 @@ const bidding = {
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
     const { companyId } = request.params;
-    const { totalPrice, plan, quotationId } = request.payload;
+    const { totalPrice, quotationId } = request.payload;
+    let { plan } = request.payload;
     const insurerCompany = user.company.detail;
     const insurer = user._id;
+    plan.master = plan.master.filter(p => (p.price !== 0) && (p.price !== null));
+    plan.insurer = plan.insurer.filter(p => (p.price !== 0) && (p.price !== null));
     Bidding.findOne({ insurerCompany, company: companyId }).then(bidding => {
       if (bidding) {
         bidding.insurer = insurer;
@@ -340,7 +343,7 @@ const biddingDetailForCompany = {
           }
         })
         .then(() => {
-          InsurerPlan.find({ company: user.company.detail, createdBy: user._id }).sort({planId: 1}).exec(function(err, plans) {
+          InsurerPlan.find({ company: user.company.detail, createdByCompanyId: companyId }).sort({planId: 1}).exec(function(err, plans) {
             if (bidding.plan.insurer !== undefined) {
               insurer = plans.map(plan => {
                 const index = bidding.plan.insurer.findIndex(element => plan._id.toString() == element.planId.toString());

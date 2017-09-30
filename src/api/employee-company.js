@@ -18,13 +18,14 @@ const registerCompany = {
       hrDetail: Joi.string().required(),
       numberOfEmployees: Joi.number().required(),
       tel: Joi.string().required(),
-      startInsurance: Joi.date().required(),
       expiredInsurance: Joi.date().required(),
     },
   },
   handler: (request, reply) => {
-    const { companyName, location, typeOfBusiness, hrDetail, numberOfEmployees, tel, startInsurance, expiredInsurance} = request.payload;
+    const { companyName, location, typeOfBusiness, hrDetail, numberOfEmployees, tel, expiredInsurance} = request.payload;
     const { user } = request.auth.credentials;
+    let startInsurance = new Date(expiredInsurance);
+    startInsurance.setFullYear(startInsurance.getFullYear() + 1);
     let hr = user._id;
     Role.findOne({ _id: user.role }).then((thisRole) => {
       const role = thisRole.roleName;
@@ -966,18 +967,35 @@ const summaryBenefitPlan = {
       BenefitPlan.find({ company: user.company.detail, effectiveDate, expiredDate})
       .exec((err, benefitPlans) => {
         const allPlans = benefitPlans.map(benefitPlan => benefitPlan._id);
-        const aggregatorOpts = [
-          { $match: { company: user.company.detail._id, benefitPlan: { $in: allPlans }, confirm: true }},
-          {
-            $group: {
-              _id: '$benefitPlan',
-              count: { $sum: 1 },
+        const isTimeout = moment(benefitPlans[0].timeout).isBefore(Date.now());
+        let aggregatorOpts;
+        if(isTimeout) {
+          aggregatorOpts = [
+            { $match: { company: user.company.detail._id, benefitPlan: { $in: allPlans }}},
+            {
+              $group: {
+                _id: '$benefitPlan',
+                count: { $sum: 1 },
+              },
             },
-          },
-          {
-            $sort: { _id: 1 }
-          }
-        ];
+            {
+              $sort: { _id: 1 }
+            }
+          ];
+        } else {
+          aggregatorOpts = [
+            { $match: { company: user.company.detail._id, benefitPlan: { $in: allPlans }, confirm: true }},
+            {
+              $group: {
+                _id: '$benefitPlan',
+                count: { $sum: 1 },
+              },
+            },
+            {
+              $sort: { _id: 1 }
+            }
+          ];
+        }
         EmployeePlan.aggregate(aggregatorOpts)
         .exec((err, plans) => {
           const summary = benefitPlans.map((plan) => {
@@ -1015,31 +1033,61 @@ const summaryInsurancePlan = {
       BenefitPlan.find({ company: user.company.detail, effectiveDate, expiredDate})
       .exec((err, benefitPlans) => {
         const allPlans = benefitPlans.map(benefitPlan => benefitPlan._id);
-        const aggregatorOpts = [
-          { $match: { company: user.company.detail._id, benefitPlan: { $in: allPlans }, confirm: true }},
-          { 
-            $lookup: {
-              from: "benefitplans",
-              localField: "benefitPlan",
-              foreignField: "_id",
-              as: "benefitPlan",
-            }
-          },
-          {
-            $group: {
-              _id: '$benefitPlan.benefitPlan.plan',
-              count: { $sum: 1 },
+        const isTimeout = moment(benefitPlans[0].timeout).isBefore(Date.now());
+        let aggregatorOpts;
+        if (isTimeout) {
+          aggregatorOpts = [
+            { $match: { company: user.company.detail._id, benefitPlan: { $in: allPlans }}},
+            { 
+              $lookup: {
+                from: "benefitplans",
+                localField: "benefitPlan",
+                foreignField: "_id",
+                as: "benefitPlan",
+              }
             },
-          },
-          {
-            $group: {
-              _id: '$_id.type',
-              planId: { $push: '$_id.planId' },
-              amount: { $push: '$count' },
+            {
+              $group: {
+                _id: '$benefitPlan.benefitPlan.plan',
+                count: { $sum: 1 },
+              },
             },
-          },
-          { $unwind: '$_id'},
-        ];
+            {
+              $group: {
+                _id: '$_id.type',
+                planId: { $push: '$_id.planId' },
+                amount: { $push: '$count' },
+              },
+            },
+            { $unwind: '$_id'},
+          ];
+        } else {
+          aggregatorOpts = [
+            { $match: { company: user.company.detail._id, benefitPlan: { $in: allPlans }, confirm: true }},
+            { 
+              $lookup: {
+                from: "benefitplans",
+                localField: "benefitPlan",
+                foreignField: "_id",
+                as: "benefitPlan",
+              }
+            },
+            {
+              $group: {
+                _id: '$benefitPlan.benefitPlan.plan',
+                count: { $sum: 1 },
+              },
+            },
+            {
+              $group: {
+                _id: '$_id.type',
+                planId: { $push: '$_id.planId' },
+                amount: { $push: '$count' },
+              },
+            },
+            { $unwind: '$_id'},
+          ];
+        }
         EmployeePlan.aggregate(aggregatorOpts)
         .exec((err, plans) => {
           const summary = plans.reduce((o, a) => Object.assign(o, { [a._id]: a }), {});
@@ -1055,7 +1103,7 @@ const summaryInsurancePlan = {
                 return Object.assign({}, {
                   planId: plan.planId._id,
                   planName: plan.planId.planName,
-                  amount: summary.master.amount[index],
+                  amount: summary.MasterPlan.amount[index],
                 });
               } else {
                 return Object.assign({}, {
@@ -1074,7 +1122,7 @@ const summaryInsurancePlan = {
                 return Object.assign({}, {
                   planId: plan.planId._id,
                   planName: plan.planId.planName,
-                  amount: summary.insurer.amount[index],
+                  amount: summary.InsurerPlan.amount[index],
                 });
               } else {
                 return Object.assign({}, {

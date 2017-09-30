@@ -340,7 +340,7 @@ const copyPlan = {
               ipdLumsumPerTime: masterPlan.ipdLumsumPerTime,
               ipdLumsumTimeNotExceedPerYear: masterPlan.ipdLumsumTimeNotExceedPerYear,
               rbLumsumRoomPerNight: masterPlan.rbLumsumRoomPerNight,
-              rbLumsumNigthNotExceedPerYear: masterPlan.rbLumsumPayNotExceedPerYear,
+              rbLumsumNigthNotExceedPerYear: masterPlan.rbLumsumNigthNotExceedPerYear,
               rbLumsumPayNotExceedPerNight: masterPlan.rbLumsumPayNotExceedPerNight,
               rbLumsumPayNotExceedPerYear: masterPlan.rbLumsumPayNotExceedPerYear,
               rbSchedulePatient: masterPlan.rbSchedulePatient,
