@@ -357,6 +357,8 @@ const biddingDetailForCompany = {
             }
           })
           .then(() => {
+            master = master.filter(plan => plan !== undefined);
+            insurer = insurer.filter(plan => plan !== undefined);
             reply({
               plan: {master, insurer},
             });
