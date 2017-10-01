@@ -300,10 +300,30 @@ const insurerClaim = {
   },
 };
 
+const userClaim = {
+  tags: ['api'],
+  auth: 'jwt',
+  validate: {
+    params: {
+      userId: Joi.string().required(),
+    },
+  },
+  handler: (request, reply) => {
+    const { userId } = request.params;
+    LogUserClaim.find({ user: userId })
+    .sort({ createdAt: -1 })
+    .exec((err, claims) => {
+      if(err) reply(err);
+      reply(claims);
+    });
+  },
+};
+
 export default function(app) {
   app.route([
     { method: 'GET', path: '/company/get-claim-list', config: getClaimListCompany },
     { method: 'PUT', path: '/company/claim/{status}/{claimId}', config: companyClaim },
+    { method: 'GET', path: '/company/claim-user/{userId}', config: userClaim },
     { method: 'GET', path: '/insurer/claim-all-company', config: claimAllCompany },
     { method: 'GET', path: '/insurer/get-claim/{companyId}', config: getClaim },
     { method: 'PUT', path: '/insurer/claim/{status}/{claimId}', config: insurerClaim },

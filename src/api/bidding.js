@@ -17,7 +17,6 @@ const bidding = {
     }
   },
   handler: (request, reply) => {
-    console.log(request);
     const { user } = request.auth.credentials;
     const { companyId } = request.params;
     const { totalPrice, quotationId } = request.payload;

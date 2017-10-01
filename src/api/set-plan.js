@@ -391,7 +391,9 @@ const getAllPlan = {
 
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
-    MasterPlan.find({ company: user.company.detail }).sort({planId: 1}).exec(function(err, plans) {
+    MasterPlan.find({ company: user.company.detail })
+    .populate({ path:'company', select: 'hrDetail'})
+    .sort({planId: 1}).exec(function(err, plans) {
       if (err) reply(err);
       reply(plans);
     });
