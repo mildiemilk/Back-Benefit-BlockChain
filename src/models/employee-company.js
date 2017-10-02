@@ -24,6 +24,7 @@ const EmployeeCompanySchema = new mongoose.Schema ({
   approve: { type: Boolean, default: false },
   startInsurance: { type: Date, required: true },
   expiredInsurance: { type: Date, required: true },
+  uploadPolicy: { type: Boolean, default: false },
 });
 
 

@@ -192,17 +192,17 @@ const insurerCustomer = {
     ];
     BiddingRelation.aggregate(aggregatorOpts)
     .exec((err, result) => {
-      EmployeeCompany.populate(result, {path: '_id', select: 'startInsurance expiredInsurance companyName logo.link numberOfEmployees completeStep'}, (err, result) => {
+      EmployeeCompany.populate(result, {path: '_id', select: 'startInsurance expiredInsurance companyName logo.link numberOfEmployees completeStep uploadPolicy'}, (err, result) => {
         const test = result.map(benefit => {
           const today = Date.now();
-          const { startInsurance, expiredInsurance } = benefit._id;
+          const { startInsurance, expiredInsurance, uploadPolicy } = benefit._id;
           let status;
           if(benefit._id.completeStep[3]) {
             status = 'pending';
-            if(moment(today).isBetween(startInsurance, expiredInsurance, null , '[]')) {
-              status = 'active';
-            } else if(moment(today).isAfter(expiredInsurance)) {
+            if(moment(today).isAfter(expiredInsurance)) {
               status = 'inActive';
+            } else if(uploadPolicy) {
+              status = 'active';
             }
           } else status = 'waiting';
 
@@ -566,7 +566,12 @@ const insurerCustomerUploadFile = {
               Promise.all(addEmployee).then(() => {
                 fs.unlink(path, (err) => {
                   if (err) throw err;
-                  reply({ message: 'upload policy success'});
+                  EmployeeCompany.findOne({ _id: companyId }).exec((err, company) => {
+                    company.uploadPolicy = true;
+                    company.save().then(() => {
+                      reply({ message: 'upload policy success'});
+                    });
+                  });
                 });
               });
             });
