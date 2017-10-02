@@ -143,7 +143,7 @@ const getCompanyList = {
         BiddingRelation.find({ 'insurers.insurerCompany': user.company.detail, confirmed: true }, null, {sort: {createdAt: -1}}).populate('company').exec((err, results) => {
           const data = results.map((result) => {
             const myDate = result.company.expiredInsurance;
-            myDate.setDate(myDate.getDate() - 1);
+            myDate.setDate(myDate.getDate() + 1);
 
             return new Promise((resolve) => {
               Bidding.findOne({ company: result.company, insurerCompany: user.company.detail }, 'countBidding',(err, bidding) => {
@@ -192,18 +192,18 @@ const insurerCustomer = {
     ];
     BiddingRelation.aggregate(aggregatorOpts)
     .exec((err, result) => {
-      console.log(result);
-      EmployeeCompany.populate(result, {path: '_id', select: 'effectiveDate, expiredDate, companyName logo.link numberOfEmployees completeStep'}, (err, result) => {
+      EmployeeCompany.populate(result, {path: '_id', select: 'startInsurance expiredInsurance companyName logo.link numberOfEmployees completeStep'}, (err, result) => {
         const test = result.map(benefit => {
           const today = Date.now();
-          const { effectiveDate, expiredDate } = benefit._id;
+          const { startInsurance, expiredInsurance } = benefit._id;
           let status;
-          if(moment(today).isBetween(effectiveDate, expiredDate, null , '[]')) {
-            status = 'active';
-          } else if(moment(today).isAfter(expiredDate)) {
-            status = 'inActive';
-          } else if(benefit._id.completeStep[3]) {
+          if(benefit._id.completeStep[3]) {
             status = 'pending';
+            if(moment(today).isBetween(startInsurance, expiredInsurance, null , '[]')) {
+              status = 'active';
+            } else if(moment(today).isAfter(expiredInsurance)) {
+              status = 'inActive';
+            }
           } else status = 'waiting';
 
           return Object.assign({}, {
@@ -211,8 +211,8 @@ const insurerCustomer = {
             companyName: benefit._id.companyName,
             logo: benefit._id.logo.link,
             numberOfEmployees: benefit._id.numberOfEmployees,
-            expiredOldInsurance: effectiveDate,
-            startNewInsurance: expiredDate,
+            expiredOldInsurance: startInsurance,
+            startNewInsurance: expiredInsurance,
             status,
           });
         });
