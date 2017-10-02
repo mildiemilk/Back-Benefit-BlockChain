@@ -517,7 +517,10 @@ const getGroupBenefit = {
 
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
-    EmployeeGroup.find({ company: user.company.detail }, 'groupName type benefitPlan defaultPlan amount', (err, groups) => {
+    EmployeeGroup.find({ company: user.company.detail })
+    .select('groupName type benefitPlan defaultPlan amount')
+    .sort({ groupName: 1 })
+    .exec((err, groups) => {
       reply(groups);
     });
   }
