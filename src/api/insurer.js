@@ -211,8 +211,8 @@ const insurerCustomer = {
             companyName: benefit._id.companyName,
             logo: benefit._id.logo.link,
             numberOfEmployees: benefit._id.numberOfEmployees,
-            expiredOldInsurance: startInsurance,
-            startNewInsurance: expiredInsurance,
+            expiredOldInsurance: expiredInsurance,
+            startNewInsurance: startInsurance,
             status,
           });
         });
