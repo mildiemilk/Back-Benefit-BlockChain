@@ -548,13 +548,12 @@ const setGroupBenefit = {
       group.benefitPlan = benefitPlan;
       group.defaultPlan = defaultPlan;
       group.save().then(() => {
-        EmployeeGroup
-        .find(
-          { company: user.company.detail },
-          'groupName type benefitPlan defaultPlan amount',
-          (err, groups) => {
-            reply(groups);
-          });
+        EmployeeGroup.find({ company: user.company.detail })
+        .select('groupName type benefitPlan defaultPlan amount')
+        .sort({ groupName: 1 })
+        .exec((err, groups) => {
+          reply(groups);
+        });
       });
     });
   }
