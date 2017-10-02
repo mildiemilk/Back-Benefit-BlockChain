@@ -589,6 +589,8 @@ const insurerCustomerUploadFileDetail = {
 
   handler: (request, reply) => {
     let { file, type, planId } = request.payload;
+    type = JSON.parse(type);
+    planId = JSON.parse(planId);
     const { storage } = request.server.app.services;
     const { user } = request.auth.credentials;
     const info = null;
