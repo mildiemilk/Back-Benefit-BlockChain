@@ -474,8 +474,8 @@ const setCompleteStep = {
                     const setBenefitPlan = employees.map((employee) => {
                       return new Promise((resolve) => {
                         EmployeeGroup.findOne({ company, groupName: employee.detail.benefitGroup }).populate('defaultPlan').exec((err, group) => {
-                          employee.detail.benefiPlan = group.defaultPlan.benefitPlanName;
-                          employee.markModified('detail');
+                          employee.detail.benefitPlan = group.defaultPlan.benefitPlanName;
+                          employee.markModified('detail.benefitPlan');
                           employee.save();
                           const employeePlan = new EmployeePlan({ user: employee, company, benefitPlan: group.defaultPlan, selectGroup: group.groupName });
                           employeePlan.save().then(() => {
