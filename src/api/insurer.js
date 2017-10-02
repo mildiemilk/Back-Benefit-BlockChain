@@ -594,26 +594,37 @@ const insurerCustomerUploadFileDetail = {
 
   handler: (request, reply) => {
     let { file, type, planId } = request.payload;
+    type = JSON.parse(type);
+    planId = JSON.parse(planId);
     const { storage } = request.server.app.services;
     const { user } = request.auth.credentials;
     const info = null;
     let planType;
-    switch(type) {
-      case 'master' : planType = MasterPlan; break;
-      case 'insurer' : planType = InsurerPlan; break;
-    }
-    storage.upload({ file }, { info }, (err, media) => {
-      if (!err) {
-        media.userId = user.id;
-        media.save().then(detail => {
-          planType.findOne({ _id: planId }).exec((err, plan) => {
-            plan.fileDetail = detail;
-            plan.save().then(() => {
-              reply({ message: 'upload detail plan success' });
+    const saveFile = file.map((file, index) => {
+      return new Promise((resolve) => {
+        const nowType = type[index];
+        const nowPlanId = planId[index];
+        switch(nowType) {
+          case 'master' : planType = MasterPlan; break;
+          case 'insurer' : planType = InsurerPlan; break;
+        }
+        storage.upload({ file }, { info }, (err, media) => {
+          if (!err) {
+            media.userId = user.id;
+            media.save().then(detail => {
+              planType.findOne({ _id: nowPlanId }).exec((err, plan) => {
+                plan.fileDetail = detail;
+                plan.save().then(() => {
+                  resolve();
+                });
+              });
             });
-          });
+          }
         });
-      }
+      });
+    });
+    Promise.all(saveFile).then(() => {
+      reply({ message: 'upload file detail success' });
     });
   }
 };
