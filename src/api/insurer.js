@@ -7,7 +7,7 @@ import fs from 'fs';
 import mongoose from 'mongoose';
 import { BiddingRelation, Role, Bidding, InsuranceCompany,
   BenefitPlan, EmployeeCompany, TemplatePlan, User, EmployeeLog,
-  MasterPlan, InsurerPlan, Media } from '../models';
+  MasterPlan, InsurerPlan, Media, EmployeePlan } from '../models';
 
 const getAllInsurer = {
   tags: ['api'],
@@ -180,7 +180,7 @@ const insurerCustomer = {
   handler: (request, reply) => {
     const { user } = request.auth.credentials;
     const aggregatorOpts = [
-      {$match: {insurerCompany: user.company.detail}},
+      {$match: {insurerCompanyWin: user.company.detail}},
       {$project:{"_id":1, "company": 1, "createdAt": 1}}, 
       {$sort:{"createdAt": -1}},
       {
@@ -190,35 +190,33 @@ const insurerCustomer = {
         },
       },
     ];
-    BenefitPlan.aggregate(aggregatorOpts)
+    BiddingRelation.aggregate(aggregatorOpts)
     .exec((err, result) => {
       console.log(result);
-      BenefitPlan.populate(result, {path: 'lastPlan', select: 'effectiveDate expiredDate'}, (err, result) => {
-        EmployeeCompany.populate(result, {path: '_id', select: 'companyName logo.link numberOfEmployees completeStep'}, (err, result) => {
-          const test = result.map(benefit => {
-            const today = Date.now();
-            const { effectiveDate, expiredDate } = benefit.lastPlan;
-            let status;
-            if(moment(today).isBetween(effectiveDate, expiredDate, null , '[]')) {
-              status = 'active';
-            } else if(moment(today).isAfter(expiredDate)) {
-              status = 'inActive';
-            } else if(benefit._id.completeStep[3]) {
-              status = 'pending';
-            } else status = 'waiting';
+      EmployeeCompany.populate(result, {path: '_id', select: 'effectiveDate, expiredDate, companyName logo.link numberOfEmployees completeStep'}, (err, result) => {
+        const test = result.map(benefit => {
+          const today = Date.now();
+          const { effectiveDate, expiredDate } = benefit._id;
+          let status;
+          if(moment(today).isBetween(effectiveDate, expiredDate, null , '[]')) {
+            status = 'active';
+          } else if(moment(today).isAfter(expiredDate)) {
+            status = 'inActive';
+          } else if(benefit._id.completeStep[3]) {
+            status = 'pending';
+          } else status = 'waiting';
 
-            return Object.assign({}, {
-              companyId: benefit._id._id,
-              companyName: benefit._id.companyName,
-              logo: benefit._id.logo.link,
-              numberOfEmployees: benefit._id.numberOfEmployees,
-              expiredOldInsurance: effectiveDate,
-              startNewInsurance: expiredDate,
-              status,
-            });
+          return Object.assign({}, {
+            companyId: benefit._id._id,
+            companyName: benefit._id.companyName,
+            logo: benefit._id.logo.link,
+            numberOfEmployees: benefit._id.numberOfEmployees,
+            expiredOldInsurance: effectiveDate,
+            startNewInsurance: expiredDate,
+            status,
           });
-          reply(test);
         });
+        reply(test);
       });
     });
   },
@@ -327,34 +325,121 @@ const insurerCustomerSelectPlan = {
   },
   handler: (request, reply) => {
     const { companyId } = request.params;
-    TemplatePlan.find({ company: companyId })
-    .sort({ createdAt: -1 })
-    .populate('plan.master.planId plan.insurer.planId')
-    .exec((err, template) => {
-      const master = template[0].plan.master.map(plan => {
-        return new Promise((resolve) => {
-          Media.populate(plan.planId, {path: 'fileDetail', select: 'name'}, () => {
-            resolve(Object.assign({}, {
-              ...plan._doc,
-              type: 'master',
-            }));
-          });
-        });
-      });
-      Promise.all(master).then((master) => {
-        const insurer = template[0].plan.insurer.map(plan => {
-          return new Promise((resolve) => {
-            Media.populate(plan.planId, {path: 'fileDetail', select: 'name'}, () => {
-              resolve(Object.assign({}, {
-                ...plan._doc,
-                type: 'insurer',
-              }));
+    // TemplatePlan.find({ company: companyId })
+    // .sort({ createdAt: -1 })
+    // .populate('plan.master.planId plan.insurer.planId')
+    // .exec((err, template) => {
+    //   const master = template[0].plan.master.map(plan => {
+    //     return new Promise((resolve) => {
+    //       Media.populate(plan.planId, {path: 'fileDetail', select: 'name'}, () => {
+    //         resolve(Object.assign({}, {
+    //           ...plan._doc,
+    //           type: 'master',
+    //         }));
+    //       });
+    //     });
+    //   });
+    //   Promise.all(master).then((master) => {
+    //     const insurer = template[0].plan.insurer.map(plan => {
+    //       return new Promise((resolve) => {
+    //         Media.populate(plan.planId, {path: 'fileDetail', select: 'name'}, () => {
+    //           resolve(Object.assign({}, {
+    //             ...plan._doc,
+    //             type: 'insurer',
+    //           }));
+    //         });
+    //       });
+    //     });
+    //     Promise.all(insurer).then((insurer) => {
+    //       const allPlan = master.concat(insurer);
+    //       reply(allPlan);
+    //     });
+    //   });
+    // });
+    EmployeeCompany.findOne({ _id: companyId }).select('startInsurance expiredInsurance').exec((err, result) => {
+      const effectiveDate = result.startInsurance;
+      const expiredDate = result.expiredInsurance;
+      BenefitPlan.find({ company: companyId, effectiveDate, expiredDate})
+      .exec((err, benefitPlans) => {
+        const allPlans = benefitPlans.map(benefitPlan => benefitPlan._id);
+        const aggregatorOpts = [
+          { $match: { company: mongoose.Types.ObjectId(companyId), benefitPlan: { $in: allPlans }}},
+          { 
+            $lookup: {
+              from: "benefitplans",
+              localField: "benefitPlan",
+              foreignField: "_id",
+              as: "benefitPlan",
+            }
+          },
+          {
+            $group: {
+              _id: '$benefitPlan.benefitPlan.plan',
+              count: { $sum: 1 },
+            },
+          },
+          {
+            $group: {
+              _id: '$_id.type',
+              planId: { $push: '$_id.planId' },
+              amount: { $push: '$count' },
+            },
+          },
+          { $unwind: '$_id'},
+        ];
+        EmployeePlan.aggregate(aggregatorOpts)
+        .exec((err, plans) => {
+          const summary = plans.reduce((o, a) => Object.assign(o, { [a._id]: a }), {});
+          TemplatePlan.find({ company: companyId }, 'plan', {sort: {createdAt: -1}})
+          .populate('plan.insurer.planId plan.master.planId')
+          .exec((err, template) => {
+            let master = template[0].plan.master.map(plan => {
+              let index = -1;
+              if(summary.MasterPlan !== undefined) {
+                index = summary.MasterPlan.planId.findIndex(p => p[0].toString() === plan.planId._id.toString());
+              }
+              if(index !== -1) {
+                return plan;
+              }
+            });
+            let insurer = template[0].plan.insurer.map(plan => {
+              let index = -1;
+              if(summary.InsurerPlan !== undefined) {
+                index = summary.InsurerPlan.planId.findIndex(p => p[0].toString() === plan.planId._id.toString());
+              }
+              if(index !== -1) {
+                return plan;
+              }
+            });
+            master = master.filter(plan => plan !== undefined);
+            insurer = insurer.filter(plan => plan !== undefined);
+            const newMaster = master.map(plan => {
+              return new Promise((resolve) => {
+                Media.populate(plan.planId, {path: 'fileDetail', select: 'name'}, () => {
+                  resolve(Object.assign({}, {
+                    ...plan._doc,
+                    type: 'master',
+                  }));
+                });
+              });
+            });
+            Promise.all(newMaster).then((master) => {
+              const newInsurer = insurer.map(plan => {
+                return new Promise((resolve) => {
+                  Media.populate(plan.planId, {path: 'fileDetail', select: 'name'}, () => {
+                    resolve(Object.assign({}, {
+                      ...plan._doc,
+                      type: 'insurer',
+                    }));
+                  });
+                });
+              });
+              Promise.all(newInsurer).then((insurer) => {
+                const allPlan = master.concat(insurer);
+                reply(allPlan);
+              });
             });
           });
-        });
-        Promise.all(insurer).then((insurer) => {
-          const allPlan = master.concat(insurer);
-          reply(allPlan);
         });
       });
     });
