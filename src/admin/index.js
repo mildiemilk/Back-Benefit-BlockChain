@@ -1,10 +1,8 @@
 import Approve from './approve';
-import FillSimpleRequirement from './fillSimpleRequirement';
 import ManageRole from './manage-role';
 
 export const register = (server, options, next) => {
   Approve(server);
-  FillSimpleRequirement(server);
   ManageRole(server);
   server.route([
     {
