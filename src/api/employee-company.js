@@ -10,20 +10,16 @@ import { EmployeeCompany, User, Media, Role,
 const registerCompany = {
   tags: ['api'],
   auth: 'jwt',
-  validate: {
-    payload: {
-      companyName: Joi.string().required(),
-      location: Joi.string().required(),
-      typeOfBusiness: Joi.string().required(),
-      hrDetail: Joi.string().required(),
-      numberOfEmployees: Joi.number().required(),
-      tel: Joi.string().required(),
-      expiredInsurance: Joi.date().required(),
-      currentInsurer: Joi.string().required(),
-    },
+  payload: {
+    output: 'stream',
+    parse: true,
+    allow: 'multipart/form-data',
+    maxBytes: 20000000,
   },
   handler: (request, reply) => {
-    const { companyName, location, typeOfBusiness, hrDetail, numberOfEmployees, tel, expiredInsurance, currentInsurer} = request.payload;
+    let { file, detail } = request.payload;
+    detail = JSON.parse(detail);
+    const { companyName, location, typeOfBusiness, hrDetail, numberOfEmployees, tel, expiredInsurance, currentInsurer } = detail;
     const { user } = request.auth.credentials;
     let startInsurance = new Date(expiredInsurance);
     startInsurance.setFullYear(startInsurance.getFullYear() - 1);
@@ -37,12 +33,30 @@ const registerCompany = {
               reply(Boom.badData('EmployeeCompany already existed'));
             } else {
               company = new EmployeeCompany({ companyName, location, typeOfBusiness, hrDetail, numberOfEmployees, tel, createdBy: hr, startInsurance, expiredInsurance, currentInsurer });
-              company.save().then(() => {
+              company.save().then((company) => {
                 User.findOneAndUpdate({ _id: hr }, { $set: { company: {kind: 'EmployeeCompany', detail: company._id} }}, () => {
-                  console.log('create company complete!');
+                  if(file) {
+                    const { storage } = request.server.app.services;
+                    const isPublic = true;
+                    storage.upload({ file }, { isPublic }, (err, media) => {
+                      if (!err) {
+                        media.userId = user.id;
+                        media.save();
+                        storage.getUrl(media.path, (url) => {
+                          if (!err) {
+                            company.logo = { mediaId: media._id, link: url };
+                            company.save((err, company) => {
+                              reply({ profile: company, message: 'setting profile success'});
+                            });
+                          }
+                        });
+                      }
+                    });
+                  } else {
+                    console.log('create company complete!');
+                    reply({ profile: company, message: 'setting profile success'});
+                  }
                 });
-                reply({profile: company,
-                  message: 'setting profile success'});
               });
             }
           });
