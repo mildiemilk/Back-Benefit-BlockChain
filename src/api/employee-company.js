@@ -19,10 +19,11 @@ const registerCompany = {
       numberOfEmployees: Joi.number().required(),
       tel: Joi.string().required(),
       expiredInsurance: Joi.date().required(),
+      currentInsurer: Joi.string().required(),
     },
   },
   handler: (request, reply) => {
-    const { companyName, location, typeOfBusiness, hrDetail, numberOfEmployees, tel, expiredInsurance} = request.payload;
+    const { companyName, location, typeOfBusiness, hrDetail, numberOfEmployees, tel, expiredInsurance, currentInsurer} = request.payload;
     const { user } = request.auth.credentials;
     let startInsurance = new Date(expiredInsurance);
     startInsurance.setFullYear(startInsurance.getFullYear() - 1);
@@ -35,7 +36,7 @@ const registerCompany = {
             if (company) {
               reply(Boom.badData('EmployeeCompany already existed'));
             } else {
-              company = new EmployeeCompany({ companyName, location, typeOfBusiness, hrDetail, numberOfEmployees, tel, createdBy: hr, startInsurance, expiredInsurance });
+              company = new EmployeeCompany({ companyName, location, typeOfBusiness, hrDetail, numberOfEmployees, tel, createdBy: hr, startInsurance, expiredInsurance, currentInsurer });
               company.save().then(() => {
                 User.findOneAndUpdate({ _id: hr }, { $set: { company: {kind: 'EmployeeCompany', detail: company._id} }}, () => {
                   console.log('create company complete!');
