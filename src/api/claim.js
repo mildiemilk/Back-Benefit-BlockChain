@@ -1,6 +1,7 @@
 import Joi from 'joi';
 import Boom from 'boom';
 import mongoose from 'mongoose';
+import moment from 'moment';
 import { LogUserClaim, User, EmployeeCompany, Role, BenefitPlan } from '../models';
 
 const getClaimListCompany = {
@@ -161,17 +162,27 @@ const claimAllCompany = {
         LogUserClaim.aggregate(aggregatorOpts)
         .exec((err, claims) => {
           if(claims.length > 0) {
-            EmployeeCompany.populate(claims, {path: '_id', select: 'companyName logo.link numberOfEmployees'}, (err, companys) => {
+            EmployeeCompany.populate(claims, {path: '_id', select: 'companyName startInsurance expiredInsurance logo.link numberOfEmployees'}, (err, companys) => {
               const test = companys.map(company => {
-                const index = result.findIndex((element) => element._id.toString() === company._id._id.toString());
-                const { effectiveDate, expiredDate } = result[index].lastPlan;
+                const { startInsurance, expiredInsurance } = company._id;
+                const today = Date.now();
+                let start, end;
+                if (moment(today).isBetween(startInsurance, expiredInsurance, null, "[]")) {
+                  start = new Date(startInsurance);
+                  start.setFullYear(start.getFullYear() + 1);
+                  end = expiredInsurance;
+                } else {
+                  start = startInsurance;
+                  end = new Date(expiredInsurance);
+                  end.setFullYear(end.getFullYear() - 1);
+                }
                 return Object.assign({}, {
                   companyId: company._id._id,
                   companyName: company._id.companyName,
                   logo: company._id.logo.link,
                   numberOfEmployees: company._id.numberOfEmployees,
-                  expiredOldInsurance: expiredDate,
-                  startNewInsurance: effectiveDate,
+                  expiredOldInsurance: end,
+                  startNewInsurance: start,
                   amount: company.amount,
                 });
               });

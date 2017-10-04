@@ -142,8 +142,18 @@ const getCompanyList = {
       if(role === 'Insurer'){
         BiddingRelation.find({ 'insurers.insurerCompany': user.company.detail, confirmed: true }, null, {sort: {createdAt: -1}}).populate('company').exec((err, results) => {
           const data = results.map((result) => {
-            const myDate = result.company.expiredInsurance;
-            myDate.setDate(myDate.getDate() + 1);
+            const { startInsurance, expiredInsurance } = result.company;
+            const today = Date.now();
+            let start, end;
+            if (moment(today).isBetween(startInsurance, expiredInsurance, null, "[]")) {
+              start = new Date(startInsurance);
+              start.setFullYear(start.getFullYear() + 1);
+              end = expiredInsurance;
+            } else {
+              start = startInsurance;
+              end = new Date(expiredInsurance);
+              end.setFullYear(end.getFullYear() - 1);
+            }
 
             return new Promise((resolve) => {
               Bidding.findOne({ company: result.company, insurerCompany: user.company.detail }, 'countBidding',(err, bidding) => {
@@ -157,8 +167,8 @@ const getCompanyList = {
                   logo: result.company.logo.link,
                   countBidding,
                   numberOfEmployees: result.company.numberOfEmployees,
-                  expiredOldInsurance: result.company.expiredInsurance,
-                  startNewInsurance: myDate,
+                  expiredOldInsurance: end,
+                  startNewInsurance: start,
                   status: result.insurers.find((insurer) => insurer.insurerCompany.toString() === user.company.detail.toString()).status,
                   candidateInsurer: result.insurers.length,
                   minPrice: result.minPrice,
@@ -181,7 +191,7 @@ const insurerCustomer = {
     const { user } = request.auth.credentials;
     const aggregatorOpts = [
       {$match: {insurerCompanyWin: user.company.detail}},
-      {$project:{"_id":1, "company": 1, "createdAt": 1}}, 
+      {$project:{"_id":1, "company": 1, "createdAt": 1}},
       {$sort:{"createdAt": -1}},
       {
         $group: {
@@ -194,10 +204,20 @@ const insurerCustomer = {
     .exec((err, result) => {
       EmployeeCompany.populate(result, {path: '_id', select: 'startInsurance expiredInsurance companyName logo.link numberOfEmployees completeStep uploadPolicy'}, (err, result) => {
         const test = result.map(benefit => {
+          const { startInsurance, expiredInsurance, uploadPolicy, completeStep, _id, companyName, logo, numberOfEmployees } = benefit._id;
           const today = Date.now();
-          const { startInsurance, expiredInsurance, uploadPolicy } = benefit._id;
+          let start, end;
+          if (moment(today).isBetween(startInsurance, expiredInsurance, null, "[]")) {
+            start = new Date(startInsurance);
+            start.setFullYear(start.getFullYear() + 1);
+            end = expiredInsurance;
+          } else {
+            start = startInsurance;
+            end = new Date(expiredInsurance);
+            end.setFullYear(end.getFullYear() - 1);
+          }
           let status;
-          if(benefit._id.completeStep[3]) {
+          if(completeStep[3]) {
             status = 'pending';
             if(moment(today).isAfter(expiredInsurance)) {
               status = 'inActive';
@@ -207,12 +227,12 @@ const insurerCustomer = {
           } else status = 'waiting';
 
           return Object.assign({}, {
-            companyId: benefit._id._id,
-            companyName: benefit._id.companyName,
-            logo: benefit._id.logo.link,
-            numberOfEmployees: benefit._id.numberOfEmployees,
-            expiredOldInsurance: expiredInsurance,
-            startNewInsurance: startInsurance,
+            companyId: _id,
+            companyName: companyName,
+            logo: logo.link,
+            numberOfEmployees: numberOfEmployees,
+            expiredOldInsurance: end,
+            startNewInsurance: start,
             status,
           });
         });
