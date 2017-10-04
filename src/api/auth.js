@@ -23,6 +23,9 @@ const login = {
         let approve = null;
         let logo = {};
         let personalVerify = false;
+        let employeeName;
+        let employeeCode;
+        let employeeProfilePic = null;
         User.findOne({ _id: user._id }).populate('company.detail role').exec((err, uCompany) => {
           const role = uCompany.role.roleName;
           logo.link = null;
@@ -46,6 +49,11 @@ const login = {
           } else {
             if (role === 'Employee') {
               personalVerify = user.detail.personalVerify;
+              employeeName = user.detail.name + ' ' + user.detail.lastname;
+              employeeCode = user.detail.employeeCode;
+              if(user.detail.profilePic) {
+                employeeProfilePic = user.detail.profilePic.link;
+              }
             }
             const { auth } = request.server.app.services;
             const token = auth.createAuthToken(user);
@@ -62,6 +70,9 @@ const login = {
                   approve: approve,
                   role: role,
                   personalVerify,
+                  employeeName,
+                  employeeCode,
+                  employeeProfilePic,
                   newUser: result.length === 1,
                 });
               }
