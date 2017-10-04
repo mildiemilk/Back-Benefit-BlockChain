@@ -131,7 +131,7 @@ const uploadEmployee = {
                 // const password = Math.random().toString(36).slice(-8) + alpha[num]; //may be base 58
                 //---------------------------------------------------------------
                 return new Promise((resolve) => {
-                  const detail = {
+                  let detail = {
                     email: employee.email,
                     password: 'Benefit2017',
                     role,
@@ -139,11 +139,6 @@ const uploadEmployee = {
                     detail: {
                       employeeCode: employee.employee_code,
                       gender: employee.gender,
-                      profilePic: null,
-                      personalVerify: false,
-                      personalEmail: null,
-                      policyNumber: null,
-                      memberNumber: null,
                       prefix: employee.prefix,
                       name: employee.name,
                       lastname: employee.lastname,
@@ -153,30 +148,59 @@ const uploadEmployee = {
                       title: employee.title,
                       department: employee.department,
                       level: employee.level,
-                      endDate: null,
                       startDate: moment(employee.start_date, "DD-MM-YYYY").toDate(),
                       nationality: employee.nationality,
-                      benefitPlan: null,
                       address: employee.address,
                       benefitGroup: employee.benefit_group,
                       dateOfBirth: moment(employee.date_of_birth, "DD-MM-YYYY").toDate(),
                       accountNumber: employee.account_number,
                       bankName: employee.bank_name,
                       marriageStatus: employee.marriage_status,
-                      familyDetail: [],
                     }
                   };
-                  const newEmployee = new User(detail);
-                  newEmployee.save().then((emp) => {
-                    const { mailer } = request.server.app.services;
-                    mailer.sendMailToEmployee(detail.email, detail.password);
-                    resolve(emp);
+                  User.findOne({ email: detail.email, "detail.employeeCode": detail.detail.employeeCode, company: detail.company }).exec((err, emp) => {
+                    if(emp) {
+                      emp.detail = detail.detail;
+                      emp.save().then((emp) => {
+                        resolve(emp);
+                      });
+                    } else {
+                      User.findOne({ email: detail.email, company: detail.company }).exec((err, emp) => {
+                        if(emp) {
+                          resolve(emp);
+                        } else {
+                          User.findOne({ "detail.employeeCode": detail.detail.employeeCode, company: detail.company }).exec((err, emp) => {
+                            if(emp) {
+                              resolve(emp);
+                            } else {
+                              detail.detail = {
+                                ...detail.detail,
+                                profilePic: null,
+                                personalVerify: false,
+                                personalEmail: null,
+                                policyNumber: null,
+                                memberNumber: null,
+                                endDate: null,
+                                benefitPlan: null,
+                                familyDetail: [],
+                              };
+                              const newEmployee = new User(detail);
+                              newEmployee.save().then((emp) => {
+                                const { mailer } = request.server.app.services;
+                                mailer.sendMailToEmployee(detail.email, detail.password);
+                                resolve(emp);
+                              });
+                            }
+                          });
+                        }
+                      });
+                    }
                   });
                 });
               });
               Promise.all(addEmployee).then(() => {
                 const aggregatorOpts = [
-                  { $match: { "company.detail": user.company.detail, "role": role } },
+                  { $match: { "company.detail": user.company.detail, "role": role, "deleted": false } },
                   {
                     $group: {
                       _id: "$detail.benefitGroup",
@@ -201,8 +225,15 @@ const uploadEmployee = {
                     const company = user.company.detail;
                     const groupName = element._id;
                     const amount = element.count;
-                    const newGroup = new EmployeeGroup({ company, groupName, amount });
-                    newGroup.save();
+                    EmployeeGroup.findOne({ groupName, company }).exec((err, group) => {
+                      if(group) {
+                        group.amount = amount;
+                        group.save();
+                      } else {
+                        const newGroup = new EmployeeGroup({ company, groupName, amount });
+                        newGroup.save();
+                      }
+                    });
                   });
                 });
               });
