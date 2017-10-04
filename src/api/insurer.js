@@ -586,12 +586,7 @@ const insurerCustomerUploadFile = {
               Promise.all(addEmployee).then(() => {
                 fs.unlink(path, (err) => {
                   if (err) throw err;
-                  EmployeeCompany.findOne({ _id: companyId }).exec((err, company) => {
-                    company.uploadPolicy = true;
-                    company.save().then(() => {
-                      reply({ message: 'upload policy success'});
-                    });
-                  });
+                  reply({ message: 'upload policy success'});
                 });
               });
             });
@@ -620,31 +615,38 @@ const insurerCustomerUploadFileDetail = {
     const { user } = request.auth.credentials;
     const info = null;
     let planType;
+    let companyId;
     const saveFile = file.map((file, index) => {
       return new Promise((resolve) => {
-        const nowType = type[index];
-        const nowPlanId = planId[index];
-        switch(nowType) {
-          case 'master' : planType = MasterPlan; break;
-          case 'insurer' : planType = InsurerPlan; break;
-        }
         storage.upload({ file }, { info }, (err, media) => {
           if (!err) {
             media.userId = user.id;
             media.save().then(detail => {
+              const nowType = type[index];
+              const nowPlanId = planId[index];
+              switch(nowType) {
+                case 'master' : planType = MasterPlan; break;
+                case 'insurer' : planType = InsurerPlan; break;
+              }
               planType.findOne({ _id: nowPlanId }).exec((err, plan) => {
+                companyId = plan.company;
                 plan.fileDetail = detail;
                 plan.save().then(() => {
                   resolve();
                 });
               });
             });
-          }
+          } else reply(err);
         });
       });
     });
     Promise.all(saveFile).then(() => {
-      reply({ message: 'upload file detail success' });
+      EmployeeCompany.findOne({ _id: companyId }).exec((err, company) => {
+        company.uploadPolicy = true;
+        company.save().then(() => {
+          reply({ message: 'upload file detail success' });
+        });
+      });
     });
   }
 };
