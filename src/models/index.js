@@ -1,7 +1,6 @@
 import UserModel from './user';
 import EmployeeCompanyModel from './employee-company';
 import InsuranceCompanyModel from './insurance-company';
-import SimpleRequirementModel from './simpleRequirement';
 import MasterPlanModel from './master-plan';
 import BiddingModel from './bidding';
 import BiddingRelationModel from './bidding-relation';
@@ -18,7 +17,6 @@ import EmployeeLogModel from './employee-log';
 export const User = UserModel;
 export const EmployeeCompany = EmployeeCompanyModel;
 export const InsuranceCompany = InsuranceCompanyModel;
-export const SimpleRequirement = SimpleRequirementModel;
 export const MasterPlan = MasterPlanModel;
 export const Bidding = BiddingModel;
 export const BiddingRelation = BiddingRelationModel;
@@ -36,7 +34,6 @@ export default {
   User,
   EmployeeCompany,
   InsuranceCompany,
-  SimpleRequirement,
   MasterPlan,
   Bidding,
   BiddingRelation,
