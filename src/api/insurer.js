@@ -192,10 +192,10 @@ const insurerCustomer = {
     const aggregatorOpts = [
       {$match: {insurerCompanyWin: user.company.detail}},
       {$project:{"_id":1, "company": 1, "createdAt": 1}},
-      {$sort:{"createdAt": -1}},
+      {$sort:{"createdAt": 1}},
       {
         $group: {
-          _id: "$company", 
+          _id: "$company",
           lastPlan: { $first: "$_id" }
         },
       },
