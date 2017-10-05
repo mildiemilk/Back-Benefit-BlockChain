@@ -31,8 +31,7 @@ const login = {
           logo.link = null;
           if (role !== 'Employee' && user.emailConfirmedAt === null) {
             reply(Boom.unauthorized('กรุณายืนยันอีเมลของคุณด้วยค่ะ'));
-          }
-          if (uCompany.company.detail) {
+          } else if (uCompany.company.detail) {
             company = uCompany.company.detail.companyName;
             approve = uCompany.company.detail.approve;
             logo = uCompany.company.detail.logo;
@@ -41,8 +40,7 @@ const login = {
             } else if (!uCompany.company.detail.approve && role !== 'Insurer') {
               reply(Boom.unauthorized('บริษัทของคุณยังไม่ได้อนุมัติ กรุณาติดต่อเจ้าหน้าที่'));
             } 
-          }
-          if (user.deleted) {
+          } else if (user.deleted) {
             reply(Boom.unauthorized('สัญญาของคุณหมดอายุ กรุณาติดต่อเจ้าหน้าที่'));
           } else if (!user.comparePassword(password)) {
             reply(Boom.unauthorized('อีเมลหรือพาวเวิร์ดไม่ถูกต้อง'));

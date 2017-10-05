@@ -35,7 +35,7 @@ const registerCompany = {
               company = new EmployeeCompany({ companyName, location, typeOfBusiness, hrDetail, numberOfEmployees, tel, createdBy: hr, startInsurance, expiredInsurance, currentInsurer });
               company.save().then((company) => {
                 User.findOneAndUpdate({ _id: hr }, { $set: { company: {kind: 'EmployeeCompany', detail: company._id} }}, () => {
-                  if(file) {
+                  if(file !== 'null') {
                     const { storage } = request.server.app.services;
                     const isPublic = true;
                     storage.upload({ file }, { isPublic }, (err, media) => {
