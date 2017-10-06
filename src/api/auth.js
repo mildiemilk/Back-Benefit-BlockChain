@@ -31,7 +31,8 @@ const login = {
           logo.link = null;
           if (role !== 'Employee' && user.emailConfirmedAt === null) {
             reply(Boom.unauthorized('กรุณายืนยันอีเมลของคุณด้วยค่ะ'));
-          } else if (uCompany.company.detail) {
+          }
+          if (uCompany.company.detail) {
             company = uCompany.company.detail.companyName;
             approve = uCompany.company.detail.approve;
             logo = uCompany.company.detail.logo;
@@ -39,42 +40,43 @@ const login = {
               reply(Boom.unauthorized('สัญญาของคุณหมดอายุ กรุณาติดต่อเจ้าหน้าที่'));
             } else if (!uCompany.company.detail.approve && role !== 'Insurer') {
               reply(Boom.unauthorized('บริษัทของคุณยังไม่ได้อนุมัติ กรุณาติดต่อเจ้าหน้าที่'));
-            } else if (user.deleted) {
-              reply(Boom.unauthorized('สัญญาของคุณหมดอายุ กรุณาติดต่อเจ้าหน้าที่'));
-            } else if (!user.comparePassword(password)) {
-              reply(Boom.unauthorized('อีเมลหรือพาวเวิร์ดไม่ถูกต้อง'));
-            } else {
-              if (role === 'Employee') {
-                personalVerify = user.detail.personalVerify;
-                employeeName = user.detail.name + ' ' + user.detail.lastname;
-                employeeCode = user.detail.employeeCode;
-                if(user.detail.profilePic) {
-                  employeeProfilePic = user.detail.profilePic.link;
-                }
+            } 
+          }
+          if (user.deleted) {
+            reply(Boom.unauthorized('สัญญาของคุณหมดอายุ กรุณาติดต่อเจ้าหน้าที่'));
+          } else if (!user.comparePassword(password)) {
+            reply(Boom.unauthorized('อีเมลหรือพาวเวิร์ดไม่ถูกต้อง'));
+          } else {
+            if (role === 'Employee') {
+              personalVerify = user.detail.personalVerify;
+              employeeName = user.detail.name + ' ' + user.detail.lastname;
+              employeeCode = user.detail.employeeCode;
+              if(user.detail.profilePic) {
+                employeeProfilePic = user.detail.profilePic.link;
               }
-              const { auth } = request.server.app.services;
-              const token = auth.createAuthToken(user);
-              EmployeePlan
-              .find({ company: user.company.detail, user: user._id })
-              .exec((err, result) => {
-                if (err) {
-                  reply(err);
-                } else {
-                  reply({
-                    token,
-                    companyName: company,
-                    logo: logo.link || null,
-                    approve: approve,
-                    role: role,
-                    personalVerify,
-                    employeeName,
-                    employeeCode,
-                    employeeProfilePic,
-                    newUser: result.length === 1,
-                  });
-                }
-              });
             }
+            const { auth } = request.server.app.services;
+            const token = auth.createAuthToken(user);
+            EmployeePlan
+            .find({ company: user.company.detail, user: user._id })
+            .exec((err, result) => {
+              if (err) {
+                reply(err);
+              } else {
+                reply({
+                  token,
+                  companyName: company,
+                  logo: logo.link || null,
+                  approve: approve,
+                  role: role,
+                  personalVerify,
+                  employeeName,
+                  employeeCode,
+                  employeeProfilePic,
+                  newUser: result.length === 1,
+                });
+              }
+            });
           }
         });
       }
