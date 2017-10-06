@@ -22,6 +22,7 @@ const registerCompany = {
     const { companyName, location, typeOfBusiness, hrDetail, numberOfEmployees, tel, expiredInsurance, currentInsurer } = detail;
     const { user } = request.auth.credentials;
     let startInsurance = new Date(expiredInsurance);
+    startInsurance.setDate(startInsurance.getDate() + 1);
     startInsurance.setFullYear(startInsurance.getFullYear() - 1);
     let hr = user._id;
     Role.findOne({ _id: user.role }).then((thisRole) => {
