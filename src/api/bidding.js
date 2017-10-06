@@ -1,5 +1,6 @@
 import Joi from 'joi';
 import Boom from 'boom';
+import moment from 'moment';
 import { Bidding, BiddingRelation, User, MasterPlan, InsurerPlan, Role, TemplatePlan } from '../models';
 
 const bidding = {
@@ -193,8 +194,18 @@ const biddingDetailForInsurer = {
     const { companyId } = request.params;
     const { user } = request.auth.credentials;
     BiddingRelation.findOne({ 'insurers.insurerCompany': user.company.detail, company: companyId }).populate('company').exec((err, result) => {
-      const myDate = result.company.expiredInsurance;
-      myDate.setDate(myDate.getDate() - 1);
+      const { startInsurance, expiredInsurance } = result.company;
+      const today = Date.now();
+      let start, end;
+      if (moment(today).isBetween(startInsurance, expiredInsurance, null, "[]")) {
+        start = new Date(startInsurance);
+        start.setFullYear(start.getFullYear() + 1);
+        end = expiredInsurance;
+      } else {
+        start = startInsurance;
+        end = new Date(expiredInsurance);
+        end.setFullYear(end.getFullYear() - 1);
+      }
       Bidding.findOne({ company: companyId, insurerCompany: user.company.detail }, (err, bidding) => {
         if (bidding) {
           let master = [];
@@ -256,8 +267,8 @@ const biddingDetailForInsurer = {
                 companyName: result.company.companyName,
                 logo: result.company.logo.link,
                 numberOfEmployees: result.company.numberOfEmployees,
-                expiredOldInsurance: result.company.expiredInsurance,
-                startNewInsurance: myDate,
+                expiredOldInsurance: start,
+                startNewInsurance: end,
                 status: result.insurers.find((insurer) => insurer.insurerCompany.toString() === user.company.detail.toString()).status,
                 candidateInsurer: result.insurers.length,
                 minPrice: result.minPrice,
@@ -298,8 +309,8 @@ const biddingDetailForInsurer = {
                 companyName: result.company.companyName,
                 logo: result.company.logo.link,
                 numberOfEmployees: result.company.numberOfEmployees,
-                expiredOldInsurance: result.company.expiredInsurance,
-                startNewInsurance: myDate,
+                expiredOldInsurance: end,
+                startNewInsurance: start,
                 status: result.insurers.find((insurer) => insurer.insurerCompany.toString() === user.company.detail.toString()).status,
                 candidateInsurer: result.insurers.length,
                 minPrice: result.minPrice,
