@@ -616,6 +616,9 @@ const insurerCustomerUploadFileDetail = {
     const info = null;
     let planType;
     let companyId;
+    if (!Array.isArray(file)) {
+      file = [file];
+    }
     const saveFile = file.map((file, index) => {
       return new Promise((resolve) => {
         storage.upload({ file }, { info }, (err, media) => {
