@@ -175,9 +175,18 @@ const uploadEmployee = {
                   };
                   User.findOne({ email: detail.email, "detail.employeeCode": detail.detail.employeeCode, company: detail.company }).exec((err, emp) => {
                     if(emp) {
-                      emp.detail = detail.detail;
+                      const newDetail = Object.assign(emp.detail, detail.detail);
+                      emp.detail = newDetail;
                       emp.save().then((emp) => {
-                        resolve(emp);
+                        EmployeeGroup.findOne({ company: detail.company.detail, groupName: emp.detail.benefitGroup }).populate('defaultPlan').exec((err, group) => {
+                          if (group) {
+                            emp.detail.benefitPlan = group.defaultPlan.benefitPlanName;
+                            emp.markModified('detail.benefitPlan');
+                            emp.save().then((emp) => {
+                              resolve(emp);
+                            });
+                          } else resolve(emp);
+                        });
                       });
                     } else {
                       User.findOne({ email: detail.email, company: detail.company }).exec((err, emp) => {
@@ -203,7 +212,18 @@ const uploadEmployee = {
                               newEmployee.save().then((emp) => {
                                 const { mailer } = request.server.app.services;
                                 mailer.sendMailToEmployee(detail.email, detail.password);
-                                resolve(emp);
+                                EmployeeGroup.findOne({ company: detail.company.detail, groupName: emp.detail.benefitGroup }).populate('defaultPlan').exec((err, group) => {
+                                  if (group) {
+                                    emp.detail.benefitPlan = group.defaultPlan.benefitPlanName;
+                                    emp.markModified('detail.benefitPlan');
+                                    emp.save().then((emp) => {
+                                      const employeePlan = new EmployeePlan({ user: emp, company: detail.company.detail, benefitPlan: group.defaultPlan, selectGroup: group.groupName });
+                                      employeePlan.save().then(() => {
+                                        resolve(emp);
+                                      });
+                                    });
+                                  } else resolve(emp);
+                                });
                               });
                             }
                           });
