@@ -145,67 +145,76 @@ const claimAllCompany = {
     ];
     BenefitPlan.aggregate(aggregatorOpts)
     .exec((err, result) => {
-      BenefitPlan.populate(result, {path: 'lastPlan', select: 'effectiveDate expiredDate'}, (err, result) => {
-        const companyList = result.map(result => result._id);
-        const aggregatorOpts = [
-          { $match: { company: { $in: companyList }, status: 'pending' , type: 'insurance'}},
-          {
-            $group: {
-              _id: '$company',
-              amount: { $sum: 1 },
-            },
+      const companyList = result.map(result => result._id);
+      const aggregatorOpts = [
+        { $match: { company: { $in: companyList }, status: 'pending' , type: 'insurance'}},
+        {
+          $group: {
+            _id: '$company',
+            amount: { $sum: 1 },
           },
-          {
-            $sort: { _id: 1 }
-          }
-        ];
-        LogUserClaim.aggregate(aggregatorOpts)
-        .exec((err, claims) => {
-          if(claims.length > 0) {
-            EmployeeCompany.populate(claims, {path: '_id', select: 'companyName startInsurance expiredInsurance logo.link numberOfEmployees'}, (err, companys) => {
-              const test = companys.map(company => {
-                const { startInsurance, expiredInsurance } = company._id;
-                const today = Date.now();
-                let start, end;
-                if (moment(today).isBetween(startInsurance, expiredInsurance, null, "[]")) {
-                  start = new Date(startInsurance);
-                  start.setFullYear(start.getFullYear() + 1);
-                  end = expiredInsurance;
-                } else {
-                  start = startInsurance;
-                  end = new Date(expiredInsurance);
-                  end.setFullYear(end.getFullYear() - 1);
-                }
-                return Object.assign({}, {
-                  companyId: company._id._id,
-                  companyName: company._id.companyName,
-                  logo: company._id.logo.link,
-                  numberOfEmployees: company._id.numberOfEmployees,
-                  expiredOldInsurance: end,
-                  startNewInsurance: start,
-                  amount: company.amount,
-                });
+        },
+        {
+          $sort: { _id: 1 }
+        }
+      ];
+      LogUserClaim.aggregate(aggregatorOpts)
+      .exec((err, claims) => {
+        if(claims.length > 0) {
+          EmployeeCompany.populate(claims, {path: '_id', select: 'companyName startInsurance expiredInsurance logo.link numberOfEmployees'}, (err, companys) => {
+            const test = companys.map(company => {
+              const { startInsurance, expiredInsurance } = company._id;
+              const today = Date.now();
+              let start, end;
+              if (moment(today).isBetween(startInsurance, expiredInsurance, null, "[]")) {
+                start = new Date(startInsurance);
+                start.setFullYear(start.getFullYear() + 1);
+                end = expiredInsurance;
+              } else {
+                start = startInsurance;
+                end = new Date(expiredInsurance);
+                end.setFullYear(end.getFullYear() - 1);
+              }
+              return Object.assign({}, {
+                companyId: company._id._id,
+                companyName: company._id.companyName,
+                logo: company._id.logo.link,
+                numberOfEmployees: company._id.numberOfEmployees,
+                expiredOldInsurance: end,
+                startNewInsurance: start,
+                amount: company.amount,
               });
-              reply(test);
             });
-          } else {
-            EmployeeCompany.populate(result, {path: '_id', select: 'companyName logo.link numberOfEmployees'}, (err, companys) => {
-              const test = companys.map(company => {
-                const { effectiveDate, expiredDate } = company.lastPlan;
-                return Object.assign({}, {
-                  companyId: company._id._id,
-                  companyName: company._id.companyName,
-                  logo: company._id.logo.link,
-                  numberOfEmployees: company._id.numberOfEmployees,
-                  expiredOldInsurance: expiredDate,
-                  startNewInsurance: effectiveDate,
-                  amount: 0,
-                });
+            reply(test);
+          });
+        } else {
+          EmployeeCompany.populate(result, {path: '_id', select: 'companyName startInsurance expiredInsurance logo.link numberOfEmployees'}, (err, companys) => {
+            const test = companys.map(company => {
+              const { startInsurance, expiredInsurance } = company._id;
+              const today = Date.now();
+              let start, end;
+              if (moment(today).isBetween(startInsurance, expiredInsurance, null, "[]")) {
+                start = new Date(startInsurance);
+                start.setFullYear(start.getFullYear() + 1);
+                end = expiredInsurance;
+              } else {
+                start = startInsurance;
+                end = new Date(expiredInsurance);
+                end.setFullYear(end.getFullYear() - 1);
+              }
+              return Object.assign({}, {
+                companyId: company._id._id,
+                companyName: company._id.companyName,
+                logo: company._id.logo.link,
+                numberOfEmployees: company._id.numberOfEmployees,
+                expiredOldInsurance: end,
+                startNewInsurance: start,
+                amount: 0,
               });
-              reply(test);
             });
-          }
-        });
+            reply(test);
+          });
+        }
       });
     });
   },
@@ -235,11 +244,23 @@ const getClaim = {
     ];
     LogUserClaim.find({ company: companyId, type: 'insurance' }, 'detail status claimNumber _id updatedAt reason')
     .exec((err, claims) => {
-      EmployeeCompany.findOne({ _id: companyId }, 'logo.link companyName effectiveDate expriedDate numberOfEmployees', (err, com) => {
+      EmployeeCompany.findOne({ _id: companyId }, 'logo.link companyName startInsurance expiredInsurance numberOfEmployees', (err, com) => {
+        const { startInsurance, expiredInsurance } = com;
+        const today = Date.now();
+        let start, end;
+        if (moment(today).isBetween(startInsurance, expiredInsurance, null, "[]")) {
+          start = new Date(startInsurance);
+          start.setFullYear(start.getFullYear() + 1);
+          end = expiredInsurance;
+        } else {
+          start = startInsurance;
+          end = new Date(expiredInsurance);
+          end.setFullYear(end.getFullYear() - 1);
+        }
         const company = {
           numberOfEmployees: com.numberOfEmployees,
-          startInsurance: com.effectiveDate,
-          expiredInsurance: com.expiredDate,
+          startInsurance: start,
+          expiredInsurance: end,
           logo: com.logo.link,
           companyName: com.companyName,
         };
