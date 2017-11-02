@@ -164,61 +164,36 @@ const claimAllCompany = {
       ];
       LogUserClaim.aggregate(aggregatorOpts)
       .exec((err, claims) => {
-        if(claims.length > 0) {
-          EmployeeCompany.populate(claims, {path: '_id', select: 'companyName startInsurance expiredInsurance logo.link numberOfEmployees'}, (err, companys) => {
-            const test = companys.map(company => {
-              const { startInsurance, expiredInsurance } = company._id;
-              const today = Date.now();
-              let start, end;
-              if (moment(today).isBetween(startInsurance, expiredInsurance, null, "[]")) {
-                start = new Date(startInsurance);
-                start.setFullYear(start.getFullYear() + 1);
-                end = expiredInsurance;
-              } else {
-                start = startInsurance;
-                end = new Date(expiredInsurance);
-                end.setFullYear(end.getFullYear() - 1);
-              }
-              return Object.assign({}, {
-                companyId: company._id._id,
-                companyName: company._id.companyName,
-                logo: company._id.logo.link,
-                numberOfEmployees: company._id.numberOfEmployees,
-                expiredOldInsurance: end,
-                startNewInsurance: start,
-                amount: company.amount,
-              });
+        EmployeeCompany.populate(result, {path: '_id', select: 'companyName startInsurance expiredInsurance logo.link numberOfEmployees'}, (err, companys) => {
+          const test = companys.map(company => {
+            const { startInsurance, expiredInsurance, companyName, logo, numberOfEmployees, _id } = company._id;
+            const today = Date.now();
+            let start, end, amount = 0;
+            const index = claims.findIndex(element => element._id.toString() === _id.toString());
+            if (moment(today).isBetween(startInsurance, expiredInsurance, null, "[]")) {
+              start = new Date(startInsurance);
+              start.setFullYear(start.getFullYear() + 1);
+              end = expiredInsurance;
+            } else {
+              start = startInsurance;
+              end = new Date(expiredInsurance);
+              end.setFullYear(end.getFullYear() - 1);
+            }
+            if ( index !== -1) {
+              amount = claims[index].amount;
+            }
+            return Object.assign({}, {
+              companyId: _id,
+              companyName: companyName,
+              logo: logo.link,
+              numberOfEmployees: numberOfEmployees,
+              expiredOldInsurance: end,
+              startNewInsurance: start,
+              amount: amount,
             });
-            reply(test);
           });
-        } else {
-          EmployeeCompany.populate(result, {path: '_id', select: 'companyName startInsurance expiredInsurance logo.link numberOfEmployees'}, (err, companys) => {
-            const test = companys.map(company => {
-              const { startInsurance, expiredInsurance } = company._id;
-              const today = Date.now();
-              let start, end;
-              if (moment(today).isBetween(startInsurance, expiredInsurance, null, "[]")) {
-                start = new Date(startInsurance);
-                start.setFullYear(start.getFullYear() + 1);
-                end = expiredInsurance;
-              } else {
-                start = startInsurance;
-                end = new Date(expiredInsurance);
-                end.setFullYear(end.getFullYear() - 1);
-              }
-              return Object.assign({}, {
-                companyId: company._id._id,
-                companyName: company._id.companyName,
-                logo: company._id.logo.link,
-                numberOfEmployees: company._id.numberOfEmployees,
-                expiredOldInsurance: end,
-                startNewInsurance: start,
-                amount: 0,
-              });
-            });
-            reply(test);
-          });
-        }
+          reply(test);
+        });
       });
     });
   },
