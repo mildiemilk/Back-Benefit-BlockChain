@@ -4,7 +4,8 @@ import mongoose from 'mongoose';
 import moment from 'moment';
 import os  from 'os';
 import Fabric_Client from 'fabric-client';
-import path          from 'path';
+import path from 'path';
+import util from 'util';
 import { LogUserClaim, User, EmployeeCompany, Role, BenefitPlan } from '../models';
 
 const getClaimListCompany = {
@@ -329,9 +330,9 @@ const insurerClaim = {
           } else {
             console.log("submit recording of a claim: " + claim);
             
-            var Key = claim.logUserClaimId;
+            var Key = claim.logUserClaimId.toString();
             var Name = claim.detail.name;
-            var Hospital = claim.detail.hospital;
+            var Hospital = claim.detail.location;
             var ICD10 = claim.detail.ICD10;
             var DateClaim = claim.detail.date;
             var Price = claim.detail.amount;
@@ -366,16 +367,16 @@ const insurerClaim = {
               return fabric_client.getUserContext('user1', true);
             }).then((user_from_store) => {
               if (user_from_store && user_from_store.isEnrolled()) {
-                  console.log('Successfully loaded user1 from persistence');
-                  member_user = user_from_store;
+                console.log('Successfully loaded user1 from persistence');
+                member_user = user_from_store;
               } else {
-                  throw new Error('Failed to get user1.... run registerUser.js');
+                throw new Error('Failed to get user1.... run registerUser.js');
               }
   
               // get a transaction id object based on the current user assigned to fabric client
               tx_id = fabric_client.newTransactionID();
               console.log("Assigning transaction_id: ", tx_id._transaction_id);
-  
+              console.log("type==>", Key, typeof Key );
               // recordTuna - requires 5 args, ID, vessel, location, timestamp,holder - ex: args: ['10', 'Hound', '-12.021, 28.012', '1504054225', 'Hansel'], 
               // send proposal to endorser
               const request = {
@@ -386,21 +387,22 @@ const insurerClaim = {
                 chainId: 'mychannel',
                 txId: tx_id
               };
-  
+              console.log('request: ', request);
               // send the transaction proposal to the peers
               return channel.sendTransactionProposal(request);
             }).then((results) => {
+              console.log('propposal');
               var proposalResponses = results[0];
               var proposal = results[1];
               let isProposalGood = false;
               console.log('result====>'+results);
               if (proposalResponses && proposalResponses[0].response &&
-                proposalResponses[0].response.status === 200) {
-                  isProposalGood = true;
-                  console.log('Transaction proposal was good');
-                } else {
-                  console.error('Transaction proposal was bad');
-                }
+              proposalResponses[0].response.status === 200) {
+                isProposalGood = true;
+                console.log('Transaction proposal was good');
+              } else {
+                console.error('Transaction proposal was bad');
+              }
               if (isProposalGood) {
                 console.log(util.format(
                   'Successfully sent Proposal and received ProposalResponse: Status - %s, message - "%s"',
@@ -446,11 +448,10 @@ const insurerClaim = {
                     var return_status = {event_status : code, tx_id : transaction_id_string};
                     if (code !== 'VALID') {
                       console.error('The transaction was invalid, code = ' + code);
-                      res.send("Error: holder duplicate");
-                        resolve(return_status); // we could use reject(new Error('Problem with the tranaction, event status ::'+code));
-                      } else {
-                        console.log('The transaction has been committed on peer ' + event_hub._ep._endpoint.addr);
-                        resolve(return_status);
+                      resolve(return_status); // we could use reject(new Error('Problem with the tranaction, event status ::'+code));
+                    } else {
+                      console.log('The transaction has been committed on peer ' + event_hub._ep._endpoint.addr);
+                      resolve(return_status);
                     }
                   }, (err) => {
                     //this is the callback if something goes wrong with the event registration or processing
@@ -461,8 +462,7 @@ const insurerClaim = {
   
                 return Promise.all(promises);
               } else {
-              console.error('Failed to send Proposal or receive valid response. Response null or status is not 200. exiting...');
-              res.send("Error: holder duplicate");
+                console.error('Failed to send Proposal or receive valid response. Response null or status is not 200. exiting...');
                 throw new Error('Failed to send Proposal or receive valid response. Response null or status is not 200. exiting...');
               }
             }).then((results) => {
@@ -475,7 +475,7 @@ const insurerClaim = {
                 });
                 // res.send(tx_id.getTransactionID());
               } else {
-                console.error('Failed to order the transaction. Error code: ' + response.status);
+                console.error('Failed to order the transaction. Error codeeieiei: ' );
               }
   
               if(results && results[1] && results[1].event_status === 'VALID') {
@@ -489,9 +489,10 @@ const insurerClaim = {
               }
             }).catch((err) => {
               console.error('Failed to invoke successfully-->add :: ' + err);
+              claim.status = "reject";
               claim.reason = "Claim duplicate";
               claim.save().then((claim) => {
-                reply(claim);
+                reply(Boom.badData('Duplicate Claim'));
               });
             });
           }

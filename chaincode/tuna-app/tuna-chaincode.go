@@ -33,8 +33,7 @@ Structure tags are used by encoding/json library
 */
 type Tuna struct {
 	Hospital string `json:"hospital"`
-	Time string `json:"time"`
-	DateClaim string `json:"dateclaim"`
+	DateClaim string `json:"dateClaim"`
 	Name string `json:"name"`
 	ICD10  string `json:"icd10"`
 	Price  string `json:"price"`
@@ -57,10 +56,11 @@ func (s *SmartContract) Init(APIstub shim.ChaincodeStubInterface) sc.Response {
  The app also specifies the specific smart contract function to call with args
  */
 func (s *SmartContract) Invoke(APIstub shim.ChaincodeStubInterface) sc.Response {
-
+	fmt.Println("Invokeee1")
 	// Retrieve the requested Smart Contract function and arguments
 	function, args := APIstub.GetFunctionAndParameters()
 	// Route to the appropriate handler function to interact with the ledger
+	fmt.Println("Invokeee2")
 	if function == "queryTuna" {
 		return s.queryTuna(APIstub, args)
 	} else if function == "initLedger" {
@@ -100,16 +100,16 @@ Will add test data (10 tuna catches)to our network
  */
 func (s *SmartContract) initLedger(APIstub shim.ChaincodeStubInterface) sc.Response {
 	tuna := []Tuna{
-		Tuna{Hospital: "923F",DateClaim: "11/2/2560",Time: "15:30", Name: "milk", ICD10: "1504054225", Price: "Miriam", Status:"true"},
-		Tuna{Hospital: "M83T",DateClaim: "11/2/2560",Time: "15:30", Name: "eiei", ICD10: "1504057825", Price: "Dave", Status:"true"},
-		Tuna{Hospital: "T012",DateClaim: "11/2/2560",Time: "15:30", Name: "donut", ICD10: "1493517025", Price: "Igor", Status:"true"},
-		Tuna{Hospital: "P490",DateClaim: "11/2/2560",Time: "15:30", Name: "polar", ICD10: "1496105425", Price: "Amalea", Status:"true"},
-		Tuna{Hospital: "S439",DateClaim: "11/2/2560",Time: "15:30", Name: "bear", ICD10: "1493512301", Price: "Rafa", Status:"true"},
-		Tuna{Hospital: "J205",DateClaim: "11/2/2560",Time: "15:30", Name: "kiku", ICD10: "1494117101", Price: "Shen", Status:"true"},
-		Tuna{Hospital: "S22L",DateClaim: "11/2/2560",Time: "15:30", Name: "mumi", ICD10: "1496104301", Price: "Leila", Status:"true"},
-		Tuna{Hospital: "EI89",DateClaim: "11/2/2560",Time: "15:30", Name: "bottle", ICD10: "1485066691", Price: "Yuan", Status:"true"},
-		Tuna{Hospital: "129R",DateClaim: "11/2/2560",Time: "15:30", Name: "macair", ICD10: "1485153091", Price: "Carlo", Status:"true"},
-		Tuna{Hospital: "49W4",DateClaim: "11/2/2560",Time: "15:30", Name: "Charger", ICD10: "1487745091", Price: "Fatima", Status:"true"},
+		Tuna{Hospital: "923F",DateClaim: "11/11/11", Name: "milk", ICD10: "1504054225", Price: "Miriam", Status:"true"},
+		Tuna{Hospital: "M83T",DateClaim: "11/11/11", Name: "eiei", ICD10: "1504057825", Price: "Dave", Status:"true"},
+		Tuna{Hospital: "T012",DateClaim: "11/11/11", Name: "donut", ICD10: "1493517025", Price: "Igor", Status:"true"},
+		Tuna{Hospital: "P490",DateClaim: "11/11/11", Name: "polar", ICD10: "1496105425", Price: "Amalea", Status:"true"},
+		Tuna{Hospital: "S439",DateClaim: "11/11/11", Name: "bear", ICD10: "1493512301", Price: "Rafa", Status:"true"},
+		Tuna{Hospital: "J205",DateClaim: "11/11/11", Name: "kiku", ICD10: "1494117101", Price: "Shen", Status:"true"},
+		Tuna{Hospital: "S22L",DateClaim: "11/11/11", Name: "mumi", ICD10: "1496104301", Price: "Leila", Status:"true"},
+		Tuna{Hospital: "EI89",DateClaim: "11/11/11", Name: "bottle", ICD10: "1485066691", Price: "Yuan", Status:"true"},
+		Tuna{Hospital: "129R",DateClaim: "11/11/11", Name: "macair", ICD10: "1485153091", Price: "Carlo", Status:"true"},
+		Tuna{Hospital: "49W4",DateClaim: "11/11/11", Name: "Charger", ICD10: "1487745091", Price: "Fatima", Status:"true"},
 	}
 
 	i := 0
@@ -131,7 +131,6 @@ This method takes in five arguments (attributes to be saved in the ledger).
  */
 func (s *SmartContract) recordTuna(APIstub shim.ChaincodeStubInterface, args []string) sc.Response {
 	fmt.Printf("-lenn Argument ==> Bc %d", len(args))
-	fmt.Println("-Argument ==> Bc[8] %s", args[7])
 	fmt.Println("-Argument ==> Bc[1] %s", args[1])
 	fmt.Println("-Argument ==> Bc[2] %s", args[2])
 	fmt.Println("-Argument ==> Bc[3] %s", args[3])
@@ -139,16 +138,17 @@ func (s *SmartContract) recordTuna(APIstub shim.ChaincodeStubInterface, args []s
 	fmt.Println("-Argument ==> Bc[5] %s", args[5])
 	fmt.Println("-Argument ==> Bc[6] %s", args[6])
 	fmt.Println("-Argument ==> Bc[7] %s", args[0])
-	if len(args) != 8 {
+	if len(args) != 7 {
 		return shim.Error("Incorrect number of arguments. Expecting 7 ==> ")
 	}
 
-var tuna = Tuna{ Name: args[1],Hospital: args[2], ICD10: args[3], DateClaim: args[4], Price: args[5], Time: args[6], Status: args[7] }
+var tuna = Tuna{ Name: args[1],Hospital: args[2], ICD10: args[3], DateClaim: args[4], Price: args[5], Status: args[6] }
 	
 	startKey := "0"
 	endKey := "999"
 
 	resultsIterator, err1 := APIstub.GetStateByRange(startKey, endKey)
+	fmt.Println("-RecordClaim")
 	if err1 != nil {
 		return shim.Error(err1.Error())
 	}
@@ -164,9 +164,9 @@ var tuna = Tuna{ Name: args[1],Hospital: args[2], ICD10: args[3], DateClaim: arg
 		json.Unmarshal(queryResponse.Value, &tunaNow)
 		if tunaNow.Name == tuna.Name && tunaNow.Hospital == tuna.Hospital && 
 			tunaNow.ICD10 == tuna.ICD10 && tunaNow.DateClaim == tuna.DateClaim && 
-			tunaNow.Price == tuna.Price && tunaNow.Time == tuna.Time {
+			tunaNow.Price == tuna.Price {
 				fmt.Println("-Argument ==> status", tuna.Status)
-				if tunaNow.Status == "true" {
+				if tunaNow.Status == "approve" {
 					return shim.Error(fmt.Sprintf("dup claim!"))
 				}	
 		}
