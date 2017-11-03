@@ -295,14 +295,11 @@ const insurerClaim = {
       const role =  thisRole.roleName;
       if(role == 'Insurer'){
         LogUserClaim.findOne({ _id: claimId, type: 'insurance' }).exec((err, claim) => {
-          if(err) reply(err);
-          claim.status = status;
-          if (status === 'reject') {
-            claim.reason = reason;
-            claim.save().then((claim) => {
-              reply(claim);
-            });
-          } else {
+          if(err) {
+            reply(err);
+          }
+          else {
+            claim.status = status;
             console.log("submit recording of a claim: " + claim);
             
             var Key = claim.logUserClaimId.toString();
@@ -445,9 +442,12 @@ const insurerClaim = {
               // check the results in the order the promises were added to the promise all list
               if (results && results[0] && results[0].status === 'SUCCESS') {
                 console.log('Successfully sent transaction to the orderer.');
+                if (status === 'reject') {
+                  claim.reason = reason;
+                } 
                 claim.save().then((claim) => {
                   reply(claim);
-                });
+                }); 
                 // res.send(tx_id.getTransactionID());
               } else {
                 console.error('Failed to order the transaction. Error codeeieiei: ' );
@@ -455,9 +455,6 @@ const insurerClaim = {
   
               if(results && results[1] && results[1].event_status === 'VALID') {
                 console.log('Successfully committed the change to the ledger by the peer');
-                claim.save().then((claim) => {
-                  reply(claim);
-                });
                 // res.send(tx_id.getTransactionID());
               } else {
                 console.log('Transaction failed to be committed to the ledger due to ::'+results[1].event_status);
@@ -469,7 +466,7 @@ const insurerClaim = {
               claim.save().then((claim) => {
                 reply(Boom.badData('Duplicate Claim'));
               });
-            });
+            }); 
           }
         });
       }else{

@@ -162,13 +162,15 @@ var tuna = Tuna{ Name: args[1],Hospital: args[2], ICD10: args[3], DateClaim: arg
 	
 		tunaNow := Tuna{}
 		json.Unmarshal(queryResponse.Value, &tunaNow)
-		if tunaNow.Name == tuna.Name && tunaNow.Hospital == tuna.Hospital && 
-			tunaNow.ICD10 == tuna.ICD10 && tunaNow.DateClaim == tuna.DateClaim && 
-			tunaNow.Price == tuna.Price {
+		if tuna.Status == "approve" {
+			if tunaNow.Name == tuna.Name && tunaNow.Hospital == tuna.Hospital && 
+				tunaNow.ICD10 == tuna.ICD10 && tunaNow.DateClaim == tuna.DateClaim && 
+				tunaNow.Price == tuna.Price {
 				fmt.Println("-Argument ==> status", tuna.Status)
 				if tunaNow.Status == "approve" {
 					return shim.Error(fmt.Sprintf("dup claim!"))
 				}	
+			}
 		}
 	}
 
