@@ -15,7 +15,7 @@ formatting, and string manipulation
 * 2 specific Hyperledger Fabric specific libraries for Smart Contracts  
 */ 
 import (
-	"bytes"
+	"time"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -200,36 +200,50 @@ func (s *SmartContract) queryAllTuna(APIstub shim.ChaincodeStubInterface) sc.Res
 	}
 	defer resultsIterator.Close()
 
-	// buffer is a JSON array containing QueryResults
-	var buffer bytes.Buffer
-	buffer.WriteString("[")
+	type AuditHistory struct {
+		TxId    string   `json:"txId"`
+		Value   Tuna   `json:"value"`
+		Timestamp string `json:"timestamp"`
+	}
 
-	bArrayMemberAlreadyWritten := false
+	var history []AuditHistory;
+	marble := Tuna{}
+
 	for resultsIterator.HasNext() {
 		queryResponse, err := resultsIterator.Next()
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-		// Add comma before array members,suppress it for the first array member
-		if bArrayMemberAlreadyWritten == true {
-			buffer.WriteString(",")
+		resultsIterator1, err1 := APIstub.GetHistoryForKey(queryResponse.Key)
+		if err1 != nil {
+			return shim.Error(err1.Error())
 		}
-		buffer.WriteString("{\"Key\":")
-		buffer.WriteString("\"")
-		buffer.WriteString(queryResponse.Key)
-		buffer.WriteString("\"")
+		defer resultsIterator1.Close()
 
-		buffer.WriteString(", \"Record\":")
-		// Record is a JSON object, so we write as-is
-		buffer.WriteString(string(queryResponse.Value))
-		buffer.WriteString("}")
-		bArrayMemberAlreadyWritten = true
+		for resultsIterator1.HasNext() {
+			historyData, err := resultsIterator1.Next()
+			if err != nil {
+				return shim.Error(err.Error())
+			}
+			var tx AuditHistory
+			tx.TxId = historyData.TxId                     //copy transaction id over
+			tx.Timestamp = time.Unix(historyData.Timestamp.Seconds, int64(historyData.Timestamp.Nanos)).String()
+			json.Unmarshal(historyData.Value, &marble)     //un stringify it aka JSON.parse()
+			if historyData.Value == nil {                  //marble has been deleted
+				var emptyMarble Tuna
+				tx.Value = emptyMarble                 //copy nil marble
+			} else {
+				json.Unmarshal(historyData.Value, &marble) //un stringify it aka JSON.parse()
+				tx.Value = marble                      //copy marble over
+			}
+			history = append(history, tx)              //add this tx to the list
+			fmt.Println("- history:%+v", tx)
+		}
+		
 	}
-	buffer.WriteString("]")
 
-	fmt.Printf("- queryAllTuna:\n%s\n", buffer.String())
-
-	return shim.Success(buffer.Bytes())
+	historyAsBytes, _ := json.Marshal(history)     //convert to array of bytes
+	return shim.Success(historyAsBytes)
 }
 
 /*
