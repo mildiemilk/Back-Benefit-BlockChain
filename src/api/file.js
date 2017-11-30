@@ -1,5 +1,6 @@
 import fs from 'fs';
 import crypto from 'crypto';
+import axios from 'axios';
 
 const upload = {
   tags: ['file', 'api'],
@@ -34,9 +35,29 @@ const download = {
   },
 };
 
+const invoke = {
+  tags: ['file', 'api'],
+  handler: (request, reply) => {
+    axios({
+      method: 'post',
+      url: 'http://localhost:8081/apis/channels/mychannel/chaincodes/mycc',
+      data: { 
+        peers: '["127.0.0.1:7051"]',
+        fcn: 'invoke',
+        args: JSON.stringify(["a","b","7"])
+      },
+    })
+    .then(response => {
+      console.log(response);
+      reply('success');
+    });
+  },
+};
+
 export default function(server) {
   server.route([
     { method: 'POST', path: '/file/upload', config: upload },
     { method: 'GET', path: '/file/download', config: download },
+    { method: 'GET', path: '/test-invoke', config: invoke },
   ]);
 }

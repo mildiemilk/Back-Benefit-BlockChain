@@ -1,6 +1,7 @@
 import Joi from 'joi';
 import Boom from 'boom';
-import { EmployeeGroup, BenefitPlan, EmployeePlan, LogUserClaim  } from '../models';
+import axios from 'axios';
+import { EmployeeGroup, BenefitPlan, EmployeePlan, LogUserClaim, BiddingRelation  } from '../models';
 
 const getAllBenefit = {
   tags: ['api'],
@@ -155,8 +156,32 @@ const claim = {
             policyNumber: null,
             type,
           });
-          createClaim.save().then(() => {
-            reply({ message: 'send claim success' });
+          createClaim.save().then((claim) => {
+            const Key = claim.logUserClaimId.toString();
+            const Name = claim.detail.name;
+            const ICD10 = claim.detail.ICD10;
+            const DateClaim = claim.detail.date;
+            const Price = claim.detail.amount;
+            const Status = claim.status;
+
+            BiddingRelation.find({ company: user.company.detail }, null, {sort: { createdAt: -1 }})
+            .populate('insurerCompanyWin')
+            .exec((err, bidding) => {
+              const Company = bidding[0].insurerCompanyWin.companyName;
+              const args = JSON.stringify([Key, Name, Company, ICD10, DateClaim, Price, Status]);
+              axios({
+                method: 'post',
+                url: 'http://localhost:8080/apis/channels/mychannel/chaincodes/mycc',
+                data: { 
+                  peers: '["127.0.0.1:7051"]',
+                  fcn: 'createClaim',
+                  args: args,
+                },
+              })
+              .then(() => {
+                reply({ message: 'send claim success' });
+              });
+            });
           });
         });
       }

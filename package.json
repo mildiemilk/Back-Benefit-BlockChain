@@ -13,6 +13,7 @@
   "private": true,
   "dependencies": {
     "aws-sdk": "^2.88.0",
+    "axios": "^0.16.2",
     "bcrypt": "^1.0.2",
     "bcryptjs": "^2.4.3",
     "bluebird": "^3.5.0",
@@ -42,10 +43,7 @@
     "nodemailer-ses-transport": "^1.5.1",
     "tmp": "^0.0.33",
     "vision": "^4.1.1",
-    "xlsx-to-json-lc": "0.5.0",
-    "fabric-ca-client": "^1.0.2",
-    "fabric-client": "^1.0.2",
-    "grpc": "^1.6.0"
+    "xlsx-to-json-lc": "0.5.0"
   },
   "devDependencies": {
     "babel-cli": "^6.24.1",
