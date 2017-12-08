@@ -104,18 +104,19 @@ const claim = {
     }
     const allFile = files.map(file => {
       return new Promise(resolve => {
-        storage.upload({ file: file }, { isPublic }, (err, media) => {
-          if (!err) {
-            media.userId = user.id;
-            media.save();
-            storage.getUrl(media.path, (url) => {
-              if (err) throw err;
-              mediaImg.push(media._id);
-              urlImg.push(url);
-              resolve();
-            });
-          }
-        });
+        // storage.upload({ file: file }, { isPublic }, (err, media) => {
+        //   if (!err) {
+        //     media.userId = user.id;
+        //     media.save();
+        //     storage.getUrl(media.path, (url) => {
+        //       if (err) throw err;
+        //       mediaImg.push(media._id);
+        //       urlImg.push(url);
+        //       resolve();
+        //     });
+        //   }
+        // });
+        resolve();
       });
       
     });
